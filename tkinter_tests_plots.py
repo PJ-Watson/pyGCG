@@ -28,12 +28,13 @@ class App(ctk.CTk):
         super().__init__()
 
         # Geometry
-        self.geometry("1280x720")
-        # self.geometry("1366x768")
+        # self.geometry("1280x720")
+        self.geometry("1366x768")
         # self.attributes("-zoomed", True)
         self.title("GLASS-JWST Classification GUI")
 
         self.initialise_configuration()
+        self.settings_window = None
 
         # Key bindings
         self.protocol("WM_DELETE_WINDOW", self.quit_gracefully)
@@ -43,16 +44,28 @@ class App(ctk.CTk):
         self.grid_rowconfigure((0, 1, 2), weight=1)
         self.grid_columnconfigure((0, 1, 2), weight=1)
 
-        # Setup top navigation buttons
-        self.change_appearance_menu = ctk.CTkOptionMenu(
+        # # Setup top navigation buttons
+        # self.change_appearance_menu = ctk.CTkOptionMenu(
+        #     self,
+        #     # text="Previous Galaxy",
+        #     values=["System", "Light", "Dark"],
+        #     command=self.change_appearance_menu_callback,
+        # )
+        # self.change_appearance_menu.grid(
+        #     row=0,
+        #     column=0,
+        #     padx=20,
+        #     pady=20,
+        #     # sticky="news",
+        # )
+        self.open_settings_button = ctk.CTkButton(
             self,
-            # text="Previous Galaxy",
-            values=["System", "Light", "Dark"],
-            command=self.change_appearance_menu_callback,
+            text="Settings",
+            command=self.open_settings_callback,
         )
-        self.change_appearance_menu.grid(
+        self.open_settings_button.grid(
             row=0,
-            column=0,
+            column=2,
             padx=20,
             pady=20,
             # sticky="news",
@@ -126,11 +139,13 @@ class App(ctk.CTk):
 
         try:
             with open(
-                Path(self.base_config["files"]["full_config_path"]).expanduser().resolve(), "rt"
+                Path(self.base_config["files"]["full_config_path"])
+                .expanduser()
+                .resolve(),
+                "rt",
             ) as fp:
                 self.full_config = tomlkit.load(fp)
-                print(self.full_config)
-            
+                self.write_full_config(self.full_config)
 
         except FileNotFoundError:
             print(
@@ -138,7 +153,9 @@ class App(ctk.CTk):
             )
             self.full_config = self.write_full_config(self.base_config)
 
-        ctk.set_appearance_mode(self.full_config["appearance"]["appearance_mode"].lower())
+        ctk.set_appearance_mode(
+            self.full_config["appearance"]["appearance_mode"].lower()
+        )
         ctk.set_default_color_theme(self.full_config["appearance"]["theme"].lower())
 
     def write_base_config(self):
@@ -165,7 +182,6 @@ class App(ctk.CTk):
         return doc
 
     def write_full_config(self, doc):
-
         # Files
         try:
             files = doc["files"]
@@ -181,7 +197,9 @@ class App(ctk.CTk):
             files["temp_dir"].comment(
                 "The directory in which temporary files are stored."
             )
-        Path(files['temp_dir']).expanduser().resolve().mkdir(exist_ok=True, parents=True)
+        Path(files["temp_dir"]).expanduser().resolve().mkdir(
+            exist_ok=True, parents=True
+        )
 
         try:
             files["extractions_dir"]
@@ -218,17 +236,26 @@ class App(ctk.CTk):
         except:
             appearance.add("theme", "blue")
             appearance["theme"].comment(
-                "Blue (default), dark-blue, or green. The CustomTKinter color theme. "+
-                "Can also point to the location of a custom .json file describing the desired theme."
+                "Blue (default), dark-blue, or green. The CustomTKinter color theme. "
+                + "Can also point to the location of a custom .json file describing the desired theme."
             )
-        
-        with open(Path(self.base_config["files"]["full_config_path"]).expanduser().resolve(), mode="wt", encoding="utf-8") as fp:
+
+        with open(
+            Path(self.base_config["files"]["full_config_path"]).expanduser().resolve(),
+            mode="wt",
+            encoding="utf-8",
+        ) as fp:
             tomlkit.dump(doc, fp)
 
         return doc
 
-    def change_appearance_menu_callback(self, choice):
-        ctk.set_appearance_mode(choice.lower())
+    def open_settings_callback(self):
+        if self.settings_window is None or not self.settings_window.winfo_exists():
+            self.settings_window = SettingsWindow(
+                self
+            )  # create window if its None or destroyed
+        else:
+            self.settings_window.focus()
 
     def save_gal_button_callback(self):
         print("Save button clicked!")
@@ -286,6 +313,7 @@ class App(ctk.CTk):
 
     def quit_gracefully(self, event=None):
         # Put some lines here to save current output
+        self.write_full_config(self.full_config)
         self.quit()
 
 
@@ -319,6 +347,139 @@ class SpecFrame(ctk.CTkFrame):
         # add widgets onto the frame...
         # self.label = ctk.CTkLabel(self)
         # self.label.grid(row=0, column=0, padx=20)
+
+
+class SettingsWindow(ctk.CTkToplevel):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.geometry("720x568")
+        self.title("Settings")
+
+        # Key bindings
+        self.protocol("WM_DELETE_WINDOW", self.quit_settings_gracefully)
+        self.bind("<Control-q>", self.quit_settings_gracefully)
+
+        self.scrollable_frame = ctk.CTkScrollableFrame(self)
+        self.scrollable_frame.grid_columnconfigure((0, 1), weight=1)
+        self.scrollable_frame.pack(side="top", fill="both", expand=True)
+
+        self.appearance_label = ctk.CTkLabel(
+            self.scrollable_frame, text="Appearance mode"
+        )
+        self.appearance_label.grid(
+            row=0,
+            column=0,
+            padx=20,
+            pady=20,
+        )
+        self.change_appearance_menu = ctk.CTkOptionMenu(
+            self.scrollable_frame,
+            values=["System", "Light", "Dark"],
+            command=self.change_appearance_menu_callback,
+        )
+        self.change_appearance_menu.grid(row=0, column=1, padx=20, pady=20, sticky="w")
+        self.change_appearance_menu.set(
+            self._root().full_config["appearance"]["appearance_mode"]
+        )
+
+        self.config_path_label = ctk.CTkLabel(
+            self.scrollable_frame, text="Full config path"
+        )
+        self.config_path_label.grid(
+            row=1,
+            column=0,
+            padx=20,
+            pady=20,
+        )
+        # self._config_path = ""
+        # self._config_path = self._root().full_config["files"]["full_config_path"]
+        self.change_config_path = ctk.CTkEntry(
+            self.scrollable_frame,
+            # textvariable = self._config_path
+            # values=["Blue", "Dark-blue", "Green"],
+        )
+        self.change_config_path.insert(
+            0, self._root().full_config["files"]["full_config_path"]
+        )
+        self.change_config_path.grid(row=1, column=1, padx=20, pady=20, sticky="we")
+        self.change_config_path.bind("<Return>", self.change_config_path_callback)
+
+
+        self.temp_dir_label = ctk.CTkLabel(
+            self.scrollable_frame, text="Temporary directory"
+        )
+        self.temp_dir_label.grid(
+            row=2,
+            column=0,
+            padx=20,
+            pady=(10,0),
+        )
+        self.temp_dir_value = ctk.StringVar(self, self._root().full_config["files"]["temp_dir"])
+        self.temp_dir_entry = ctk.CTkEntry(
+            self.scrollable_frame,
+            textvariable=self.temp_dir_value,
+        )
+        self.temp_dir_entry.grid(row=2, column=1, padx=20, pady=(10,0), sticky="we")
+        self.temp_dir_entry.bind("<Return>", self.change_temp_dir_callback)
+        self.open_temp_dir_button = ctk.CTkButton(
+            self.scrollable_frame,
+            text="Browse",
+            command=self.browse_temp_dir,
+        )
+        self.open_temp_dir_button.grid(
+            row=3,
+            column=1,
+            padx=20,
+            pady=(5,10),
+            sticky="we",
+        )
+
+
+
+    def change_appearance_menu_callback(self, choice):
+        ctk.set_appearance_mode(choice.lower())
+        self._root().full_config["appearance"]["appearance_mode"] = choice.lower()
+        self._root().write_full_config(self._root().full_config)
+
+    def change_config_path_callback(self, event):
+        self._root().base_config["files"]["full_config_path"] = str(
+            Path(event.widget.get()).expanduser().resolve()
+        )
+        with open(
+            Path(__file__).parent / "base_config.toml", mode="wt", encoding="utf-8"
+        ) as fp:
+            tomlkit.dump(self._root().base_config, fp)
+
+        self._root().full_config["files"]["full_config_path"] = str(
+            Path(event.widget.get()).expanduser().resolve()
+        )
+        self._root().write_full_config(self._root().full_config)
+
+    
+    def change_temp_dir_callback(self, event=None):
+        self._root().full_config["files"]["temp_dir"] = str(
+            Path(self.temp_dir_value.get()).expanduser().resolve()
+        )
+        self._root().write_full_config(self._root().full_config)
+
+    def browse_temp_dir(self):
+        dir_output = ctk.filedialog.askdirectory(parent=self, initialdir=self.temp_dir_value.get())
+        self.temp_dir_entry = dir_output
+        self.change_temp_dir_callback()
+
+
+        # ctk.set_appearance_mode(choice.lower())
+        # self._root().full_config["appearance"]["appearance_mode"] = choice.lower()
+        # self._root().write_full_config(self._root().full_config)
+
+    # def change_theme_menu_callback(self, choice):
+    #     ctk.set_default_color_theme(choice.lower())
+    #     self.master.update()
+
+    def quit_settings_gracefully(self, event=None):
+        # Put some lines here to save current output
+        self._root().write_full_config(self._root().full_config)
+        self.destroy()
 
 
 if __name__ == "__main__":

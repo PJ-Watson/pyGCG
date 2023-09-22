@@ -71,7 +71,9 @@ def plot_MUSE_spec(
     NIRCAM_fits_tab = Table.read(cat_path)
 
     # print (dir(master._root()))
-    cube_path = Path(master._root().full_config["files"]["cube_path"]).expanduser().resolve()
+    cube_path = (
+        Path(master._root().full_config["files"]["cube_path"]).expanduser().resolve()
+    )
     if not cube_path.is_file():
         return
 
