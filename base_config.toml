@@ -1,0 +1,13 @@
+# This is the base configuration file, which stores the settings used previously.
+
+title = "Base Configuration"
+
+[files]
+full_config_path = ".testing_base_config.toml" # The location of the primary configuration file.
+temp_dir = "~/.pyGCG_temp" # The directory in which temporary files are stored.
+extractions_dir = "" # The directory in which NIRISS extractions are stored.
+cube_path = "" # [optional] The file path of the corresponding MUSE datacube.
+
+[appearance]
+appearance_mode = "system" # System (default), light, or dark.
+theme = "blue" # Blue (default), dark-blue, or green. The CustomTKinter color theme. Can also point to the location of a custom .json file describing the desired theme.

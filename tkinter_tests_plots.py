@@ -126,7 +126,7 @@ class App(ctk.CTk):
 
         try:
             with open(
-                Path(self.base_config["files"]["full_config_path"] + "t"), "rt"
+                Path(self.base_config["files"]["full_config_path"]).expanduser().resolve(), "rt"
             ) as fp:
                 self.full_config = tomlkit.load(fp)
                 print(self.full_config)
@@ -222,7 +222,7 @@ class App(ctk.CTk):
                 "Can also point to the location of a custom .json file describing the desired theme."
             )
         
-        with open(Path(self.base_config["files"]["full_config_path"]), mode="wt", encoding="utf-8") as fp:
+        with open(Path(self.base_config["files"]["full_config_path"]).expanduser().resolve(), mode="wt", encoding="utf-8") as fp:
             tomlkit.dump(doc, fp)
 
         return doc
@@ -274,8 +274,6 @@ class App(ctk.CTk):
             ):
                 plot_MUSE_spec(
                     self.muse_spec_frame,
-                    figure=self.muse_spec_frame.fig,
-                    parent_canvas=self.muse_spec_frame.pyplot_canvas,
                     gal_id=self.current_gal_id,
                 )
 

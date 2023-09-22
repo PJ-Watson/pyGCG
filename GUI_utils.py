@@ -66,16 +66,14 @@ def cube_extract_spectra(
 def plot_MUSE_spec(
     master,
     gal_id=1864,
-    mnt_path=Path("/media/sharedData/data/"),
-    cat_path="./code/catalogues/combined_v3_NIRCAM_Xin.fits",
-    cube_path=Path("/media/sharedData/data/")
-    / "archival"
-    / "ESO"
-    / "MUSE"
-    / "A2744"
-    / "ADP.2017-03-24T12 14 09.100.fits",
+    cat_path="../catalogues/combined_v3_NIRCAM_Xin.fits",
 ):
     NIRCAM_fits_tab = Table.read(cat_path)
+
+    # print (dir(master._root()))
+    cube_path = Path(master._root().full_config["files"]["cube_path"]).expanduser().resolve()
+    if not cube_path.is_file():
+        return
 
     with pf.open(cube_path) as cube_hdul:
         tab_row = NIRCAM_fits_tab[NIRCAM_fits_tab["v3_id"] == gal_id]
