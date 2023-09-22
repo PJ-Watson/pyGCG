@@ -22,7 +22,7 @@ def cube_extract_spectra(
     cube_wcs,
     ra,
     dec,
-    radius=1,
+    radius=0.1,
     cube_error=None,
 ):
     try:
