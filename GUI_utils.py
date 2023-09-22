@@ -18,7 +18,12 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 
 def cube_extract_spectra(
     # temp_dir_path,
-    data_cube, cube_wcs, ra, dec, radius=1, cube_error=None
+    data_cube,
+    cube_wcs,
+    ra,
+    dec,
+    radius=1,
+    cube_error=None,
 ):
     try:
         ra.unit
@@ -60,8 +65,6 @@ def cube_extract_spectra(
 
 def plot_MUSE_spec(
     master,
-    figure,
-    parent_canvas,
     gal_id=1864,
     mnt_path=Path("/media/sharedData/data/"),
     cat_path="./code/catalogues/combined_v3_NIRCAM_Xin.fits",
@@ -95,8 +98,8 @@ def plot_MUSE_spec(
 
         # fig, ax = plt.subplots(figsize=(8, 6))
         # figure.axes.clear()
-        figure.clear()
-        ax = figure.add_subplot(111)
+        master.fig.clear()
+        ax = master.fig.add_subplot(111)
 
         ax.plot(
             wavelengths,
@@ -108,7 +111,7 @@ def plot_MUSE_spec(
         ax.set_title(
             f"IDs: v3={tab_row['v3_id'][0]}, Xin={tab_row['Xin_id'][0]}, NIRCAM={tab_row['NIRCAM_id'][0]}"
         )
-        parent_canvas.draw_idle()
+        master.pyplot_canvas.draw_idle()
         # pyplot_canvas = FigureCanvasTkAgg(fig,master=master)
         # pyplot_canvas.draw()
         # master.pyplot_canvas.get_tk_widget().grid(row=0, column=0, sticky="news")
