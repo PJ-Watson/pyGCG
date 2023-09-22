@@ -360,7 +360,8 @@ class SettingsWindow(ctk.CTkToplevel):
         self.bind("<Control-q>", self.quit_settings_gracefully)
 
         self.scrollable_frame = ctk.CTkScrollableFrame(self)
-        self.scrollable_frame.grid_columnconfigure((0, 1), weight=1)
+        self.scrollable_frame.grid_columnconfigure(0, weight=0)
+        self.scrollable_frame.grid_columnconfigure(1, weight=1)
         self.scrollable_frame.pack(side="top", fill="both", expand=True)
 
         self.appearance_label = ctk.CTkLabel(
@@ -389,37 +390,48 @@ class SettingsWindow(ctk.CTkToplevel):
             row=1,
             column=0,
             padx=20,
-            pady=20,
+            pady=(10, 0),
         )
-        # self._config_path = ""
-        # self._config_path = self._root().full_config["files"]["full_config_path"]
-        self.change_config_path = ctk.CTkEntry(
-            self.scrollable_frame,
-            # textvariable = self._config_path
-            # values=["Blue", "Dark-blue", "Green"],
-        )
-        self.change_config_path.insert(
-            0, self._root().full_config["files"]["full_config_path"]
-        )
-        self.change_config_path.grid(row=1, column=1, padx=20, pady=20, sticky="we")
-        self.change_config_path.bind("<Return>", self.change_config_path_callback)
 
+        self.config_path_value = ctk.StringVar(
+            self, self._root().full_config["files"]["full_config_path"]
+        )
+        self.config_path_entry = ctk.CTkEntry(
+            self.scrollable_frame,
+            textvariable=self.config_path_value,
+        )
+        self.config_path_entry.grid(row=1, column=1, padx=20, pady=(10, 0), sticky="we")
+        self.config_path_entry.bind("<Return>", self.change_config_path_callback)
+        self.open_config_path_button = ctk.CTkButton(
+            self.scrollable_frame,
+            text="Browse",
+            command=self.browse_config_path,
+        )
+        self.open_config_path_button.grid(
+            row=2,
+            column=1,
+            padx=20,
+            pady=(5, 10),
+            sticky="we",
+        )
 
         self.temp_dir_label = ctk.CTkLabel(
             self.scrollable_frame, text="Temporary directory"
         )
         self.temp_dir_label.grid(
-            row=2,
+            row=3,
             column=0,
             padx=20,
-            pady=(10,0),
+            pady=(10, 0),
         )
-        self.temp_dir_value = ctk.StringVar(self, self._root().full_config["files"]["temp_dir"])
+        self.temp_dir_value = ctk.StringVar(
+            self, self._root().full_config["files"]["temp_dir"]
+        )
         self.temp_dir_entry = ctk.CTkEntry(
             self.scrollable_frame,
             textvariable=self.temp_dir_value,
         )
-        self.temp_dir_entry.grid(row=2, column=1, padx=20, pady=(10,0), sticky="we")
+        self.temp_dir_entry.grid(row=3, column=1, padx=20, pady=(10, 0), sticky="we")
         self.temp_dir_entry.bind("<Return>", self.change_temp_dir_callback)
         self.open_temp_dir_button = ctk.CTkButton(
             self.scrollable_frame,
@@ -427,23 +439,54 @@ class SettingsWindow(ctk.CTkToplevel):
             command=self.browse_temp_dir,
         )
         self.open_temp_dir_button.grid(
-            row=3,
+            row=4,
             column=1,
             padx=20,
-            pady=(5,10),
+            pady=(5, 10),
             sticky="we",
+            columnspan=2,
         )
 
+        self.cube_path_label = ctk.CTkLabel(
+            self.scrollable_frame, text="Full config path"
+        )
+        self.cube_path_label.grid(
+            row=5,
+            column=0,
+            padx=20,
+            pady=(10, 0),
+        )
 
+        self.cube_path_value = ctk.StringVar(
+            self, self._root().full_config["files"]["cube_path"]
+        )
+        self.cube_path_entry = ctk.CTkEntry(
+            self.scrollable_frame,
+            textvariable=self.cube_path_value,
+        )
+        self.cube_path_entry.grid(row=5, column=1, padx=20, pady=(10, 0), sticky="we")
+        self.cube_path_entry.bind("<Return>", self.change_cube_path_callback)
+        self.open_cube_path_button = ctk.CTkButton(
+            self.scrollable_frame,
+            text="Browse",
+            command=self.browse_cube_path,
+        )
+        self.open_cube_path_button.grid(
+            row=6,
+            column=1,
+            padx=20,
+            pady=(5, 10),
+            sticky="we",
+        )
 
     def change_appearance_menu_callback(self, choice):
         ctk.set_appearance_mode(choice.lower())
         self._root().full_config["appearance"]["appearance_mode"] = choice.lower()
         self._root().write_full_config(self._root().full_config)
 
-    def change_config_path_callback(self, event):
+    def change_config_path_callback(self, event=None):
         self._root().base_config["files"]["full_config_path"] = str(
-            Path(event.widget.get()).expanduser().resolve()
+            Path(self.config_path_value.get()).expanduser().resolve()
         )
         with open(
             Path(__file__).parent / "base_config.toml", mode="wt", encoding="utf-8"
@@ -451,11 +494,52 @@ class SettingsWindow(ctk.CTkToplevel):
             tomlkit.dump(self._root().base_config, fp)
 
         self._root().full_config["files"]["full_config_path"] = str(
-            Path(event.widget.get()).expanduser().resolve()
+            Path(self.config_path_value.get()).expanduser().resolve()
         )
         self._root().write_full_config(self._root().full_config)
 
-    
+    def browse_config_path(self):
+        path_output = str(
+            ctk.filedialog.askopenfilename(
+                parent=self,
+                initialdir=Path(self.config_path_value.get())
+                .expanduser()
+                .resolve()
+                .parent,
+            )
+        )
+        if Path(path_output) is not None and Path(path_output).is_file():
+            self.config_path_value.set(path_output)
+            self.change_config_path_callback()
+
+    def change_cube_path_callback(self, event=None):
+        self._root().base_config["files"]["cube_path"] = str(
+            Path(self.cube_path_value.get()).expanduser().resolve()
+        )
+        with open(
+            Path(__file__).parent / "base_config.toml", mode="wt", encoding="utf-8"
+        ) as fp:
+            tomlkit.dump(self._root().base_config, fp)
+
+        self._root().full_config["files"]["cube_path"] = str(
+            Path(self.cube_path_value.get()).expanduser().resolve()
+        )
+        self._root().write_full_config(self._root().full_config)
+
+    def browse_cube_path(self):
+        path_output = str(
+            ctk.filedialog.askopenfilename(
+                parent=self,
+                initialdir=Path(self.cube_path_value.get())
+                .expanduser()
+                .resolve()
+                .parent,
+            )
+        )
+        if Path(path_output) is not None and Path(path_output).is_file():
+            self.cube_path_value.set(path_output)
+            self.change_cube_path_callback()
+
     def change_temp_dir_callback(self, event=None):
         self._root().full_config["files"]["temp_dir"] = str(
             Path(self.temp_dir_value.get()).expanduser().resolve()
@@ -463,10 +547,11 @@ class SettingsWindow(ctk.CTkToplevel):
         self._root().write_full_config(self._root().full_config)
 
     def browse_temp_dir(self):
-        dir_output = ctk.filedialog.askdirectory(parent=self, initialdir=self.temp_dir_value.get())
-        self.temp_dir_entry = dir_output
+        dir_output = ctk.filedialog.askdirectory(
+            parent=self, initialdir=self.temp_dir_value.get()
+        )
+        self.temp_dir_value.set(dir_output)
         self.change_temp_dir_callback()
-
 
         # ctk.set_appearance_mode(choice.lower())
         # self._root().full_config["appearance"]["appearance_mode"] = choice.lower()

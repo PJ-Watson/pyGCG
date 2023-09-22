@@ -3,4 +3,4 @@
 title = "Base Configuration"
 
 [files]
-full_config_path = ".testing_base_config.toml" # The location of the primary configuration file.
+full_config_path = ".testing_base_config.toml"  # The location of the primary configuration file.
