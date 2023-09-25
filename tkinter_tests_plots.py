@@ -1,9 +1,10 @@
 import customtkinter as ctk
-from GUI_utils import plot_MUSE_spec
+import GUI_utils
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2Tk
 from pathlib import Path
 import tomlkit
+from astropy.table import Table
 
 # app = customtkinter.CTk()
 # app.geometry("768x512")
@@ -217,6 +218,20 @@ class App(ctk.CTk):
                 "[optional] The file path of the corresponding MUSE datacube."
             )
 
+        try:
+            files["cat_path"]
+        except Exception as e:
+            print (e)
+            self.cat = None
+            files.add("cat_path", "")
+            files["cat_path"].comment(
+                "[optional] The file path of the NIRISS catalogue (FINISH DESCRIPTION LATER)."
+            )
+        try:
+            self.cat = Table.read(Path(files["cat_path"]).expanduser().resolve())
+        except:
+            self.cat = None
+
         # Appearance
         try:
             appearance = doc["appearance"]
@@ -239,6 +254,142 @@ class App(ctk.CTk):
                 "Blue (default), dark-blue, or green. The CustomTKinter color theme. "
                 + "Can also point to the location of a custom .json file describing the desired theme."
             )
+
+        # Lines
+        try:
+            lines = doc["lines"]
+        except:
+            lines_tab = tomlkit.table()
+            lines_tab.add(tomlkit.comment("These tables define the lines shown in the redshift tab."))
+            lines_tab.add(tomlkit.nl())
+            doc.add(tomlkit.nl())
+            doc.add("lines", lines_tab)
+            lines = doc["lines"]
+
+        try:
+            emission = lines["emission"]
+        except:
+            lines.add("emission", tomlkit.table().indent(4))
+            emission = lines["emission"]
+            emission.add(tomlkit.comment("These are the emission lines."))
+            emission.add(tomlkit.nl())
+            # appearance["appearance_mode"].comment("System (default), light, or dark.")
+
+        em_lines = {
+            "Lyman_alpha": {
+                "latex_name" : r"Ly$\alpha$",
+                "centre"     : 1215.24,
+            },
+            "CIV_1549": {
+                "latex_name" : r"C IV",
+                "centre"     : 1549.48,
+            },
+            "H_delta": {
+                "latex_name" : r"H$\delta$",
+                "centre"     : 4102.89,
+            },
+            "OIII_4364": {
+                "latex_name" : r"OIII",
+                "centre"     : 4364.436,
+            },
+            "H_gamma": {
+                "latex_name" : r"H$\gamma$",
+                "centre"     : 4341.68,
+            },
+            "H_beta": {
+                "latex_name" : r"H$\beta$",
+                "centre"     : 4862.68,
+            },
+            "NII_6550": {
+                "latex_name" : r"NII",
+                "centre"     : 6549.86,
+            },
+            "H_alpha": {
+                "latex_name" : r"H$\alpha$",
+                "centre"     : 6564.61,
+            },
+            "NII_6585": {
+                "latex_name" : r"NII",
+                "centre"     : 6585.27,
+            },
+        }
+
+        for line_name, line_data in em_lines.items():
+            try:
+                emission[line_name]
+                for key in line_data.keys():
+                    emission[line_name][key]
+            except:
+                emission.add(line_name, tomlkit.table().indent(8))
+                for key, value in line_data.items():
+                    emission[line_name].add(key, value)
+                emission.add(tomlkit.nl())
+
+        try:
+            absorption = lines["absorption"]
+        except:
+            lines.add("absorption", tomlkit.table().indent(4))
+            absorption = lines["absorption"]
+            absorption.add(tomlkit.comment("These are the absorption lines."))
+            absorption.add(tomlkit.nl())
+            # appearance["appearance_mode"].comment("System (default), light, or dark.")
+
+        ab_lines = {
+            "K_3935": {
+                "latex_name" : r"K",
+                "centre"     : 3934.777,
+            },
+            "H_3970": {
+                "latex_name" : r"H",
+                "centre"     : 3969.588 ,
+            },
+            "G_4306": {
+                "latex_name" : r"G",
+                "centre"     : 4305.61,
+            },
+            "Mg_5177": {
+                "latex_name" : r"Mg",
+                "centre"     : 5176.7,
+            },
+            "Na_5896": {
+                "latex_name" : r"Na",
+                "centre"     : 5895.6 ,
+            },
+            "Ca_8500": {
+                "latex_name" : r"CaII",
+                "centre"     :8500.36,
+            },
+            "Ca_8544": {
+                "latex_name" : r"CaII",
+                "centre"     :8544.44,
+            },
+            "Ca_8564": {
+                "latex_name" : r"CaII",
+                "centre"     :8564.52,
+            },
+        }
+
+        for line_name, line_data in ab_lines.items():
+            try:
+                absorption[line_name]
+                for key in line_data.keys():
+                    absorption[line_name][key]
+            except:
+                absorption.add(line_name, tomlkit.table().indent(8))
+                for key, value in line_data.items():
+                    absorption[line_name].add(key, value)
+                absorption.add(tomlkit.nl())
+        # try:
+        #     emission["Halpha"]
+        # except:
+        #     emission.add("Halpha", "test")
+        #     # appearance["theme"].comment(
+        #     #     "Blue (default), dark-blue, or green. The CustomTKinter color theme. "
+        #     #     + "Can also point to the location of a custom .json file describing the desired theme."
+        #     # )
+
+        # print (doc)
+        # print (self.base_config["files"]["full_config_path"])
 
         with open(
             Path(self.base_config["files"]["full_config_path"]).expanduser().resolve(),
@@ -286,10 +437,20 @@ class App(ctk.CTk):
                 self.muse_spec_frame.pyplot_canvas = FigureCanvasTkAgg(
                     figure=self.muse_spec_frame.fig, master=self.muse_spec_frame
                 )
-                plot_MUSE_spec(
+                GUI_utils.plot_MUSE_spec(
                     self.muse_spec_frame,
                     gal_id=self.current_gal_id,
                 )
+                slider_update = ctk.CTkSlider(
+                    self.muse_spec_frame,
+                    from_=0, 
+                    to=0.5, 
+                    orientation="horizontal",
+                    # label="Frequency [Hz]",
+                    # command=GUI_utils.update_lines(master=self.muse_spec_frame), 
+                    command = lambda slider_value : GUI_utils.update_lines(self.muse_spec_frame, slider_value),
+                )
+                slider_update.pack(side="right")
                 self.muse_spec_frame.pyplot_canvas.get_tk_widget().pack(
                     side="top", fill="both", expand=True
                 )
@@ -299,7 +460,7 @@ class App(ctk.CTk):
             if self.muse_spec_frame.gal_id != self.current_gal_id or not hasattr(
                 self.muse_spec_frame, "pyplot_canvas"
             ):
-                plot_MUSE_spec(
+                GUI_utils.plot_MUSE_spec(
                     self.muse_spec_frame,
                     gal_id=self.current_gal_id,
                 )
@@ -513,6 +674,14 @@ class SettingsWindow(ctk.CTkToplevel):
             "Extractions directory",
             "extractions_dir",
             setting_is_dir=True,
+        )
+
+        cat_settings = SettingsSelection(
+            self.scrollable_frame,
+            9,
+            "Catalogue filepath",
+            "cat_path",
+            setting_is_dir=False,
         )
 
     def change_appearance_menu_callback(self, choice):
