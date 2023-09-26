@@ -62,11 +62,11 @@ def cube_extract_spectra(
 
     return spectrum
 
+
 def add_lines(
     master,
     line_type="absorption",
 ):
-
     xlims = master.fig.get_axes()[0].get_xlim()
     # print (dir(master.fig))
     # print (master.fig.axes)
@@ -74,43 +74,52 @@ def add_lines(
 
     # print (master._root().full_config["lines"]["emission"])
 
-    for line_type, colour in zip(["emission", "absorption"], ["r", "b"]): 
-        for line_key, line_data in master._root().full_config["lines"][line_type].items():
-            master.plotted_lines[line_type][line_key] = master.fig.get_axes()[0].axvline(
+    for line_type, colour in zip(["emission", "absorption"], ["r", "b"]):
+        for line_key, line_data in (
+            master._root().full_config["lines"][line_type].items()
+        ):
+            master.plotted_lines[line_type][line_key] = master.fig.get_axes()[
+                0
+            ].axvline(
                 line_data["centre"],
                 c=colour,
             )
 
     master.fig.get_axes()[0].set_xlim(xlims)
 
+
 def update_lines(
     master,
     new_redshift,
 ):
-
     # print ("yarp")
     # print (new_redshift)
     # print (master)
-    for line_type in ["emission", "absorption"]: 
+    for line_type in ["emission", "absorption"]:
         try:
-            for line_key, line_data in master._root().full_config["lines"][line_type].items():
+            for line_key, line_data in (
+                master._root().full_config["lines"][line_type].items()
+            ):
                 current_line = master.plotted_lines[line_type][line_key]
                 # print (dir(current_line))
                 # print (current_line.get_ydata())
                 current_line.set_data(
-                    [line_data["centre"]*(1+new_redshift), line_data["centre"]*(1+new_redshift)],
-                    [0,1],
+                    [
+                        line_data["centre"] * (1 + new_redshift),
+                        line_data["centre"] * (1 + new_redshift),
+                    ],
+                    [0, 1],
                 )
         except:
             pass
     # master.update()
     master.pyplot_canvas.draw_idle()
 
+
 def plot_MUSE_spec(
     master,
     gal_id=1864,
 ):
-    
     cube_path = (
         Path(master._root().full_config["files"]["cube_path"]).expanduser().resolve()
     )
@@ -150,7 +159,7 @@ def plot_MUSE_spec(
         ax.set_title(
             f"IDs: v3={tab_row['v3_id'][0]}, Xin={tab_row['Xin_id'][0]}, NIRCAM={tab_row['NIRCAM_id'][0]}"
         )
-        
+
         add_lines(master)
 
         master.pyplot_canvas.draw_idle()
@@ -170,6 +179,7 @@ def plot_MUSE_spec(
         # print(master.winfo_reqheight())
         # print(master.winfo_reqheight() / figure.get_dpi())
 
+
 # import tkinter as tk     # python 3
 # # import Tkinter as tk   # python 2
 # import numpy as np
@@ -178,40 +188,40 @@ def plot_MUSE_spec(
 # # Implement the default Matplotlib key bindings.
 # from matplotlib.backend_bases import key_press_handler
 # from matplotlib.figure import Figure
- 
- 
+
+
 # class Example(tk.Frame):
 #     """Illustrate how to drag items on a Tkinter canvas"""
- 
+
 #     def __init__(self, parent):
 #         tk.Frame.__init__(self, parent)
- 
- 
+
+
 #         fig = Figure(figsize=(5, 4), dpi=100)
 #         t = np.arange(0, 3, .01)
 #         fig.add_subplot(111).plot(t, 2 * np.sin(2 * np.pi * t))
-         
+
 #         #create a canvas
 #         self.canvas = tk.Canvas(width=200, height=300)
 #         self.canvas.pack(fill="both", expand=True)
-         
+
 #         canvas = FigureCanvasTkAgg(fig, master=root)  # A tk.DrawingArea.
 #         canvas.draw()
 #         canvas.get_tk_widget().pack(side=tk.TOP, fill=tk.BOTH, expand=1)
- 
+
 #         # this data is used to keep track of an
 #         # item being dragged
 #         self._drag_data = {"x": 0, "y": 0, "item": None}
- 
+
 #         # create a movable object
 #         self.create_token(100, 150, "black")
- 
+
 #         # add bindings for clicking, dragging and releasing over
 #         # any object with the "token" tag
 #         self.canvas.tag_bind("token", "<ButtonPress-1>", self.drag_start)
 #         self.canvas.tag_bind("token", "<ButtonRelease-1>", self.drag_stop)
 #         self.canvas.tag_bind("token", "<B1-Motion>", self.drag)
- 
+
 #     def create_token(self, x, y, color):
 #         """Create a token at the given coordinate in the given color"""
 #         self.canvas.create_rectangle(
@@ -223,21 +233,21 @@ def plot_MUSE_spec(
 #             fill=color,
 #             tags=("token",),
 #         )
- 
+
 #     def drag_start(self, event):
 #         """Begining drag of an object"""
 #         # record the item and its location
 #         self._drag_data["item"] = self.canvas.find_closest(event.x, event.y)[0]
 #         self._drag_data["x"] = event.x
 #         self._drag_data["y"] = event.y
- 
+
 #     def drag_stop(self, event):
 #         """End drag of an object"""
 #         # reset the drag information
 #         self._drag_data["item"] = None
 #         self._drag_data["x"] = 0
 #         self._drag_data["y"] = 0
- 
+
 #     def drag(self, event):
 #         """Handle dragging of an object"""
 #         # compute how much the mouse has moved
@@ -248,7 +258,7 @@ def plot_MUSE_spec(
 #         # record the new position
 #         self._drag_data["x"] = event.x
 #         self._drag_data["y"] = event.y
- 
+
 # if __name__ == "__main__":
 #     root = tk.Tk()
 #     Example(root).pack(fill="both", expand=True)

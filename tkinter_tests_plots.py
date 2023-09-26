@@ -1,10 +1,9 @@
 import customtkinter as ctk
 import GUI_utils
-from matplotlib.figure import Figure
-from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2Tk
 from pathlib import Path
 import tomlkit
 from astropy.table import Table
+from tab_spectrum import SpecFrame
 
 # app = customtkinter.CTk()
 # app.geometry("768x512")
@@ -42,7 +41,7 @@ class App(ctk.CTk):
         self.bind("<Control-q>", self.quit_gracefully)
 
         # configure grid system
-        self.grid_rowconfigure((0, 1, 2), weight=1)
+        self.grid_rowconfigure(1, weight=1)
         self.grid_columnconfigure((0, 1, 2), weight=1)
 
         # # Setup top navigation buttons
@@ -69,7 +68,7 @@ class App(ctk.CTk):
             column=2,
             padx=20,
             pady=20,
-            # sticky="news",
+            sticky="ns",
         )
 
         # Setup bottom navigation buttons
@@ -120,6 +119,7 @@ class App(ctk.CTk):
             row=1, column=0, padx=20, pady=20, columnspan=3, sticky="news"
         )
 
+        self.current_gal_id = 3927
         self.current_gal_id = 1864
 
         self.muse_spec_frame = SpecFrame(
@@ -221,7 +221,7 @@ class App(ctk.CTk):
         try:
             files["cat_path"]
         except Exception as e:
-            print (e)
+            print(e)
             self.cat = None
             files.add("cat_path", "")
             files["cat_path"].comment(
@@ -260,7 +260,11 @@ class App(ctk.CTk):
             lines = doc["lines"]
         except:
             lines_tab = tomlkit.table()
-            lines_tab.add(tomlkit.comment("These tables define the lines shown in the redshift tab."))
+            lines_tab.add(
+                tomlkit.comment(
+                    "These tables define the lines shown in the redshift tab."
+                )
+            )
             lines_tab.add(tomlkit.nl())
             doc.add(tomlkit.nl())
             doc.add("lines", lines_tab)
@@ -277,40 +281,40 @@ class App(ctk.CTk):
 
         em_lines = {
             "Lyman_alpha": {
-                "latex_name" : r"Ly$\alpha$",
-                "centre"     : 1215.24,
+                "latex_name": r"Ly$\alpha$",
+                "centre": 1215.24,
             },
             "CIV_1549": {
-                "latex_name" : r"C IV",
-                "centre"     : 1549.48,
+                "latex_name": r"C IV",
+                "centre": 1549.48,
             },
             "H_delta": {
-                "latex_name" : r"H$\delta$",
-                "centre"     : 4102.89,
+                "latex_name": r"H$\delta$",
+                "centre": 4102.89,
             },
             "OIII_4364": {
-                "latex_name" : r"OIII",
-                "centre"     : 4364.436,
+                "latex_name": r"OIII",
+                "centre": 4364.436,
             },
             "H_gamma": {
-                "latex_name" : r"H$\gamma$",
-                "centre"     : 4341.68,
+                "latex_name": r"H$\gamma$",
+                "centre": 4341.68,
             },
             "H_beta": {
-                "latex_name" : r"H$\beta$",
-                "centre"     : 4862.68,
+                "latex_name": r"H$\beta$",
+                "centre": 4862.68,
             },
             "NII_6550": {
-                "latex_name" : r"NII",
-                "centre"     : 6549.86,
+                "latex_name": r"NII",
+                "centre": 6549.86,
             },
             "H_alpha": {
-                "latex_name" : r"H$\alpha$",
-                "centre"     : 6564.61,
+                "latex_name": r"H$\alpha$",
+                "centre": 6564.61,
             },
             "NII_6585": {
-                "latex_name" : r"NII",
-                "centre"     : 6585.27,
+                "latex_name": r"NII",
+                "centre": 6585.27,
             },
         }
 
@@ -336,36 +340,36 @@ class App(ctk.CTk):
 
         ab_lines = {
             "K_3935": {
-                "latex_name" : r"K",
-                "centre"     : 3934.777,
+                "latex_name": r"K",
+                "centre": 3934.777,
             },
             "H_3970": {
-                "latex_name" : r"H",
-                "centre"     : 3969.588 ,
+                "latex_name": r"H",
+                "centre": 3969.588,
             },
             "G_4306": {
-                "latex_name" : r"G",
-                "centre"     : 4305.61,
+                "latex_name": r"G",
+                "centre": 4305.61,
             },
             "Mg_5177": {
-                "latex_name" : r"Mg",
-                "centre"     : 5176.7,
+                "latex_name": r"Mg",
+                "centre": 5176.7,
             },
             "Na_5896": {
-                "latex_name" : r"Na",
-                "centre"     : 5895.6 ,
+                "latex_name": r"Na",
+                "centre": 5895.6,
             },
             "Ca_8500": {
-                "latex_name" : r"CaII",
-                "centre"     :8500.36,
+                "latex_name": r"CaII",
+                "centre": 8500.36,
             },
             "Ca_8544": {
-                "latex_name" : r"CaII",
-                "centre"     :8544.44,
+                "latex_name": r"CaII",
+                "centre": 8544.44,
             },
             "Ca_8564": {
-                "latex_name" : r"CaII",
-                "centre"     :8564.52,
+                "latex_name": r"CaII",
+                "centre": 8564.52,
             },
         }
 
@@ -425,52 +429,9 @@ class App(ctk.CTk):
 
         self.main_tabs_update()
 
-    # def _test_print_e(self, event):
-    #     # print(dir(event))
-    #     # print (event.widget)
-    #     print("Test")
-
     def main_tabs_update(self):
         if self.main_tabs.get() == "Spec view":
-            if not hasattr(self.muse_spec_frame, "pyplot_canvas"):
-                self.muse_spec_frame.fig = Figure()
-                self.muse_spec_frame.pyplot_canvas = FigureCanvasTkAgg(
-                    figure=self.muse_spec_frame.fig, master=self.muse_spec_frame
-                )
-                GUI_utils.plot_MUSE_spec(
-                    self.muse_spec_frame,
-                    gal_id=self.current_gal_id,
-                )
-                slider_update = ctk.CTkSlider(
-                    self.muse_spec_frame,
-                    from_=0, 
-                    to=0.5, 
-                    orientation="horizontal",
-                    # label="Frequency [Hz]",
-                    # command=GUI_utils.update_lines(master=self.muse_spec_frame), 
-                    command = lambda slider_value : GUI_utils.update_lines(self.muse_spec_frame, slider_value),
-                )
-                slider_update.pack(side="right")
-                self.muse_spec_frame.pyplot_canvas.get_tk_widget().pack(
-                    side="top", fill="both", expand=True
-                )
-                # self.muse_spec_frame.pyplot_canvas.get_tk_widget().grid(row=0, column=0, padx=20, pady=20, sticky="nsew")
-                # self.update()
-                # print (dir(self.muse_spec_frame._canvas))
-            if self.muse_spec_frame.gal_id != self.current_gal_id or not hasattr(
-                self.muse_spec_frame, "pyplot_canvas"
-            ):
-                GUI_utils.plot_MUSE_spec(
-                    self.muse_spec_frame,
-                    gal_id=self.current_gal_id,
-                )
-
-                self.muse_spec_frame.pyplot_canvas.get_tk_widget().pack(
-                    side="top", fill="both", expand=True
-                )
-                self.update()
-                # print (dir(self.muse_spec_frame))
-                # print (self.muse_spec_frame.winfo_children())
+            self.muse_spec_frame.update_plot()
 
     def quit_gracefully(self, event=None):
         # Put some lines here to save current output
@@ -490,20 +451,6 @@ class MyTabView(ctk.CTkTabview):
             # print ("success")
             except:
                 pass
-
-        # add widgets on tabs
-        # self.label = ctk.CTkLabel(master=self.tab("tab 1"))
-        # self.label.grid(row=0, column=0, padx=20, pady=10)
-
-    # def _test_print_current_tab(self):
-    #     print (self.get())
-
-
-class SpecFrame(ctk.CTkFrame):
-    def __init__(self, master, gal_id, **kwargs):
-        super().__init__(master, **kwargs)
-
-        self.gal_id = gal_id
 
 
 class SettingsSelection(ctk.CTkFrame):
