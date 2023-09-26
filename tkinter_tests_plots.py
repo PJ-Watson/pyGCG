@@ -120,7 +120,7 @@ class App(ctk.CTk):
         )
 
         self.current_gal_id = 3927
-        self.current_gal_id = 1864
+        # self.current_gal_id = 1864
 
         self.muse_spec_frame = SpecFrame(
             self.main_tabs.tab("Spec view"), self.current_gal_id
@@ -315,6 +315,38 @@ class App(ctk.CTk):
             "NII_6585": {
                 "latex_name": r"NII",
                 "centre": 6585.27,
+            },
+            "PaE": {
+                "latex_name": r"Pa-$\eta$",
+                "centre": 9548.6,
+            },
+            "PaD": {
+                "latex_name": r"Pa-$\delta$",
+                "centre": 10052.1,
+            },
+            "PaG": {
+                "latex_name": r"Pa-$\gamma$",
+                "centre": 10941.1,
+            },
+            "PaB": {
+                "latex_name": r"Pa-$\beta$",
+                "centre": 12821.6,
+            },
+            "PaA": {
+                "latex_name": r"Pa-$\alpha$",
+                "centre": 18756.1,
+            },
+            "SII_6718": {
+                "latex_name": r"SII",
+                "centre": 6718.29,
+            },
+            "SII_6733": {
+                "latex_name": r"SII",
+                "centre": 6732.67,
+            },
+            "SIII_9069": {
+                "latex_name": r"SIII",
+                "centre": 9068.6,
             },
         }
 
