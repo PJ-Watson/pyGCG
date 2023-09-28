@@ -1,9 +1,9 @@
 import customtkinter as ctk
-import GUI_utils
 from pathlib import Path
 import tomlkit
 from astropy.table import Table
 from tab_spectrum import SpecFrame
+from tab_beams import BeamFrame
 
 # app = customtkinter.CTk()
 # app.geometry("768x512")
@@ -111,22 +111,51 @@ class App(ctk.CTk):
 
         self.main_tabs = MyTabView(
             master=self,
-            tab_names=["Redshift view", "Spec view"],
+            tab_names=["Beam view", "Spec view"],
             command=self.main_tabs_update,
-            # expose_bind_fns=[self._test_print_e, self._test_print_e]
+            # expose_bind_fns=[self._test_pr
+            # int_e, self._test_print_e]
         )
         self.main_tabs.grid(
             row=1, column=0, padx=20, pady=20, columnspan=3, sticky="news"
         )
 
         self.current_gal_id = 3927
-        # self.current_gal_id = 1864
+        self.current_gal_id = 1864
+        # self.current_gal_id = 1494
+        # self.current_gal_id = 1338
 
         self.muse_spec_frame = SpecFrame(
             self.main_tabs.tab("Spec view"), self.current_gal_id
         )
         # self.muse_spec_frame.grid(row=0, column=0, padx=20, pady=20, sticky="nsew")
         self.muse_spec_frame.pack(fill="both", expand=1)
+
+
+        self.main_tabs.tab("Beam view").grid_rowconfigure((0,1,2), weight=1)
+        self.main_tabs.tab("Beam view").grid_columnconfigure((0,1,2), weight=1)
+        print (self.main_tabs.tab("Beam view").winfo_height())
+        for idx, name in enumerate(["F115W", "F150W", "F200W"]):
+            self.beam_frame = BeamFrame(
+                self.main_tabs.tab("Beam view"), self.current_gal_id, extver=name+",72.0", ext="MODEL", #height = self.main_tabs.tab("Beam view").winfo_height()/2
+            )
+            # self.muse_spec_frame.grid(row=0, column=0, padx=20, pady=20, sticky="nsew")
+            # self.beam_frame.pack(fill="both", expand=1)
+            self.beam_frame.grid(row=0, column=idx, sticky="ew")
+        for idx, name in enumerate(["F115W", "F150W", "F200W"]):
+            self.beam_frame = BeamFrame(
+                self.main_tabs.tab("Beam view"), self.current_gal_id, extver=name+",341.0", ext="MODEL"# height = self.main_tabs.tab("Beam view").winfo_height()/2
+            )
+            # self.muse_spec_frame.grid(row=0, column=0, padx=20, pady=20, sticky="nsew")
+            # self.beam_frame.pack(fill="both", expand=1)
+            self.beam_frame.grid(row=1, column=idx, sticky="ew")
+        for idx, name in enumerate(["F115W", "F150W", "F200W"]):
+            self.beam_frame = BeamFrame(
+                self.main_tabs.tab("Beam view"), self.current_gal_id, extver=name, ext="MODEL",# height = self.main_tabs.tab("Beam view").winfo_height()/2,
+            )
+            # self.muse_spec_frame.grid(row=0, column=0, padx=20, pady=20, sticky="nsew")
+            # self.beam_frame.pack(fill="both", expand=1)
+            self.beam_frame.grid(row=3, column=idx, sticky="ew")
 
         # print (dir(self.main_tabs.tab("Spec view")))
 
