@@ -13,21 +13,117 @@ from tqdm import tqdm
 import numpy as np
 from astropy.table import Table
 
+
 class BeamFrame(ctk.CTkFrame):
+    def __init__(self, master, gal_id, **kwargs):
+        super().__init__(master, **kwargs)
+
+        self.cmap="plasma"
+        self.ext = "SCI"
+
+        self.file_path = [*(
+            Path(self._root().full_config["files"]["extractions_dir"]).expanduser().resolve()
+        ).glob(f"*{gal_id:0>5}.stack.fits")][0]
+        
+        # if not hasattr(self, "gal_id"):
+        self.gal_id = gal_id
+        self.generate_grid()
+
+    def update_grid(self):
+        if self.gal_id == self._root().current_gal_id:
+            print ("No need to panic.")
+        else:
+            self.gal_id = self._root().current_gal_id
+            self.file_path = [*(
+                Path(self._root().full_config["files"]["extractions_dir"]).expanduser().resolve()
+            ).glob(f"*{self.gal_id:0>5}.stack.fits")][0]
+            with pf.open(self.file_path) as hdul:
+                header = hdul[0].header
+                n_grism = header["NGRISM"]
+                n_pa = np.nanmax([header[f"N{header[f'GRISM{n:0>3}']}"] for n in range(1,n_grism+1)])
+
+            # for n in range(1,header["NGRISM"]+1):
+            #     print (n)
+            #     print (header[f"GRISM{n:0>3}"])
+            #     print (header[f"N{header[f'GRISM{n:0>3}']}"])
+            for idx, beam_sub_frame in enumerate(self.beam_frame_list):
+                print (beam_sub_frame.ext, beam_sub_frame.extver)
+                beam_sub_frame.update_plots()
+            # for row, col in np.ndindex(n_pa+1, n_grism):
+            #     flat_idx = np.ravel_multi_index((row, col), (n_pa+1, n_grism))
+            #     print (flat_idx)
+            # print ("sort this out")
+
+    def generate_grid(self):
+
+        with pf.open(self.file_path) as hdul:
+            header = hdul[0].header
+            n_grism = header["NGRISM"]
+            n_pa = np.nanmax([header[f"N{header[f'GRISM{n:0>3}']}"] for n in range(1,n_grism+1)])
+            # for n in range(1,header["NGRISM"]+1):
+            #     print (n)
+            #     print (header[f"GRISM{n:0>3}"])
+            #     print (header[f"N{header[f'GRISM{n:0>3}']}"])
+            self.beam_frame_list = []
+            for row, col in np.ndindex(n_pa+1, n_grism):
+                flat_idx = np.ravel_multi_index((row, col), (n_pa+1, n_grism))
+                print (flat_idx)
+                # print (row, col)
+                # print (header[f"GRISM{col+1:0>3}"])
+                if row != n_grism-1:
+                    # print (header[f"{header[f'{header[f"GRISM{col+1:0>3}"]}{row+1:0>2}']}"])
+                    pa = ","+str(header[f'{header[f"GRISM{col+1:0>3}"]}{row+1:0>2}'])
+                else:
+                    pa=""
+                extver = header[f"GRISM{col+1:0>3}"]+pa
+                self.beam_frame_list.append(BeamSubFrame(
+                    self, self.gal_id, extver=extver, ext=self.ext, #height = self.main_tabs.tab("Beam view").winfo_height()/2
+                ))
+                self.beam_frame_list[flat_idx].grid(row=row, column=col, sticky="ew")
+                # print (hdul["SCI", header[f"GRISM{col+1:0>3}"]+pa])
+
+            self.grid_rowconfigure([*np.arange(n_pa+1)], weight=1)
+            self.grid_columnconfigure([*np.arange(n_grism)], weight=1)
+            # self.grid_columnconfigure((0,1,2), weight=1)
+        # print (self.main_tabs.tab("Beam view").winfo_height())
+        # for idx, name in enumerate(["F115W", "F150W", "F200W"]):
+        #     self.beam_frame = BeamSubFrame(
+        #         self, self.gal_id, extver=name+",72.0", ext="MODEL", #height = self.main_tabs.tab("Beam view").winfo_height()/2
+        #     )
+        #     # self.muse_spec_frame.grid(row=0, column=0, padx=20, pady=20, sticky="nsew")
+        #     # self.beam_frame.pack(fill="both", expand=1)
+        #     self.beam_frame.grid(row=0, column=idx, sticky="ew")
+        # for idx, name in enumerate(["F115W", "F150W", "F200W"]):
+        #     self.beam_frame = BeamSubFrame(
+        #         self, self.gal_id, extver=name+",341.0", ext="MODEL"# height = self.main_tabs.tab("Beam view").winfo_height()/2
+        #     )
+        #     # self.muse_spec_frame.grid(row=0, column=0, padx=20, pady=20, sticky="nsew")
+        #     # self.beam_frame.pack(fill="both", expand=1)
+        #     self.beam_frame.grid(row=1, column=idx, sticky="ew")
+        # for idx, name in enumerate(["F115W", "F150W", "F200W"]):
+        #     self.beam_frame = BeamSubFrame(
+        #         self, self.gal_id, extver=name, ext="MODEL",# height = self.main_tabs.tab("Beam view").winfo_height()/2,
+        #     )
+        #     # self.muse_spec_frame.grid(row=0, column=0, padx=20, pady=20, sticky="nsew")
+        #     # self.beam_frame.pack(fill="both", expand=1)
+        #     self.beam_frame.grid(row=2, column=idx, sticky="ew")
+
+
+class BeamSubFrame(ctk.CTkFrame):
     def __init__(self, master, gal_id, extver, ext="SCI", **kwargs):
         super().__init__(master, **kwargs)
+
 
         self.gal_id = gal_id
         self.extver = extver
         self.ext=ext
         self.cmap="plasma"
-        print (self)
-
+        # print (self)
         self.rowconfigure(0, weight=1)
         self.rowconfigure(1, weight=0)
         self.columnconfigure(1, weight=1)
 
-
+        # print (dir(self))
         # self.grid_columnconfigure(0, weight=1)
         # self.grid_columnconfigure(1, weight=0)
 
@@ -73,27 +169,14 @@ class BeamFrame(ctk.CTkFrame):
             # self.plot_frame.columnconfigure(0,weight=1)
             # calls function to fix the aspect ratio
             # self.set_aspect(self.plot_frame, self.pad_frame, aspect_ratio=5) 
-            self.pad_frame = ctk.CTkFrame(self, bg_color="blue")
-            self.pad_frame.grid(row=0, column=0, sticky="news")
-            self.pad_frame.rowconfigure(0, weight=1)
-            self.pad_frame.columnconfigure(0, weight=1)
-
-            self.plot_frame = ctk.CTkFrame(self.pad_frame, bg_color="red")
-            self.plot_frame.grid(row=0, column=0, sticky="news")
-
-            self.pad_frame.rowconfigure(0, weight=1)
-            self.pad_frame.rowconfigure(1, weight=1)
-            self.pad_frame.columnconfigure(0, weight=1)
-            self.pad_frame.columnconfigure(1, weight=1)
-
             self.fig = Figure(constrained_layout=True
             # , figsize=(2,1))
             , figsize=(3,1),
             )
-            print (self.master.winfo_height()/2)
-            print (self.master.winfo_width()/3)
+            # print (self.master.winfo_height()/2)
+            # print (self.master.winfo_width()/3)
             # self.fig.set_figsize(5,1)
-            print (self.fig.get_size_inches())
+            # print (self.fig.get_size_inches())
             self.pyplot_canvas = FigureCanvasTkAgg(
                 figure=self.fig,
                 master=self,
@@ -124,75 +207,92 @@ class BeamFrame(ctk.CTkFrame):
             self.plot_beam()
             self.fig.canvas.draw_idle()
 
-            # self.fig.canvas.get_tk_widget().grid(row=0, column=0,columnspan=2, sticky="news")
+            self.fig.canvas.get_tk_widget().grid(row=0, column=0,columnspan=2, sticky="news")
             # self.fig.canvas.get_tk_widget().pack()
-            print (self.fig.canvas.get_tk_widget())
-            print (self.fig.get_size_inches())
-            print (self.fig_axes[0].get_aspect())
+            # print (self.fig.canvas.get_tk_widget())
+            # print (self.fig.get_size_inches())
+            # print (self.fig_axes[0].get_aspect())
+        else:
+            if self.gal_id != self._root().current_gal_id or not hasattr(
+                self, "pyplot_canvas"
+            ):
+                print ("yeah")
+                self.gal_id = self._root().current_gal_id
 
-            self.pad_frame.bind('<Configure>', self._resize)
+                self.file_path = [*(
+                    Path(self._root().full_config["files"]["extractions_dir"]).expanduser().resolve()
+                ).glob(f"*{self.gal_id:0>5}.stack.fits")][0]
+
+                self.plot_kernel()
+                self.plot_beam()
+                self.fig.canvas.draw_idle()
+
+                self.fig.canvas.get_tk_widget().grid(row=0, column=0,columnspan=2, sticky="news")
+
+                self.update()
 
     def plot_kernel(self):
         
+        try:
+            print (self.plotted_images["kernel"])
+            self.plotted_images["kernel"].remove()
+            del self.plotted_images["kernel"]
+        except Exception as e:
+            print (e.__traceback__)
+            pass
         with pf.open(self.file_path) as hdul:
-            # print (hdul["SCI","F115W"])
-            # print (hdul.info())
-            data = hdul["KERNEL",self.extver].data
-
-            self.plotted_images["kernel"] = self.fig_axes[0].imshow(
-                data,
-                origin="lower",
-                cmap=self.cmap,
-                # aspect="auto"
-            )
-            self.fig_axes[0].set_xticklabels("")
-            self.fig_axes[0].set_yticklabels("")
-            self.fig_axes[0].tick_params(direction="in")
+            try:
+                # print (hdul["SCI","F115W"])
+                # print (hdul.info())
+                data = hdul["KERNEL",self.extver].data
+                print (self.plotted_images)
+                print (self.plotted_images)
+                # if hasattr(self.plotted_images, "kernel"):
+                #     print (self.plotted_images["kernel"])
+                #     self.plotted_images["kernel"].remove()
+                self.plotted_images["kernel"] = self.fig_axes[0].imshow(
+                    data,
+                    origin="lower",
+                    cmap=self.cmap,
+                    # aspect="auto"
+                )
+                self.fig_axes[0].set_xticklabels("")
+                self.fig_axes[0].set_yticklabels("")
+                self.fig_axes[0].tick_params(direction="in")
+            except:
+                pass
 
     def plot_beam(self):
-
+        try:
+            print (self.plotted_images["beam"])
+            self.plotted_images["beam"].remove()
+            del self.plotted_images["beam"]
+        except Exception as e:
+            print (e.__traceback__)
+            pass
         with pf.open(self.file_path) as hdul:
-            # print (hdul["SCI","F115W"])
-            # print (hdul.info())
-            data = hdul[self.ext,self.extver].data
+            try:
+                # print (hdul["SCI","F115W"])
+                # print (hdul.info())
+                data = hdul[self.ext,self.extver].data
 
-            self.plotted_images["beam"] = self.fig_axes[1].imshow(
-                data,
-                origin="lower",
-                cmap=self.cmap,
-                aspect="auto",
-            )
-            self.fig_axes[1].tick_params(direction="in")
-            # self.fig_axes[0].plot([1,2],[3,4])
-            # self.update()
-            # self.fig_axes.imshow(
-            #     data
-            # )
-            # self.fig_axes[0].plot([1,2],[3,4])
-            # self.update()
-            # print 
-
-    def _resize(self, event, aspect = 4):
-        '''Modify padding when window is resized.'''
-        w, h = event.width, event.height
-        w1, h1 = self.winfo_width(), self.winfo_height()
-        # print (w1, h1)  # should be equal
-        if w > h:
-            self.rowconfigure(0, weight=1)
-            self.rowconfigure(1, weight=0)
-            self.columnconfigure(0, weight=h)
-            self.columnconfigure(1, weight=w - h)
-        elif w < h:
-            self.rowconfigure(0, weight=w)
-            self.rowconfigure(1, weight=h - w)
-            self.columnconfigure(0, weight=1)
-            self.columnconfigure(1, weight=0)
-        else:
-            # width = height
-            self.rowconfigure(0, weight=1)
-            self.rowconfigure(1, weight=0)
-            self.rowconfigure(0, weight=1)
-            self.columnconfigure(1, weight=0)
+                self.plotted_images["beam"] = self.fig_axes[1].imshow(
+                    data,
+                    origin="lower",
+                    cmap=self.cmap,
+                    aspect="auto",
+                )
+                self.fig_axes[1].tick_params(direction="in")
+                # self.fig_axes[0].plot([1,2],[3,4])
+                # self.update()
+                # self.fig_axes.imshow(
+                #     data
+                # )
+                # self.fig_axes[0].plot([1,2],[3,4])
+                # self.update()
+                # print
+            except:
+                pass
 
     def set_aspect(self, content_frame, pad_frame, aspect_ratio):
         # a function which places a frame within a containing frame, and
@@ -367,135 +467,86 @@ class BeamFrame(ctk.CTkFrame):
 
     #         self.update()
 
-if __name__=="__main__":
-    # import tkinter as tk
+# if __name__=="__main__":
+#     import tkinter as tk
 
-    # def center(win, w = None, h = None):
-    #     # sets the window's minimal size and centers it.
-    #     win.update() # updates the window to get it's minimum working size
+#     def center(win, w = None, h = None):
+#         # sets the window's minimal size and centers it.
+#         win.update() # updates the window to get it's minimum working size
 
-    #     # if no size is given, keep the minimum size
-    #     width = w if w else win.winfo_width()
-    #     height = h if h else win.winfo_height()
+#         # if no size is given, keep the minimum size
+#         width = w if w else win.winfo_width()
+#         height = h if h else win.winfo_height()
 
-    #     # compute position for the window to be central
-    #     x = (win.winfo_screenwidth() - width) // 2
-    #     y = (win.winfo_screenheight() - height) // 2
+#         # compute position for the window to be central
+#         x = (win.winfo_screenwidth() - width) // 2
+#         y = (win.winfo_screenheight() - height) // 2
 
-    #     # set geomet and minimum size
-    #     win.geometry("{}x{}+{}+{}".format(width, height, x, y))
-    #     win.minsize(width, height)
+#         # set geomet and minimum size
+#         win.geometry("{}x{}+{}+{}".format(width, height, x, y))
+#         win.minsize(width, height)
 
-    # def set_aspect(content_frame, pad_frame, aspect_ratio):
-    #     # a function which places a frame within a containing frame, and
-    #     # then forces the inner frame to keep a specific aspect ratio
+#     def set_aspect(content_frame, pad_frame, aspect_ratio):
+#         # a function which places a frame within a containing frame, and
+#         # then forces the inner frame to keep a specific aspect ratio
 
-    #     def enforce_aspect_ratio(event):
-    #         # when the pad window resizes, fit the content into it,
-    #         # either by fixing the width or the height and then
-    #         # adjusting the height or width based on the aspect ratio.
+#         def enforce_aspect_ratio(event):
+#             # when the pad window resizes, fit the content into it,
+#             # either by fixing the width or the height and then
+#             # adjusting the height or width based on the aspect ratio.
 
-    #         # start by using the width as the controlling dimension
-    #         desired_width = event.width
-    #         desired_height = int(event.width / aspect_ratio)
+#             # start by using the width as the controlling dimension
+#             desired_width = event.width
+#             desired_height = int(event.width / aspect_ratio)
 
-    #         # if the window is too tall to fit, use the height as
-    #         # the controlling dimension
-    #         if desired_height > event.height:
-    #             desired_height = event.height
-    #             desired_width = int(event.height * aspect_ratio)
+#             # if the window is too tall to fit, use the height as
+#             # the controlling dimension
+#             if desired_height > event.height:
+#                 desired_height = event.height
+#                 desired_width = int(event.height * aspect_ratio)
 
-    #         # place the window, giving it an explicit size
-    #         content_frame.place(in_=pad_frame, x=0, y=0, 
-    #             width=desired_width, height=desired_height)
+#             # place the window, giving it an explicit size
+#             content_frame.place(in_=pad_frame, x=0, y=0, 
+#                 width=desired_width, height=desired_height)
 
-    #     pad_frame.bind("<Configure>", enforce_aspect_ratio)
+#         pad_frame.bind("<Configure>", enforce_aspect_ratio)
 
-    # window = tk.Tk()
+#     window = tk.Tk()
 
-    # window.columnconfigure(0, weight=1, minsize=300)
-    # window.rowconfigure(0, weight=1, minsize=300)
+#     window.columnconfigure(0, weight=1, minsize=300)
+#     window.rowconfigure(0, weight=1, minsize=300)
 
-    # # Frame with the main content.
-    # content = tk.Frame(
-    #     window,
-    # )
-    # content.grid(row=0, column=0, padx=5, pady=5, sticky="nesw")
+#     # Frame with the main content.
+#     content = tk.Frame(
+#         window,
+#     )
+#     content.grid(row=0, column=0, padx=5, pady=5, sticky="nesw")
 
-    # # Frame for padding apparently necessary to have the resized Frame
-    # pad_frame = tk.Frame(content, borderwidth=0, background="bisque", width=200, height=200)
-    # pad_frame.grid(row=0, column=0, sticky="nsew", padx=10, pady=20)
-    # # Frame with the plot. It lays inside the "content" Frame
-    # plot_frame = tk.Frame(
-    #     content,
-    #     bg = "blue",
-    #     width = 300,
-    #     height = 300
-    # )
-    # tk.Label(plot_frame,text='Some Plot').pack()
-    # # calls function to fix the aspect ratio
-    # set_aspect(plot_frame, pad_frame, aspect_ratio=16/9) 
-    # content.rowconfigure(0, weight=1)
-    # content.columnconfigure(0, weight=1)
+#     # Frame for padding apparently necessary to have the resized Frame
+#     pad_frame = tk.Frame(content, borderwidth=0, background="bisque", width=200, height=200)
+#     pad_frame.grid(row=0, column=0, sticky="nsew", padx=10, pady=20)
+#     # Frame with the plot. It lays inside the "content" Frame
+#     plot_frame = tk.Frame(
+#         content,
+#         bg = "blue",
+#         width = 300,
+#         height = 300
+#     )
+#     tk.Label(plot_frame,text='Some Plot').pack()
+#     # calls function to fix the aspect ratio
+#     set_aspect(plot_frame, pad_frame, aspect_ratio=16/9) 
+#     content.rowconfigure(0, weight=1)
+#     content.columnconfigure(0, weight=1)
 
-    # # Frame containing the setting controls
-    # window.columnconfigure(1, weight=0, minsize=200)
-    # settings = tk.Frame(
-    #     window,
-    #     bg = "red"
-    # )
-    # settings.grid(row=0, column=1, padx=5, pady=5, sticky="nesw")
+#     # Frame containing the setting controls
+#     window.columnconfigure(1, weight=0, minsize=200)
+#     settings = tk.Frame(
+#         window,
+#         bg = "red"
+#     )
+#     settings.grid(row=0, column=1, padx=5, pady=5, sticky="nesw")
 
-    # # usual Tkinter stuff
-    # center(window)
-    # window.title("Some Program")
-    # window.mainloop()
-
-    import tkinter as tk
-    # from Tkconstants import *
-
-
-    class Application(tk.Frame):
-        def __init__(self, master, width, height):
-            tk.Frame.__init__(self, master)
-            self.grid(sticky="news")
-            master.rowconfigure(0, weight=1)
-            master.columnconfigure(0, weight=1)
-            self._create_widgets()
-            self.bind('<Configure>', self._resize)
-            self.winfo_toplevel().minsize(150, 150)
-
-        def _create_widgets(self):
-            self.content = tk.Frame(self, bg='blue')
-            self.content.grid(row=0, column=0, sticky="news")
-
-            self.rowconfigure(0, weight=1)
-            self.rowconfigure(1, weight=1)
-            self.columnconfigure(0, weight=1)
-            self.columnconfigure(1, weight=1)
-
-        def _resize(self, event):
-            '''Modify padding when window is resized.'''
-            w, h = event.width, event.height
-            w1, h1 = self.content.winfo_width(), self.content.winfo_height()
-            print (w1, h1)  # should be equal
-            if w > h:
-                self.rowconfigure(0, weight=1)
-                self.rowconfigure(1, weight=0)
-                self.columnconfigure(0, weight=h)
-                self.columnconfigure(1, weight=w - h)
-            elif w < h:
-                self.rowconfigure(0, weight=w)
-                self.rowconfigure(1, weight=h - w)
-                self.columnconfigure(0, weight=1)
-                self.columnconfigure(1, weight=0)
-            else:
-                # width = height
-                self.rowconfigure(0, weight=1)
-                self.rowconfigure(1, weight=0)
-                self.rowconfigure(0, weight=1)
-                self.columnconfigure(1, weight=0)
-
-    root = tk.Tk()
-    app = Application(master=root, width=100, height=100)
-    app.mainloop()
+#     # usual Tkinter stuff
+#     center(window)
+#     window.title("Some Program")
+#     window.mainloop()

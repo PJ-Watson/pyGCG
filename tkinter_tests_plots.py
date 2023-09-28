@@ -4,7 +4,6 @@ import tomlkit
 from astropy.table import Table
 from tab_spectrum import SpecFrame
 from tab_beams import BeamFrame
-
 # app = customtkinter.CTk()
 # app.geometry("768x512")
 
@@ -133,31 +132,13 @@ class App(ctk.CTk):
         self.muse_spec_frame.pack(fill="both", expand=1)
 
 
-        self.main_tabs.tab("Beam view").grid_rowconfigure((0,1,2), weight=1)
-        self.main_tabs.tab("Beam view").grid_columnconfigure((0,1,2), weight=1)
-        print (self.main_tabs.tab("Beam view").winfo_height())
-        for idx, name in enumerate(["F115W", "F150W", "F200W"]):
-            self.beam_frame = BeamFrame(
-                self.main_tabs.tab("Beam view"), self.current_gal_id, extver=name+",72.0", ext="MODEL", #height = self.main_tabs.tab("Beam view").winfo_height()/2
-            )
-            # self.muse_spec_frame.grid(row=0, column=0, padx=20, pady=20, sticky="nsew")
-            # self.beam_frame.pack(fill="both", expand=1)
-            self.beam_frame.grid(row=0, column=idx, sticky="news")
-        for idx, name in enumerate(["F115W", "F150W", "F200W"]):
-            self.beam_frame = BeamFrame(
-                self.main_tabs.tab("Beam view"), self.current_gal_id, extver=name+",341.0", ext="MODEL"# height = self.main_tabs.tab("Beam view").winfo_height()/2
-            )
-            # self.muse_spec_frame.grid(row=0, column=0, padx=20, pady=20, sticky="nsew")
-            # self.beam_frame.pack(fill="both", expand=1)
-            self.beam_frame.grid(row=1, column=idx, sticky="news")
-        for idx, name in enumerate(["F115W", "F150W", "F200W"]):
-            self.beam_frame = BeamFrame(
-                self.main_tabs.tab("Beam view"), self.current_gal_id, extver=name, ext="MODEL",# height = self.main_tabs.tab("Beam view").winfo_height()/2,
-            )
-            # self.muse_spec_frame.grid(row=0, column=0, padx=20, pady=20, sticky="nsew")
-            # self.beam_frame.pack(fill="both", expand=1)
-            self.beam_frame.grid(row=2, column=idx, sticky="news")
+        self.full_beam_frame = BeamFrame(
+            self.main_tabs.tab("Beam view"), self.current_gal_id
+        )
+        # self.muse_spec_frame.grid(row=0, column=0, padx=20, pady=20, sticky="nsew")
+        self.full_beam_frame.pack(fill="both", expand=1)
 
+        
         # print (dir(self.main_tabs.tab("Spec view")))
 
     def initialise_configuration(self):
@@ -494,6 +475,8 @@ class App(ctk.CTk):
     def main_tabs_update(self):
         if self.main_tabs.get() == "Spec view":
             self.muse_spec_frame.update_plot()
+        if self.main_tabs.get() == "Beam view":
+            self.full_beam_frame.update_grid()
 
     def quit_gracefully(self, event=None):
         # Put some lines here to save current output
