@@ -22,9 +22,12 @@ class BeamFrame(ctk.CTkFrame):
         self.ext=ext
         self.cmap="plasma"
         print (self)
+
         self.rowconfigure(0, weight=1)
         self.rowconfigure(1, weight=0)
         self.columnconfigure(1, weight=1)
+
+
         # self.grid_columnconfigure(0, weight=1)
         # self.grid_columnconfigure(1, weight=0)
 
@@ -56,23 +59,36 @@ class BeamFrame(ctk.CTkFrame):
         if not hasattr(self, "fig_axes"):
 
 
-            self.pad_frame = tk.Frame(self, width=200, height=200, borderwidth=0, background="")
-            self.pad_frame.grid(row=0, column=0, columnspan=2, sticky="nsew")#, padx=10, pady=20)
+            # self.pad_frame = tk.Frame(self, width=200, height=200, borderwidth=0, background="")
+            # self.pad_frame.grid(row=0, column=0, columnspan=2, sticky="nsew")#, padx=10, pady=20)
 
-            self.plot_frame = tk.Frame(
-                self,
-                bg = "blue",
-                width = 300,
-                height = 300,
-                borderwidth=0,
-            )
-            self.plot_frame.rowconfigure(0,weight=1)
-            self.plot_frame.columnconfigure(0,weight=1)
+            # self.plot_frame = tk.Frame(
+            #     self,
+            #     bg = "blue",
+            #     width = 300,
+            #     height = 300,
+            #     borderwidth=0,
+            # )
+            # self.plot_frame.rowconfigure(0,weight=1)
+            # self.plot_frame.columnconfigure(0,weight=1)
             # calls function to fix the aspect ratio
-            self.set_aspect(self.plot_frame, self.pad_frame, aspect_ratio=5) 
+            # self.set_aspect(self.plot_frame, self.pad_frame, aspect_ratio=5) 
+            self.pad_frame = ctk.CTkFrame(self, bg_color="blue")
+            self.pad_frame.grid(row=0, column=0, sticky="news")
+            self.pad_frame.rowconfigure(0, weight=1)
+            self.pad_frame.columnconfigure(0, weight=1)
+
+            self.plot_frame = ctk.CTkFrame(self.pad_frame, bg_color="red")
+            self.plot_frame.grid(row=0, column=0, sticky="news")
+
+            self.pad_frame.rowconfigure(0, weight=1)
+            self.pad_frame.rowconfigure(1, weight=1)
+            self.pad_frame.columnconfigure(0, weight=1)
+            self.pad_frame.columnconfigure(1, weight=1)
+
             self.fig = Figure(constrained_layout=True
             # , figsize=(2,1))
-            , figsize=(4,1),
+            , figsize=(3,1),
             )
             print (self.master.winfo_height()/2)
             print (self.master.winfo_width()/3)
@@ -80,7 +96,7 @@ class BeamFrame(ctk.CTkFrame):
             print (self.fig.get_size_inches())
             self.pyplot_canvas = FigureCanvasTkAgg(
                 figure=self.fig,
-                master=self.plot_frame,
+                master=self,
             )
 
             if not hasattr(self, "plotted_images"):
@@ -101,18 +117,20 @@ class BeamFrame(ctk.CTkFrame):
                 # aspect="auto", 
                 # width_ratios=[1,shape_sci/shape_kernel],
                 # width_ratios=[0.5,1]
-                width_ratios=[0.25,1]
+                width_ratios=[1/3,1]
             )
 
             self.plot_kernel()
             self.plot_beam()
             self.fig.canvas.draw_idle()
 
-            self.fig.canvas.get_tk_widget().grid(row=0, column=0,sticky="news")
+            # self.fig.canvas.get_tk_widget().grid(row=0, column=0,columnspan=2, sticky="news")
             # self.fig.canvas.get_tk_widget().pack()
             print (self.fig.canvas.get_tk_widget())
             print (self.fig.get_size_inches())
             print (self.fig_axes[0].get_aspect())
+
+            self.pad_frame.bind('<Configure>', self._resize)
 
     def plot_kernel(self):
         
@@ -153,6 +171,28 @@ class BeamFrame(ctk.CTkFrame):
             # self.fig_axes[0].plot([1,2],[3,4])
             # self.update()
             # print 
+
+    def _resize(self, event, aspect = 4):
+        '''Modify padding when window is resized.'''
+        w, h = event.width, event.height
+        w1, h1 = self.winfo_width(), self.winfo_height()
+        # print (w1, h1)  # should be equal
+        if w > h:
+            self.rowconfigure(0, weight=1)
+            self.rowconfigure(1, weight=0)
+            self.columnconfigure(0, weight=h)
+            self.columnconfigure(1, weight=w - h)
+        elif w < h:
+            self.rowconfigure(0, weight=w)
+            self.rowconfigure(1, weight=h - w)
+            self.columnconfigure(0, weight=1)
+            self.columnconfigure(1, weight=0)
+        else:
+            # width = height
+            self.rowconfigure(0, weight=1)
+            self.rowconfigure(1, weight=0)
+            self.rowconfigure(0, weight=1)
+            self.columnconfigure(1, weight=0)
 
     def set_aspect(self, content_frame, pad_frame, aspect_ratio):
         # a function which places a frame within a containing frame, and
@@ -328,85 +368,134 @@ class BeamFrame(ctk.CTkFrame):
     #         self.update()
 
 if __name__=="__main__":
+    # import tkinter as tk
+
+    # def center(win, w = None, h = None):
+    #     # sets the window's minimal size and centers it.
+    #     win.update() # updates the window to get it's minimum working size
+
+    #     # if no size is given, keep the minimum size
+    #     width = w if w else win.winfo_width()
+    #     height = h if h else win.winfo_height()
+
+    #     # compute position for the window to be central
+    #     x = (win.winfo_screenwidth() - width) // 2
+    #     y = (win.winfo_screenheight() - height) // 2
+
+    #     # set geomet and minimum size
+    #     win.geometry("{}x{}+{}+{}".format(width, height, x, y))
+    #     win.minsize(width, height)
+
+    # def set_aspect(content_frame, pad_frame, aspect_ratio):
+    #     # a function which places a frame within a containing frame, and
+    #     # then forces the inner frame to keep a specific aspect ratio
+
+    #     def enforce_aspect_ratio(event):
+    #         # when the pad window resizes, fit the content into it,
+    #         # either by fixing the width or the height and then
+    #         # adjusting the height or width based on the aspect ratio.
+
+    #         # start by using the width as the controlling dimension
+    #         desired_width = event.width
+    #         desired_height = int(event.width / aspect_ratio)
+
+    #         # if the window is too tall to fit, use the height as
+    #         # the controlling dimension
+    #         if desired_height > event.height:
+    #             desired_height = event.height
+    #             desired_width = int(event.height * aspect_ratio)
+
+    #         # place the window, giving it an explicit size
+    #         content_frame.place(in_=pad_frame, x=0, y=0, 
+    #             width=desired_width, height=desired_height)
+
+    #     pad_frame.bind("<Configure>", enforce_aspect_ratio)
+
+    # window = tk.Tk()
+
+    # window.columnconfigure(0, weight=1, minsize=300)
+    # window.rowconfigure(0, weight=1, minsize=300)
+
+    # # Frame with the main content.
+    # content = tk.Frame(
+    #     window,
+    # )
+    # content.grid(row=0, column=0, padx=5, pady=5, sticky="nesw")
+
+    # # Frame for padding apparently necessary to have the resized Frame
+    # pad_frame = tk.Frame(content, borderwidth=0, background="bisque", width=200, height=200)
+    # pad_frame.grid(row=0, column=0, sticky="nsew", padx=10, pady=20)
+    # # Frame with the plot. It lays inside the "content" Frame
+    # plot_frame = tk.Frame(
+    #     content,
+    #     bg = "blue",
+    #     width = 300,
+    #     height = 300
+    # )
+    # tk.Label(plot_frame,text='Some Plot').pack()
+    # # calls function to fix the aspect ratio
+    # set_aspect(plot_frame, pad_frame, aspect_ratio=16/9) 
+    # content.rowconfigure(0, weight=1)
+    # content.columnconfigure(0, weight=1)
+
+    # # Frame containing the setting controls
+    # window.columnconfigure(1, weight=0, minsize=200)
+    # settings = tk.Frame(
+    #     window,
+    #     bg = "red"
+    # )
+    # settings.grid(row=0, column=1, padx=5, pady=5, sticky="nesw")
+
+    # # usual Tkinter stuff
+    # center(window)
+    # window.title("Some Program")
+    # window.mainloop()
+
     import tkinter as tk
+    # from Tkconstants import *
 
-    def center(win, w = None, h = None):
-        # sets the window's minimal size and centers it.
-        win.update() # updates the window to get it's minimum working size
 
-        # if no size is given, keep the minimum size
-        width = w if w else win.winfo_width()
-        height = h if h else win.winfo_height()
+    class Application(tk.Frame):
+        def __init__(self, master, width, height):
+            tk.Frame.__init__(self, master)
+            self.grid(sticky="news")
+            master.rowconfigure(0, weight=1)
+            master.columnconfigure(0, weight=1)
+            self._create_widgets()
+            self.bind('<Configure>', self._resize)
+            self.winfo_toplevel().minsize(150, 150)
 
-        # compute position for the window to be central
-        x = (win.winfo_screenwidth() - width) // 2
-        y = (win.winfo_screenheight() - height) // 2
+        def _create_widgets(self):
+            self.content = tk.Frame(self, bg='blue')
+            self.content.grid(row=0, column=0, sticky="news")
 
-        # set geomet and minimum size
-        win.geometry("{}x{}+{}+{}".format(width, height, x, y))
-        win.minsize(width, height)
+            self.rowconfigure(0, weight=1)
+            self.rowconfigure(1, weight=1)
+            self.columnconfigure(0, weight=1)
+            self.columnconfigure(1, weight=1)
 
-    def set_aspect(content_frame, pad_frame, aspect_ratio):
-        # a function which places a frame within a containing frame, and
-        # then forces the inner frame to keep a specific aspect ratio
+        def _resize(self, event):
+            '''Modify padding when window is resized.'''
+            w, h = event.width, event.height
+            w1, h1 = self.content.winfo_width(), self.content.winfo_height()
+            print (w1, h1)  # should be equal
+            if w > h:
+                self.rowconfigure(0, weight=1)
+                self.rowconfigure(1, weight=0)
+                self.columnconfigure(0, weight=h)
+                self.columnconfigure(1, weight=w - h)
+            elif w < h:
+                self.rowconfigure(0, weight=w)
+                self.rowconfigure(1, weight=h - w)
+                self.columnconfigure(0, weight=1)
+                self.columnconfigure(1, weight=0)
+            else:
+                # width = height
+                self.rowconfigure(0, weight=1)
+                self.rowconfigure(1, weight=0)
+                self.rowconfigure(0, weight=1)
+                self.columnconfigure(1, weight=0)
 
-        def enforce_aspect_ratio(event):
-            # when the pad window resizes, fit the content into it,
-            # either by fixing the width or the height and then
-            # adjusting the height or width based on the aspect ratio.
-
-            # start by using the width as the controlling dimension
-            desired_width = event.width
-            desired_height = int(event.width / aspect_ratio)
-
-            # if the window is too tall to fit, use the height as
-            # the controlling dimension
-            if desired_height > event.height:
-                desired_height = event.height
-                desired_width = int(event.height * aspect_ratio)
-
-            # place the window, giving it an explicit size
-            content_frame.place(in_=pad_frame, x=0, y=0, 
-                width=desired_width, height=desired_height)
-
-        pad_frame.bind("<Configure>", enforce_aspect_ratio)
-
-    window = tk.Tk()
-
-    window.columnconfigure(0, weight=1, minsize=300)
-    window.rowconfigure(0, weight=1, minsize=300)
-
-    # Frame with the main content.
-    content = tk.Frame(
-        window,
-    )
-    content.grid(row=0, column=0, padx=5, pady=5, sticky="nesw")
-
-    # Frame for padding apparently necessary to have the resized Frame
-    pad_frame = tk.Frame(content, borderwidth=0, background="bisque", width=200, height=200)
-    pad_frame.grid(row=0, column=0, sticky="nsew", padx=10, pady=20)
-    # Frame with the plot. It lays inside the "content" Frame
-    plot_frame = tk.Frame(
-        content,
-        bg = "blue",
-        width = 300,
-        height = 300
-    )
-    tk.Label(plot_frame,text='Some Plot').pack()
-    # calls function to fix the aspect ratio
-    set_aspect(plot_frame, pad_frame, aspect_ratio=16/9) 
-    content.rowconfigure(0, weight=1)
-    content.columnconfigure(0, weight=1)
-
-    # Frame containing the setting controls
-    window.columnconfigure(1, weight=0, minsize=200)
-    settings = tk.Frame(
-        window,
-        bg = "red"
-    )
-    settings.grid(row=0, column=1, padx=5, pady=5, sticky="nesw")
-
-    # usual Tkinter stuff
-    center(window)
-    window.title("Some Program")
-    window.mainloop()
+    root = tk.Tk()
+    app = Application(master=root, width=100, height=100)
+    app.mainloop()

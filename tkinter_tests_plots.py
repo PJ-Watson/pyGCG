@@ -142,21 +142,21 @@ class App(ctk.CTk):
             )
             # self.muse_spec_frame.grid(row=0, column=0, padx=20, pady=20, sticky="nsew")
             # self.beam_frame.pack(fill="both", expand=1)
-            self.beam_frame.grid(row=0, column=idx, sticky="ew")
+            self.beam_frame.grid(row=0, column=idx, sticky="news")
         for idx, name in enumerate(["F115W", "F150W", "F200W"]):
             self.beam_frame = BeamFrame(
                 self.main_tabs.tab("Beam view"), self.current_gal_id, extver=name+",341.0", ext="MODEL"# height = self.main_tabs.tab("Beam view").winfo_height()/2
             )
             # self.muse_spec_frame.grid(row=0, column=0, padx=20, pady=20, sticky="nsew")
             # self.beam_frame.pack(fill="both", expand=1)
-            self.beam_frame.grid(row=1, column=idx, sticky="ew")
+            self.beam_frame.grid(row=1, column=idx, sticky="news")
         for idx, name in enumerate(["F115W", "F150W", "F200W"]):
             self.beam_frame = BeamFrame(
                 self.main_tabs.tab("Beam view"), self.current_gal_id, extver=name, ext="MODEL",# height = self.main_tabs.tab("Beam view").winfo_height()/2,
             )
             # self.muse_spec_frame.grid(row=0, column=0, padx=20, pady=20, sticky="nsew")
             # self.beam_frame.pack(fill="both", expand=1)
-            self.beam_frame.grid(row=2, column=idx, sticky="ew")
+            self.beam_frame.grid(row=2, column=idx, sticky="news")
 
         # print (dir(self.main_tabs.tab("Spec view")))
 
