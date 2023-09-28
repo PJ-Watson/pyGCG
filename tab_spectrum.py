@@ -21,7 +21,7 @@ class SpecFrame(ctk.CTkFrame):
     def __init__(self, master, gal_id, **kwargs):
         super().__init__(master, **kwargs)
 
-        self.gal_id = gal_id
+        self.gal_id = int(gal_id)
 
         self.grid_rowconfigure(0, weight=1)
         self.grid_columnconfigure(0, weight=1)
@@ -29,6 +29,7 @@ class SpecFrame(ctk.CTkFrame):
 
         self.scrollable_frame = ctk.CTkScrollableFrame(self)
         self.scrollable_frame.grid(row=0, column=1, sticky="news")
+        self.scrollable_frame.grid_columnconfigure(0, weight=1)
 
         self.reference_lines_label = ctk.CTkLabel(
             self.scrollable_frame, text="Show reference lines:"
@@ -59,7 +60,7 @@ class SpecFrame(ctk.CTkFrame):
         self.redshift_entry.grid(
             row=4,
             column=0,
-            padx=20,
+            padx=(20,10),
             pady=(10, 0),
             sticky="we",
         )
@@ -72,13 +73,20 @@ class SpecFrame(ctk.CTkFrame):
             variable=self.current_redshift,
             from_=0,
             to=2,
-            orientation="horizontal",
+            # orientation="horizontal",
             command=self.update_lines,
+            # border_width=20,
         )
         self.redshift_slider.grid(
             row=5,
-            padx=20,
-            pady=20,
+            column=0,
+            # padx=(10,10),
+            # padx=(30,40),
+            # padx=(10,0),
+            # padx=(0,20),
+            padx=(20,10),
+            pady=10,
+            sticky="we",
         )
 
     def change_lines(self):
@@ -141,27 +149,27 @@ class SpecFrame(ctk.CTkFrame):
             self.custom_annotation.set_visible(False)
 
             self.plot_grizli(
-                gal_id=self._root().current_gal_id,
+                gal_id=int(self._root().current_gal_id.get()),
             )
             self.plot_MUSE_spec(
-                gal_id=self._root().current_gal_id,
+                gal_id=int(self._root().current_gal_id.get()),
             )
             self.add_lines()
 
-            self.gal_id = self._root().current_gal_id
+            self.gal_id = int(self._root().current_gal_id.get())
             self.pyplot_canvas.draw_idle()
 
             self.pyplot_canvas.get_tk_widget().grid(row=0, column=0, sticky="news")
 
-        if self.gal_id != self._root().current_gal_id or not hasattr(
+        if self.gal_id != self._root().current_gal_id.get() or not hasattr(
             self, "pyplot_canvas"
         ):
-            self.gal_id = self._root().current_gal_id
+            self.gal_id = int(self._root().current_gal_id.get())
             self.plot_MUSE_spec(
-                gal_id=self._root().current_gal_id,
+                gal_id=int(self._root().current_gal_id.get()),
             )
             self.plot_grizli(
-                gal_id=self._root().current_gal_id,
+                gal_id=int(self._root().current_gal_id.get()),
             )
             self.pyplot_canvas.draw_idle()
 
@@ -236,6 +244,7 @@ class SpecFrame(ctk.CTkFrame):
                 (np.arange(cube_hdul[1].header["NAXIS3"]) + 1.0)
                 - cube_hdul[1].header["CRPIX3"]
             ) * cube_hdul[1].header["CD3_3"] + cube_hdul[1].header["CRVAL3"]
+            # print (tab_row)
             MUSE_spec = self.cube_extract_spectra(
                 cube_hdul[1].data,
                 cube_wcs,

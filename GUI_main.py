@@ -39,10 +39,12 @@ class App(ctk.CTk):
         # Key bindings
         self.protocol("WM_DELETE_WINDOW", self.quit_gracefully)
         self.bind("<Control-q>", self.quit_gracefully)
+        self.bind("<Left>", self.prev_gal_button_callback)
+        self.bind("<Right>", self.next_gal_button_callback)
 
         # configure grid system
-        self.grid_rowconfigure(1, weight=1)
-        self.grid_columnconfigure((0, 1, 2), weight=1)
+        self.grid_rowconfigure(0, weight=1)
+        self.grid_columnconfigure((0, 1, 2, 3, 4), weight=1)
 
         # # Setup top navigation buttons
         # self.change_appearance_menu = ctk.CTkOptionMenu(
@@ -64,8 +66,8 @@ class App(ctk.CTk):
             command=self.open_settings_callback,
         )
         self.open_settings_button.grid(
-            row=0,
-            column=2,
+            row=1,
+            column=1,
             padx=20,
             pady=20,
             sticky="ns",
@@ -78,7 +80,7 @@ class App(ctk.CTk):
             command=self.prev_gal_button_callback,
         )
         self.prev_gal_button.grid(
-            row=2,
+            row=1,
             column=0,
             padx=20,
             pady=20,
@@ -90,8 +92,8 @@ class App(ctk.CTk):
             command=self.next_gal_button_callback,
         )
         self.next_gal_button.grid(
-            row=2,
-            column=2,
+            row=1,
+            column=5,
             padx=20,
             pady=20,
             # sticky="news",
@@ -102,11 +104,53 @@ class App(ctk.CTk):
             command=self.save_gal_button_callback,
         )
         self.save_gal_button.grid(
-            row=2,
-            column=1,
+            row=1,
+            column=4,
             padx=20,
             pady=20,
             # sticky="news",
+        )
+
+        # self.current_gal_entry = ctk.CTkEntry(
+        #     self,
+        #     text="Save Galaxy",
+        #     command=self.save_gal_button_callback,
+        # )
+        # self.save_gal_button.grid(
+        #     row=1,
+        #     column=3,
+        #     padx=20,
+        #     pady=20,
+        #     # sticky="news",
+        # )
+        self.current_gal_id = ctk.StringVar(
+            master=self,
+            value=1864,
+        )
+        self.current_gal_label = ctk.CTkLabel(
+            self, text="Current ID:",
+        )
+        self.current_gal_label.grid(
+            row=1,
+            column=2,
+            padx=(20,5),
+            pady=20,
+            sticky="e",
+        )
+        self.current_gal_entry = ctk.CTkEntry(
+            self,
+            textvariable=self.current_gal_id,
+        )
+        self.current_gal_entry.grid(
+            row=1,
+            column=3,
+            padx=(5,20),
+            pady=20,
+            sticky="w",
+        )
+        self.current_gal_entry.bind(
+            "<Return>",
+            self.change_gal_id,
         )
 
         self.main_tabs = MyTabView(
@@ -117,23 +161,23 @@ class App(ctk.CTk):
             # int_e, self._test_print_e]
         )
         self.main_tabs.grid(
-            row=1, column=0, padx=20, pady=20, columnspan=3, sticky="news"
+            row=0, column=0, padx=20, pady=0, columnspan=6, sticky="news"
         )
 
-        self.current_gal_id = 3927
-        self.current_gal_id = 1864
+        # self.current_gal_id = 3927
+        # self.current_gal_id = 1864
         # self.current_gal_id = 1494
         # self.current_gal_id = 1338
 
         self.muse_spec_frame = SpecFrame(
-            self.main_tabs.tab("Spec view"), self.current_gal_id
+            self.main_tabs.tab("Spec view"), self.current_gal_id.get()
         )
         # self.muse_spec_frame.grid(row=0, column=0, padx=20, pady=20, sticky="nsew")
         self.muse_spec_frame.pack(fill="both", expand=1)
 
 
         self.full_beam_frame = BeamFrame(
-            self.main_tabs.tab("Beam view"), self.current_gal_id
+            self.main_tabs.tab("Beam view"), self.current_gal_id.get()
         )
         # self.muse_spec_frame.grid(row=0, column=0, padx=20, pady=20, sticky="nsew")
         self.full_beam_frame.pack(fill="both", expand=1)
@@ -458,17 +502,21 @@ class App(ctk.CTk):
     def save_gal_button_callback(self):
         print("Save button clicked!")
 
-    def prev_gal_button_callback(self):
+    def prev_gal_button_callback(self, event=None):
+        self.current_gal_id.set(str(int(self.current_gal_id.get())-1))
         print("Previous galaxy button clicked!")
-        self.change_gal_id(relative_change=-1)
+        self.main_tabs_update()
 
-    def next_gal_button_callback(self):
+    def next_gal_button_callback(self, event=None):
+        self.current_gal_id.set(str(int(self.current_gal_id.get())+1))
         print("Next galaxy button clicked!")
-        self.change_gal_id(relative_change=1)
+        self.main_tabs_update()
 
-    def change_gal_id(self, relative_change=1):
-        self.current_gal_id += relative_change
-        print(self.current_gal_id)
+    def change_gal_id(self, event=None):
+        # print (event)
+        # self.current_gal_id.set(str(int(self.current_gal_id.get())+1))
+        # self.current_gal_id += relative_change
+        # print(self.current_gal_id)
 
         self.main_tabs_update()
 

@@ -13,6 +13,9 @@ from tqdm import tqdm
 import numpy as np
 from astropy.table import Table
 
+from astropy.visualization import (MinMaxInterval, SqrtStretch,
+                                   ImageNormalize, LinearStretch, LogStretch)
+
 
 class BeamFrame(ctk.CTkFrame):
     def __init__(self, master, gal_id, **kwargs):
@@ -20,20 +23,66 @@ class BeamFrame(ctk.CTkFrame):
 
         self.cmap="plasma"
         self.ext = "SCI"
+        self.stretch = "Linear"
+
+        self.settings_frame = ctk.CTkFrame(self)
+        self.settings_frame.grid(
+            row=0, column=0, columnspan=3, sticky="ew",
+        )
+        ext_label = ctk.CTkLabel(self.settings_frame,text="Extension:")
+        ext_label.grid(row=0, column=0, padx=(20,5), pady=20, sticky="e")
+        self.ext_menu = ctk.CTkOptionMenu(
+            self.settings_frame,
+            values=["SCI","WHT","MODEL"],
+            command=self.change_ext,
+        )
+        self.ext_menu.grid(row=0, column=1, padx=(5,20), pady=20, sticky="w")
+
+        cmap_label = ctk.CTkLabel(self.settings_frame,text="Colourmap:")
+        cmap_label.grid(row=0, column=2, padx=(20,5), pady=20, sticky="e")
+        self.cmap_menu = ctk.CTkOptionMenu(
+            self.settings_frame,
+            values=["plasma", "jet", "binary"],
+            command=self.change_cmap,
+        )
+        self.cmap_menu.grid(row=0, column=3, padx=(5,20), pady=20, sticky="w")
+
+        stretch_label = ctk.CTkLabel(self.settings_frame,text="Image stretch:")
+        stretch_label.grid(row=0, column=4, padx=(20,5), pady=20, sticky="e")
+        self.stretch_menu = ctk.CTkOptionMenu(
+            self.settings_frame,
+            values=["Linear", "Square root", "Logarithmic"],
+            command=self.change_stretch,
+        )
+        self.stretch_menu.grid(row=0, column=5, padx=(5,20), pady=20, sticky="w")
 
         self.file_path = [*(
             Path(self._root().full_config["files"]["extractions_dir"]).expanduser().resolve()
-        ).glob(f"*{gal_id:0>5}.stack.fits")][0]
+        ).glob(f"*{int(gal_id):0>5}.stack.fits")][0]
         
         # if not hasattr(self, "gal_id"):
         self.gal_id = gal_id
         self.generate_grid()
 
-    def update_grid(self):
-        if self.gal_id == self._root().current_gal_id:
+    def change_ext(self, event=None):
+        # print (event)
+        self.ext = event
+        self.update_grid(force_update=True)
+
+    def change_cmap(self, event=None):
+        # print (event)
+        self.cmap = event
+        self.update_grid(force_update=True)
+
+    def change_stretch(self, event=None):
+        self.stretch = event
+        self.update_grid(force_update=True)
+
+    def update_grid(self, force_update=False):
+        if self.gal_id == self._root().current_gal_id.get() and not force_update:
             print ("No need to panic.")
         else:
-            self.gal_id = self._root().current_gal_id
+            self.gal_id = self._root().current_gal_id.get()
             self.file_path = [*(
                 Path(self._root().full_config["files"]["extractions_dir"]).expanduser().resolve()
             ).glob(f"*{self.gal_id:0>5}.stack.fits")][0]
@@ -47,7 +96,10 @@ class BeamFrame(ctk.CTkFrame):
             #     print (header[f"GRISM{n:0>3}"])
             #     print (header[f"N{header[f'GRISM{n:0>3}']}"])
             for idx, beam_sub_frame in enumerate(self.beam_frame_list):
-                print (beam_sub_frame.ext, beam_sub_frame.extver)
+                # print (beam_sub_frame.ext, beam_sub_frame.extver)
+                beam_sub_frame.ext = self.ext
+                beam_sub_frame.cmap = self.cmap
+                beam_sub_frame.stretch = self.stretch
                 beam_sub_frame.update_plots()
             # for row, col in np.ndindex(n_pa+1, n_grism):
             #     flat_idx = np.ravel_multi_index((row, col), (n_pa+1, n_grism))
@@ -67,7 +119,7 @@ class BeamFrame(ctk.CTkFrame):
             self.beam_frame_list = []
             for row, col in np.ndindex(n_pa+1, n_grism):
                 flat_idx = np.ravel_multi_index((row, col), (n_pa+1, n_grism))
-                print (flat_idx)
+                # print (flat_idx)
                 # print (row, col)
                 # print (header[f"GRISM{col+1:0>3}"])
                 if row != n_grism-1:
@@ -77,12 +129,12 @@ class BeamFrame(ctk.CTkFrame):
                     pa=""
                 extver = header[f"GRISM{col+1:0>3}"]+pa
                 self.beam_frame_list.append(BeamSubFrame(
-                    self, self.gal_id, extver=extver, ext=self.ext, #height = self.main_tabs.tab("Beam view").winfo_height()/2
+                    self, self.gal_id, extver=extver, ext=self.ext, cmap=self.cmap, stretch=self.stretch#height = self.main_tabs.tab("Beam view").winfo_height()/2
                 ))
-                self.beam_frame_list[flat_idx].grid(row=row, column=col, sticky="ew")
+                self.beam_frame_list[flat_idx].grid(row=row+1, column=col, sticky="ew")
                 # print (hdul["SCI", header[f"GRISM{col+1:0>3}"]+pa])
 
-            self.grid_rowconfigure([*np.arange(n_pa+1)], weight=1)
+            self.grid_rowconfigure([*np.arange(1, n_pa+2)], weight=1)
             self.grid_columnconfigure([*np.arange(n_grism)], weight=1)
             # self.grid_columnconfigure((0,1,2), weight=1)
         # print (self.main_tabs.tab("Beam view").winfo_height())
@@ -110,14 +162,15 @@ class BeamFrame(ctk.CTkFrame):
 
 
 class BeamSubFrame(ctk.CTkFrame):
-    def __init__(self, master, gal_id, extver, ext="SCI", **kwargs):
+    def __init__(self, master, gal_id, extver, ext="SCI", cmap="plasma", stretch="Logarithmic", **kwargs):
         super().__init__(master, **kwargs)
 
 
         self.gal_id = gal_id
         self.extver = extver
         self.ext=ext
-        self.cmap="plasma"
+        self.cmap=cmap
+        self.stretch=stretch
         # print (self)
         self.rowconfigure(0, weight=1)
         self.rowconfigure(1, weight=0)
@@ -203,6 +256,13 @@ class BeamSubFrame(ctk.CTkFrame):
                 width_ratios=[1/3,1]
             )
 
+            if self.stretch.lower()=="linear":
+                self.stretch_fn = LinearStretch
+            elif self.stretch.lower()=="square root":
+                self.stretch_fn = SqrtStretch
+            elif self.stretch.lower()=="logarithmic":
+                self.stretch_fn = LogStretch
+
             self.plot_kernel()
             self.plot_beam()
             self.fig.canvas.draw_idle()
@@ -213,62 +273,69 @@ class BeamSubFrame(ctk.CTkFrame):
             # print (self.fig.get_size_inches())
             # print (self.fig_axes[0].get_aspect())
         else:
-            if self.gal_id != self._root().current_gal_id or not hasattr(
-                self, "pyplot_canvas"
-            ):
-                print ("yeah")
-                self.gal_id = self._root().current_gal_id
+            # if self.gal_id != self._root().current_gal_id.get() or not hasattr(
+            #     self, "pyplot_canvas"
+            # ):
+            self.gal_id = self._root().current_gal_id.get()
 
-                self.file_path = [*(
-                    Path(self._root().full_config["files"]["extractions_dir"]).expanduser().resolve()
-                ).glob(f"*{self.gal_id:0>5}.stack.fits")][0]
+            if self.stretch.lower()=="linear":
+                self.stretch_fn = LinearStretch
+            elif self.stretch.lower()=="square root":
+                self.stretch_fn = SqrtStretch
+            elif self.stretch.lower()=="logarithmic":
+                self.stretch_fn = LogStretch
 
-                self.plot_kernel()
-                self.plot_beam()
-                self.fig.canvas.draw_idle()
+            self.file_path = [*(
+                Path(self._root().full_config["files"]["extractions_dir"]).expanduser().resolve()
+            ).glob(f"*{self.gal_id:0>5}.stack.fits")][0]
 
-                self.fig.canvas.get_tk_widget().grid(row=0, column=0,columnspan=2, sticky="news")
+            self.plot_kernel()
+            self.plot_beam()
+            self.fig.canvas.draw_idle()
 
-                self.update()
+            self.fig.canvas.get_tk_widget().grid(row=0, column=0,columnspan=2, sticky="news")
+
+            self.update()
 
     def plot_kernel(self):
         
         try:
-            print (self.plotted_images["kernel"])
             self.plotted_images["kernel"].remove()
             del self.plotted_images["kernel"]
-        except Exception as e:
-            print (e.__traceback__)
+        except:
             pass
         with pf.open(self.file_path) as hdul:
             try:
                 # print (hdul["SCI","F115W"])
                 # print (hdul.info())
                 data = hdul["KERNEL",self.extver].data
-                print (self.plotted_images)
-                print (self.plotted_images)
                 # if hasattr(self.plotted_images, "kernel"):
                 #     print (self.plotted_images["kernel"])
                 #     self.plotted_images["kernel"].remove()
+                norm = ImageNormalize(
+                    data,
+                    #  interval=MinMaxInterval(),
+                    stretch=self.stretch_fn()
+                )
                 self.plotted_images["kernel"] = self.fig_axes[0].imshow(
                     data,
                     origin="lower",
                     cmap=self.cmap,
                     # aspect="auto"
+                    norm=norm
                 )
                 self.fig_axes[0].set_xticklabels("")
                 self.fig_axes[0].set_yticklabels("")
                 self.fig_axes[0].tick_params(direction="in")
-            except:
+            except Exception as e:
+                print (e)
                 pass
 
     def plot_beam(self):
         try:
-            print (self.plotted_images["beam"])
             self.plotted_images["beam"].remove()
             del self.plotted_images["beam"]
-        except Exception as e:
-            print (e.__traceback__)
+        except:
             pass
         with pf.open(self.file_path) as hdul:
             try:
@@ -276,11 +343,17 @@ class BeamSubFrame(ctk.CTkFrame):
                 # print (hdul.info())
                 data = hdul[self.ext,self.extver].data
 
+                norm = ImageNormalize(
+                    data,
+                    #  interval=MinMaxInterval(),
+                    stretch=self.stretch_fn()
+                )
                 self.plotted_images["beam"] = self.fig_axes[1].imshow(
                     data,
                     origin="lower",
                     cmap=self.cmap,
                     aspect="auto",
+                    norm=norm,
                 )
                 self.fig_axes[1].tick_params(direction="in")
                 # self.fig_axes[0].plot([1,2],[3,4])
@@ -293,260 +366,3 @@ class BeamSubFrame(ctk.CTkFrame):
                 # print
             except:
                 pass
-
-    def set_aspect(self, content_frame, pad_frame, aspect_ratio):
-        # a function which places a frame within a containing frame, and
-        # then forces the inner frame to keep a specific aspect ratio
-
-        def enforce_aspect_ratio(event):
-            # when the pad window resizes, fit the content into it,
-            # either by fixing the width or the height and then
-            # adjusting the height or width based on the aspect ratio.
-
-            # start by using the width as the controlling dimension
-            desired_width = event.width
-            desired_height = int(event.width / aspect_ratio)
-
-            # if the window is too tall to fit, use the height as
-            # the controlling dimension
-            if desired_height > event.height:
-                desired_height = event.height
-                desired_width = int(event.height * aspect_ratio)
-
-            # place the window, giving it an explicit size
-            content_frame.place(in_=pad_frame, x=0, y=0, 
-                width=desired_width, height=desired_height)
-
-        pad_frame.bind("<Configure>", enforce_aspect_ratio)
-
-        # AANTAL = [(1,"1"),(2,"2"),(3,"3"),(4,"4"),(5,"5"),(6,"6"),]
-        # self.buttons = []
-        # self.button_vars = []
-        # for idx, (text, mode) in enumerate(AANTAL):
-        #     self.button_vars.append(ctk.StringVar(value="1"))
-        #     self.buttons.append(ctk.CTkRadioButton(self, text=text, variable=self.button_vars[-1], value=mode))
-        #     self.buttons[-1].grid(row=0, column=idx) 
-
-
-        # status_options = ["Student", "Staff", "Both"]
-        # x = ctk.IntVar()
-        # for index in range(len(status_options)):
-        #     _button = ctk.CTkRadioButton(self,text=status_options[index],variable=x,value=index)
-        #     _button.grid(row=1, column=index)
-            # .pack(side="left")
-        # self.emission_checkbox = ctk.CTkCheckBox(
-        #     self.scrollable_frame, text="Emission", command=self.change_lines
-        # )
-        # self.emission_checkbox.grid(row=1, column=0, padx=20, pady=(10, 0), sticky="w")
-        # self.absorption_checkbox = ctk.CTkCheckBox(
-        #     self.scrollable_frame, text="Absorption", command=self.change_lines
-        # )
-        # self.absorption_checkbox.grid(
-        #     row=2, column=0, padx=20, pady=(10, 0), sticky="w"
-        # )
-
-        # self.redshift_label = ctk.CTkLabel(self.scrollable_frame, text="Redshift:")
-        # self.redshift_label.grid(row=3, padx=10, pady=(10, 0), sticky="w")
-        # self.current_redshift = ctk.DoubleVar(
-        #     master=self,
-        #     value=0,
-        # )
-
-        # self.redshift_entry = ctk.CTkEntry(
-        #     self.scrollable_frame,
-        #     textvariable=self.current_redshift,
-        # )
-        # self.redshift_entry.grid(
-        #     row=4,
-        #     column=0,
-        #     padx=20,
-        #     pady=(10, 0),
-        #     sticky="we",
-        # )
-        # self.redshift_entry.bind(
-        #     "<Return>",
-        #     self.update_lines,
-        # )
-        # self.redshift_slider = ctk.CTkSlider(
-        #     self.scrollable_frame,
-        #     variable=self.current_redshift,
-        #     from_=0,
-        #     to=2,
-        #     orientation="horizontal",
-        #     command=self.update_lines,
-        # )
-        # self.redshift_slider.grid(
-        #     row=5,
-        #     padx=20,
-        #     pady=20,
-        # )
-
-    # def change_lines(self):
-    #     if self.emission_checkbox.get() and len(self.plotted_lines["emission"]) == 0:
-    #         self.add_lines(line_type="emission")
-    #         self.update_lines()
-    #     elif (
-    #         not self.emission_checkbox.get() and len(self.plotted_lines["emission"]) > 0
-    #     ):
-    #         for line in self.fig_axes.get_lines():
-    #             if line in self.plotted_lines["emission"].values():
-    #                 line.remove()
-    #         for line_key, line_data in (
-    #             self._root().full_config["lines"]["emission"].items()
-    #         ):
-    #             del self.plotted_lines["emission"][line_key]
-
-    #     if (
-    #         self.absorption_checkbox.get()
-    #         and len(self.plotted_lines["absorption"]) == 0
-    #     ):
-    #         self.add_lines(line_type="absorption")
-    #         self.update_lines()
-    #     elif (
-    #         not self.absorption_checkbox.get()
-    #         and len(self.plotted_lines["absorption"]) > 0
-    #     ):
-    #         for line in self.fig_axes.get_lines():
-    #             if line in self.plotted_lines["absorption"].values():
-    #                 line.remove()
-    #         for line_key, line_data in (
-    #             self._root().full_config["lines"]["absorption"].items()
-    #         ):
-    #             del self.plotted_lines["absorption"][line_key]
-
-    #     self.pyplot_canvas.draw()
-    #     self.update()
-
-    # def update_plot(self):
-    #     if not hasattr(self, "pyplot_canvas"):
-    #         self.fig = Figure(constrained_layout=True)
-    #         self.pyplot_canvas = FigureCanvasTkAgg(
-    #             figure=self.fig,
-    #             master=self,
-    #         )
-
-    #         if not hasattr(self, "plotted_lines"):
-    #             self.plotted_lines = dict(emission={}, absorption={})
-
-    #         self.fig_axes = self.fig.add_subplot(111)
-
-    #         self.fig.canvas.mpl_connect("motion_notify_event", self.hover)
-
-    #         self.fig_axes.set_xlabel(r"Wavelength (\AA)")
-    #         self.fig_axes.set_ylabel("Flux")
-
-    #         self.custom_annotation = self.fig_axes.annotate(
-    #             "", xy=(0, 0), xytext=(0, 0), textcoords="offset points"
-    #         )
-    #         self.custom_annotation.set_visible(False)
-
-    #         self.plot_grizli(
-    #             gal_id=self._root().current_gal_id,
-    #         )
-    #         self.plot_MUSE_spec(
-    #             gal_id=self._root().current_gal_id,
-    #         )
-    #         self.add_lines()
-
-    #         self.gal_id = self._root().current_gal_id
-    #         self.pyplot_canvas.draw_idle()
-
-    #         self.pyplot_canvas.get_tk_widget().grid(row=0, column=0, sticky="news")
-
-    #     if self.gal_id != self._root().current_gal_id or not hasattr(
-    #         self, "pyplot_canvas"
-    #     ):
-    #         self.gal_id = self._root().current_gal_id
-    #         self.plot_MUSE_spec(
-    #             gal_id=self._root().current_gal_id,
-    #         )
-    #         self.plot_grizli(
-    #             gal_id=self._root().current_gal_id,
-    #         )
-    #         self.pyplot_canvas.draw_idle()
-
-    #         self.update()
-
-# if __name__=="__main__":
-#     import tkinter as tk
-
-#     def center(win, w = None, h = None):
-#         # sets the window's minimal size and centers it.
-#         win.update() # updates the window to get it's minimum working size
-
-#         # if no size is given, keep the minimum size
-#         width = w if w else win.winfo_width()
-#         height = h if h else win.winfo_height()
-
-#         # compute position for the window to be central
-#         x = (win.winfo_screenwidth() - width) // 2
-#         y = (win.winfo_screenheight() - height) // 2
-
-#         # set geomet and minimum size
-#         win.geometry("{}x{}+{}+{}".format(width, height, x, y))
-#         win.minsize(width, height)
-
-#     def set_aspect(content_frame, pad_frame, aspect_ratio):
-#         # a function which places a frame within a containing frame, and
-#         # then forces the inner frame to keep a specific aspect ratio
-
-#         def enforce_aspect_ratio(event):
-#             # when the pad window resizes, fit the content into it,
-#             # either by fixing the width or the height and then
-#             # adjusting the height or width based on the aspect ratio.
-
-#             # start by using the width as the controlling dimension
-#             desired_width = event.width
-#             desired_height = int(event.width / aspect_ratio)
-
-#             # if the window is too tall to fit, use the height as
-#             # the controlling dimension
-#             if desired_height > event.height:
-#                 desired_height = event.height
-#                 desired_width = int(event.height * aspect_ratio)
-
-#             # place the window, giving it an explicit size
-#             content_frame.place(in_=pad_frame, x=0, y=0, 
-#                 width=desired_width, height=desired_height)
-
-#         pad_frame.bind("<Configure>", enforce_aspect_ratio)
-
-#     window = tk.Tk()
-
-#     window.columnconfigure(0, weight=1, minsize=300)
-#     window.rowconfigure(0, weight=1, minsize=300)
-
-#     # Frame with the main content.
-#     content = tk.Frame(
-#         window,
-#     )
-#     content.grid(row=0, column=0, padx=5, pady=5, sticky="nesw")
-
-#     # Frame for padding apparently necessary to have the resized Frame
-#     pad_frame = tk.Frame(content, borderwidth=0, background="bisque", width=200, height=200)
-#     pad_frame.grid(row=0, column=0, sticky="nsew", padx=10, pady=20)
-#     # Frame with the plot. It lays inside the "content" Frame
-#     plot_frame = tk.Frame(
-#         content,
-#         bg = "blue",
-#         width = 300,
-#         height = 300
-#     )
-#     tk.Label(plot_frame,text='Some Plot').pack()
-#     # calls function to fix the aspect ratio
-#     set_aspect(plot_frame, pad_frame, aspect_ratio=16/9) 
-#     content.rowconfigure(0, weight=1)
-#     content.columnconfigure(0, weight=1)
-
-#     # Frame containing the setting controls
-#     window.columnconfigure(1, weight=0, minsize=200)
-#     settings = tk.Frame(
-#         window,
-#         bg = "red"
-#     )
-#     settings.grid(row=0, column=1, padx=5, pady=5, sticky="nesw")
-
-#     # usual Tkinter stuff
-#     center(window)
-#     window.title("Some Program")
-#     window.mainloop()
