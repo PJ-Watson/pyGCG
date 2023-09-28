@@ -1,4 +1,5 @@
 import customtkinter as ctk
+import tkinter as tk
 from matplotlib.figure import Figure
 import matplotlib.colors as colors
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2Tk
@@ -53,9 +54,25 @@ class BeamFrame(ctk.CTkFrame):
 
     def update_plots(self):
         if not hasattr(self, "fig_axes"):
+
+
+            self.pad_frame = tk.Frame(self, width=200, height=200, borderwidth=0, background="")
+            self.pad_frame.grid(row=0, column=0, columnspan=2, sticky="nsew")#, padx=10, pady=20)
+
+            self.plot_frame = tk.Frame(
+                self,
+                bg = "blue",
+                width = 300,
+                height = 300,
+                borderwidth=0,
+            )
+            self.plot_frame.rowconfigure(0,weight=1)
+            self.plot_frame.columnconfigure(0,weight=1)
+            # calls function to fix the aspect ratio
+            self.set_aspect(self.plot_frame, self.pad_frame, aspect_ratio=5) 
             self.fig = Figure(constrained_layout=True
             # , figsize=(2,1))
-            , figsize=(5,1),
+            , figsize=(4,1),
             )
             print (self.master.winfo_height()/2)
             print (self.master.winfo_width()/3)
@@ -63,7 +80,7 @@ class BeamFrame(ctk.CTkFrame):
             print (self.fig.get_size_inches())
             self.pyplot_canvas = FigureCanvasTkAgg(
                 figure=self.fig,
-                master=self,
+                master=self.plot_frame,
             )
 
             if not hasattr(self, "plotted_images"):
@@ -84,14 +101,15 @@ class BeamFrame(ctk.CTkFrame):
                 # aspect="auto", 
                 # width_ratios=[1,shape_sci/shape_kernel],
                 # width_ratios=[0.5,1]
-                width_ratios=[0.2,1]
+                width_ratios=[0.25,1]
             )
 
             self.plot_kernel()
             self.plot_beam()
             self.fig.canvas.draw_idle()
 
-            self.fig.canvas.get_tk_widget().grid(row=0, column=0, columnspan=2, sticky="news")
+            self.fig.canvas.get_tk_widget().grid(row=0, column=0,sticky="news")
+            # self.fig.canvas.get_tk_widget().pack()
             print (self.fig.canvas.get_tk_widget())
             print (self.fig.get_size_inches())
             print (self.fig_axes[0].get_aspect())
@@ -111,6 +129,7 @@ class BeamFrame(ctk.CTkFrame):
             )
             self.fig_axes[0].set_xticklabels("")
             self.fig_axes[0].set_yticklabels("")
+            self.fig_axes[0].tick_params(direction="in")
 
     def plot_beam(self):
 
@@ -125,6 +144,7 @@ class BeamFrame(ctk.CTkFrame):
                 cmap=self.cmap,
                 aspect="auto",
             )
+            self.fig_axes[1].tick_params(direction="in")
             # self.fig_axes[0].plot([1,2],[3,4])
             # self.update()
             # self.fig_axes.imshow(
@@ -133,6 +153,31 @@ class BeamFrame(ctk.CTkFrame):
             # self.fig_axes[0].plot([1,2],[3,4])
             # self.update()
             # print 
+
+    def set_aspect(self, content_frame, pad_frame, aspect_ratio):
+        # a function which places a frame within a containing frame, and
+        # then forces the inner frame to keep a specific aspect ratio
+
+        def enforce_aspect_ratio(event):
+            # when the pad window resizes, fit the content into it,
+            # either by fixing the width or the height and then
+            # adjusting the height or width based on the aspect ratio.
+
+            # start by using the width as the controlling dimension
+            desired_width = event.width
+            desired_height = int(event.width / aspect_ratio)
+
+            # if the window is too tall to fit, use the height as
+            # the controlling dimension
+            if desired_height > event.height:
+                desired_height = event.height
+                desired_width = int(event.height * aspect_ratio)
+
+            # place the window, giving it an explicit size
+            content_frame.place(in_=pad_frame, x=0, y=0, 
+                width=desired_width, height=desired_height)
+
+        pad_frame.bind("<Configure>", enforce_aspect_ratio)
 
         # AANTAL = [(1,"1"),(2,"2"),(3,"3"),(4,"4"),(5,"5"),(6,"6"),]
         # self.buttons = []

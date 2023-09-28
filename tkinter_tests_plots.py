@@ -30,6 +30,7 @@ class App(ctk.CTk):
         # Geometry
         # self.geometry("1280x720")
         self.geometry("1366x768")
+        self.minsize(1280,720)
         # self.attributes("-zoomed", True)
         self.title("GLASS-JWST Classification GUI")
 
@@ -155,7 +156,7 @@ class App(ctk.CTk):
             )
             # self.muse_spec_frame.grid(row=0, column=0, padx=20, pady=20, sticky="nsew")
             # self.beam_frame.pack(fill="both", expand=1)
-            self.beam_frame.grid(row=3, column=idx, sticky="ew")
+            self.beam_frame.grid(row=2, column=idx, sticky="ew")
 
         # print (dir(self.main_tabs.tab("Spec view")))
 
