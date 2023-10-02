@@ -4,6 +4,7 @@ import tomlkit
 from astropy.table import Table
 from tab_spectrum import SpecFrame
 from tab_beams import BeamFrame
+
 # app = customtkinter.CTk()
 # app.geometry("768x512")
 
@@ -29,7 +30,7 @@ class App(ctk.CTk):
         # Geometry
         # self.geometry("1280x720")
         self.geometry("1366x768")
-        self.minsize(1280,720)
+        self.minsize(1280, 720)
         # self.attributes("-zoomed", True)
         self.title("GLASS-JWST Classification GUI")
 
@@ -125,15 +126,16 @@ class App(ctk.CTk):
         # )
         self.current_gal_id = ctk.StringVar(
             master=self,
-            value=1864,
+            value=3927,
         )
         self.current_gal_label = ctk.CTkLabel(
-            self, text="Current ID:",
+            self,
+            text="Current ID:",
         )
         self.current_gal_label.grid(
             row=1,
             column=2,
-            padx=(20,5),
+            padx=(20, 5),
             pady=20,
             sticky="e",
         )
@@ -144,7 +146,7 @@ class App(ctk.CTk):
         self.current_gal_entry.grid(
             row=1,
             column=3,
-            padx=(5,20),
+            padx=(5, 20),
             pady=20,
             sticky="w",
         )
@@ -175,14 +177,12 @@ class App(ctk.CTk):
         # self.muse_spec_frame.grid(row=0, column=0, padx=20, pady=20, sticky="nsew")
         self.muse_spec_frame.pack(fill="both", expand=1)
 
-
         self.full_beam_frame = BeamFrame(
             self.main_tabs.tab("Beam view"), self.current_gal_id.get()
         )
         # self.muse_spec_frame.grid(row=0, column=0, padx=20, pady=20, sticky="nsew")
         self.full_beam_frame.pack(fill="both", expand=1)
 
-        
         # print (dir(self.main_tabs.tab("Spec view")))
 
     def initialise_configuration(self):
@@ -403,6 +403,10 @@ class App(ctk.CTk):
                 "latex_name": r"SIII",
                 "centre": 9068.6,
             },
+            "HeI_10830": {
+                "latex_name": r"HeI",
+                "centre" : 10830.3398,
+            }
         }
 
         for line_name, line_data in em_lines.items():
@@ -503,12 +507,12 @@ class App(ctk.CTk):
         print("Save button clicked!")
 
     def prev_gal_button_callback(self, event=None):
-        self.current_gal_id.set(str(int(self.current_gal_id.get())-1))
+        self.current_gal_id.set(str(int(self.current_gal_id.get()) - 1))
         print("Previous galaxy button clicked!")
         self.main_tabs_update()
 
     def next_gal_button_callback(self, event=None):
-        self.current_gal_id.set(str(int(self.current_gal_id.get())+1))
+        self.current_gal_id.set(str(int(self.current_gal_id.get()) + 1))
         print("Next galaxy button clicked!")
         self.main_tabs_update()
 
