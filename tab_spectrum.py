@@ -53,8 +53,6 @@ class SpecFrame(ctk.CTkFrame):
             value=0,
         )
 
-        tab_row = self._root().cat[self._root().cat["v3_id"] == gal_id]
-
         self.redshift_entry = ctk.CTkEntry(
             self.scrollable_frame,
             textvariable=self.current_redshift,
@@ -212,6 +210,16 @@ class SpecFrame(ctk.CTkFrame):
             )
             self.custom_annotation.set_visible(False)
 
+            _path = [
+                *(
+                    Path(self._root().full_config["files"]["extractions_dir"])
+                    .expanduser()
+                    .resolve()
+                ).glob(f"*{self.gal_id:0>5}.row.fits")
+            ][0]
+            with pf.open(_path) as hdul:
+                self.current_redshift.set(Table(hdul[1].data)["redshift"].value[0])
+
             if self.grizli_checkbox.get():
                 self.plot_grizli(
                     gal_id=int(self._root().current_gal_id.get()),
@@ -228,6 +236,9 @@ class SpecFrame(ctk.CTkFrame):
             self.add_lines()
 
             self.gal_id = int(self._root().current_gal_id.get())
+
+            f = zoom_factory(self.fig_axes)
+
             self.pyplot_canvas.draw_idle()
 
             self.pyplot_canvas.get_tk_widget().grid(row=0, column=0, sticky="news")
@@ -236,6 +247,17 @@ class SpecFrame(ctk.CTkFrame):
         if self.gal_id != int(self._root().current_gal_id.get()):
             print ("running this")
             self.gal_id = int(self._root().current_gal_id.get())
+
+            _path = [
+                *(
+                    Path(self._root().full_config["files"]["extractions_dir"])
+                    .expanduser()
+                    .resolve()
+                ).glob(f"*{self.gal_id:0>5}.row.fits")
+            ][0]
+            with pf.open(_path) as hdul:
+                self.current_redshift.set(Table(hdul[1].data)["redshift"].value[0])
+
             if self.grizli_checkbox.get():
                 self.plot_grizli(
                     gal_id=int(self._root().current_gal_id.get()),
@@ -249,6 +271,16 @@ class SpecFrame(ctk.CTkFrame):
                 self.plot_MUSE_spec(
                     gal_id=int(self._root().current_gal_id.get()),
                 )
+            self.update_lines()
+            try:
+                tab_row = self._root().cat[self._root().cat["v3_id"] == int(self.gal_id)]
+                self.fig_axes.set_title(
+                    f"IDs: v3={tab_row['v3_id'].value}, Xin={tab_row['Xin_id'].value}, NIRCAM={tab_row['NIRCAM_id'].value}"
+                )
+                # print (tab_row['v3_id'])
+            except Exception as e:
+                print (e)
+                pass
             self.pyplot_canvas.draw()
 
             self.update()
@@ -290,31 +322,33 @@ class SpecFrame(ctk.CTkFrame):
                 # print (self.clip*len(data_table["wave"]))
                 # print (np.percentile(data_table["flux"]/data_table["flat"]/1e-19,[1,99]))
                 # print (hdu.name)
+                clip = data_table["err"] > 0
+                if clip.sum() == 0:
+                    clip = np.isfinite(data_table["err"])
                 if templates:
-                    y_vals = data_table["line"] / data_table["flat"] / 1e-19
-                    y_err = None
-                    c="tab:red"
-                    alpha = 0.7
+                    (self.plotted_components[dict_key][hdu.name],) = self.fig_axes.plot(
+                        data_table["wave"][clip],
+                        data_table["line"][clip] / data_table["flat"][clip] / 1e-19,
+                        c="tab:red",
+                        alpha=0.7
+                    )
                 else:
-                    y_vals = data_table["flux"] / data_table["flat"] / data_table["pscale"]/ 1e-19
-                    y_err = data_table["err"] / data_table["flat"] /data_table["pscale"]/ 1e-19
-                    c = colours[hdu.name]
-                    alpha = 1
-                self.plotted_components[dict_key][hdu.name] = self.fig_axes.errorbar(
-                    data_table["wave"],
-                    y_vals,
-                    yerr=y_err,
-                    fmt="o",
-                    markersize=3,
-                    ecolor=colors.to_rgba(colours[hdu.name], 0.5),
-                    c=c,
-                    alpha=alpha
-                )
+                    y_vals = data_table["flux"][clip] / data_table["flat"][clip] / data_table["pscale"][clip] / 1e-19
+                    self.plotted_components[dict_key][hdu.name] = self.fig_axes.errorbar(
+                        data_table["wave"][clip],
+                        y_vals,
+                        yerr=data_table["err"][clip] / data_table["flat"][clip] /data_table["pscale"][clip] / 1e-19,
+                        fmt="o",
+                        markersize=3,
+                        ecolor=colors.to_rgba(colours[hdu.name], 0.5),
+                        c=colours[hdu.name],
+                    )
                 # print (self.plotted_grisms[hdu.name])
                 # print (self.fig_axes.get_children())
-                ymax = np.nanmax([ymax, np.nanmax(y_vals)])
+                    ymax = np.nanmax([ymax, np.nanmax(y_vals)])
 
-        self.fig_axes.set_ylim(ymin=-0.05 * ymax, ymax=1.05 * ymax)
+        if not templates:
+            self.fig_axes.set_ylim(ymin=-0.05 * ymax, ymax=1.05 * ymax)
 
     def plot_MUSE_spec(
         self,
@@ -344,8 +378,8 @@ class SpecFrame(ctk.CTkFrame):
             MUSE_spec = self.cube_extract_spectra(
                 cube_hdul[1].data,
                 cube_wcs,
-                tab_row["RA"],
-                tab_row["DEC"],
+                tab_row["v3_ra"],
+                tab_row["v3_dec"],
                 radius=tab_row["r50_SE"][0],
             )
             # if not hasattr(self, "plotted_components"):
@@ -364,9 +398,9 @@ class SpecFrame(ctk.CTkFrame):
                 linewidth=0.5,
                 c="k",
             )
-            self.fig_axes.set_title(
-                f"IDs: v3={tab_row['v3_id'][0]}, Xin={tab_row['Xin_id'][0]}, NIRCAM={tab_row['NIRCAM_id'][0]}"
-            )
+            # self.fig_axes.set_title(
+            #     f"IDs: v3={tab_row['v3_id'][0]}, Xin={tab_row['Xin_id'][0]}, NIRCAM={tab_row['NIRCAM_id'][0]}"
+            # )
 
     def cube_extract_spectra(
         self,
@@ -496,63 +530,103 @@ class SpecFrame(ctk.CTkFrame):
         self.custom_annotation.set_visible(False)
         self.fig.canvas.draw()
 
-
-# import tkinter
-
-# import numpy as np
-
-# # Implement the default Matplotlib key bindings.
-# from matplotlib.backend_bases import key_press_handler
-# from matplotlib.backends.backend_tkagg import (FigureCanvasTkAgg,
-#                                                NavigationToolbar2Tk)
-# from matplotlib.figure import Figure
-
-# root = tkinter.Tk()
-# root.wm_title("Embedding in Tk")
-
-# fig = Figure(figsize=(5, 4), dpi=100)
-# t = np.arange(0, 3, .01)
-# ax = fig.add_subplot()
-# line, = ax.plot(t, 2 * np.sin(2 * np.pi * t))
-# ax.set_xlabel("time [s]")
-# ax.set_ylabel("f(t)")
-
-# canvas = FigureCanvasTkAgg(fig, master=root)  # A tk.DrawingArea.
-# canvas.draw()
-
-# # pack_toolbar=False will make it easier to use a layout manager later on.
-# toolbar = NavigationToolbar2Tk(canvas, root, pack_toolbar=False)
-# toolbar.update()
-
-# canvas.mpl_connect(
-#     "key_press_event", lambda event: print(f"you pressed {event.key}"))
-# canvas.mpl_connect("key_press_event", key_press_handler)
-
-# button_quit = tkinter.Button(master=root, text="Quit", command=root.destroy)
+# based on https://gist.github.com/tacaswell/3144287
+def zoom_factory(ax, base_scale=1.1):
+    """
+    Add ability to zoom with the scroll wheel.
 
 
-# def update_frequency(new_val):
-#     # retrieve frequency
-#     f = float(new_val)
+    Parameters
+    ----------
+    ax : matplotlib axes object
+        axis on which to implement scroll to zoom
+    base_scale : float
+        how much zoom on each tick of scroll wheel
 
-#     # update data
-#     y = 2 * np.sin(2 * np.pi * f * t)
-#     line.set_data(t, y)
+    Returns
+    -------
+    disconnect_zoom : function
+        call this to disconnect the scroll listener
+    """
 
-#     # required to update canvas and attached toolbar!
-#     canvas.draw()
+    def limits_to_range(lim):
+        return lim[1] - lim[0]
 
+    fig = ax.get_figure()  # get the figure of interest
+    if hasattr(fig.canvas, "capture_scroll"):
+        fig.canvas.capture_scroll = True
+    has_toolbar = hasattr(fig.canvas, "toolbar") and fig.canvas.toolbar is not None
+    if has_toolbar:
+        # it might be possible to have an interactive backend without
+        # a toolbar. I'm not sure so being safe here
+        toolbar = fig.canvas.toolbar
+        toolbar.push_current()
+    # orig_xlim = ax.get_xlim()
+    # orig_ylim = ax.get_ylim()
+    # orig_yrange = limits_to_range(orig_ylim)
+    # orig_xrange = limits_to_range(orig_xlim)
+    # orig_center = ((orig_xlim[0] + orig_xlim[1]) / 2, (orig_ylim[0] + orig_ylim[1]) / 2)
 
-# slider_update = tkinter.Scale(root, from_=1, to=5, orient=tkinter.HORIZONTAL,
-#                               command=update_frequency, label="Frequency [Hz]")
+    def zoom_fun(event):
+        if event.inaxes is not ax:
+            return
+        # get the current x and y limits
+        cur_xlim = ax.get_xlim()
+        cur_ylim = ax.get_ylim()
+        cur_yrange = limits_to_range(cur_ylim)
+        cur_xrange = limits_to_range(cur_xlim)
+        # cur_center = ((orig_xlim[0] + orig_xlim[1]) / 2, (orig_ylim[0] + orig_ylim[1]) / 2)
+        # set the range
+        # (cur_xlim[1] - cur_xlim[0]) * 0.5
+        # (cur_ylim[1] - cur_ylim[0]) * 0.5
+        xdata = event.xdata  # get event x location
+        ydata = event.ydata  # get event y location
 
-# # Packing order is important. Widgets are processed sequentially and if there
-# # is no space left, because the window is too small, they are not displayed.
-# # The canvas is rather flexible in its size, so we pack it last which makes
-# # sure the UI controls are displayed as long as possible.
-# button_quit.pack(side=tkinter.BOTTOM)
-# slider_update.pack(side=tkinter.BOTTOM)
-# toolbar.pack(side=tkinter.BOTTOM, fill=tkinter.X)
-# canvas.get_tk_widget().pack(side=tkinter.TOP, fill=tkinter.BOTH, expand=True)
+        # print (f"Current position: ({xdata},{ydata}).")
+        # print (f"Current limits: ([{cur_xlim}],[{cur_ylim}]).")
 
-# tkinter.mainloop()
+        if event.button == "up":
+            # deal with zoom in
+            scale_factor = base_scale
+        elif event.button == "down":
+            # deal with zoom out
+            scale_factor = 1 / base_scale
+        else:
+            # deal with something that should never happen
+            scale_factor = 1
+        # set new limits
+        new_xlim = [
+            xdata - (xdata - cur_xlim[0]) / scale_factor,
+            xdata + (cur_xlim[1] - xdata) / scale_factor,
+        ]
+        new_ylim = [
+            ydata - (ydata - cur_ylim[0]) / scale_factor,
+            ydata + (cur_ylim[1] - ydata) / scale_factor,
+        ]
+        # print (f"New limits: ([{new_xlim}],[{new_ylim}]).")
+
+        new_yrange = limits_to_range(new_ylim)
+        new_xrange = limits_to_range(new_xlim)
+
+        # print (f"Old range, f{orig_xrange}")
+        # print (f"New range, f{new_xrange}")
+
+        # if np.abs(new_yrange) > np.abs(orig_yrange):
+        #     new_ylim = orig_center[1] - new_yrange / 2, orig_center[1] + new_yrange / 2
+        # if np.abs(new_xrange) > np.abs(orig_xrange):
+        #     new_xlim = orig_center[0] - new_xrange / 2, orig_center[0] + new_xrange / 2
+        ax.set_xlim(new_xlim)
+        ax.set_ylim(new_ylim)
+
+        if has_toolbar:
+            toolbar.push_current()
+        ax.figure.canvas.draw_idle()  # force re-draw
+
+    # attach the call back
+    cid = fig.canvas.mpl_connect("scroll_event", zoom_fun)
+
+    def disconnect_zoom():
+        fig.canvas.mpl_disconnect(cid)
+
+    # return the disconnect function
+    return disconnect_zoom

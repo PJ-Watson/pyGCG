@@ -75,17 +75,20 @@ class BeamFrame(ctk.CTkFrame):
         )
         self.limits_menu.grid(row=0, column=7, padx=(5, 20), pady=20, sticky="w")
 
-        self.file_path = [
-            *(
-                Path(self._root().full_config["files"]["extractions_dir"])
-                .expanduser()
-                .resolve()
-            ).glob(f"*{int(gal_id):0>5}.stack.fits")
-        ][0]
+        self.gal_id = int(gal_id)
+        try:
+            self.file_path = [
+                *(
+                    Path(self._root().full_config["files"]["extractions_dir"])
+                    .expanduser()
+                    .resolve()
+                ).glob(f"*{int(gal_id):0>5}.stack.fits")
+            ][0]
+            self.generate_grid()
+        except:
+            self.file_path = None
 
         # if not hasattr(self, "gal_id"):
-        self.gal_id = int(gal_id)
-        self.generate_grid()
 
     def change_ext(self, event=None):
         # print (event)
