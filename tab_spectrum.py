@@ -47,19 +47,21 @@ class SpecFrame(ctk.CTkFrame):
             row=2, column=0, padx=20, pady=(10, 0), sticky="w"
         )
 
-        self.redshift_label = ctk.CTkLabel(self.scrollable_frame, text="Redshift:")
-        self.redshift_label.grid(row=3, padx=10, pady=(10, 0), sticky="w")
-        self.current_redshift = ctk.DoubleVar(
+        self.redshift_frame = ctk.CTkFrame(self.scrollable_frame)
+        self.redshift_frame.grid(row=3, sticky="ew")
+        self.redshift_frame.columnconfigure([0,1], weight=1)
+        self.redshift_label = ctk.CTkLabel(self.redshift_frame, text="Redshift:")
+        self.redshift_label.grid(row=0, column=0, columnspan=2,padx=10, pady=(10, 0), sticky="w")
+        self.current_redshift = ValidateFloatVar(
             master=self,
             value=0,
         )
-
         self.redshift_entry = ctk.CTkEntry(
-            self.scrollable_frame,
+            self.redshift_frame,
             textvariable=self.current_redshift,
         )
         self.redshift_entry.grid(
-            row=4,
+            row=1,
             column=0,
             padx=(20, 10),
             pady=(10, 0),
@@ -69,18 +71,28 @@ class SpecFrame(ctk.CTkFrame):
             "<Return>",
             self.update_lines,
         )
+        self.reset_redshift_button = ctk.CTkButton(self.redshift_frame, text="Reset")
+        self.reset_redshift_button.grid(
+            row=1,
+            column=1,
+            padx=(20, 10),
+            pady=(10, 0),
+            sticky="we",
+        )
         self.redshift_slider = ctk.CTkSlider(
-            self.scrollable_frame,
-            variable=self.current_redshift,
+            self.redshift_frame,
+            # variable=self.current_redshift,
             from_=0,
             to=2,
             # orientation="horizontal",
             command=self.update_lines,
             # border_width=20,
+            number_of_steps=200,
         )
         self.redshift_slider.grid(
-            row=5,
+            row=2,
             column=0,
+            columnspan=2,
             # padx=(10,10),
             # padx=(30,40),
             # padx=(10,0),
@@ -94,20 +106,20 @@ class SpecFrame(ctk.CTkFrame):
             self.scrollable_frame, text="MUSE spectrum", command=self._test_event
         )
         self.muse_checkbox.grid(
-            row=6, column=0, padx=20, pady=(10, 0), sticky="w"
+            row=4, column=0, padx=20, pady=(10, 0), sticky="w"
         )
         self.grizli_checkbox = ctk.CTkCheckBox(
             self.scrollable_frame, text="NIRISS spectrum", command=self._test_event
         )
         self.grizli_checkbox.select()
         self.grizli_checkbox.grid(
-            row=7, column=0, padx=20, pady=(10, 0), sticky="w"
+            row=5, column=0, padx=20, pady=(10, 0), sticky="w"
         )
         self.grizli_temp_checkbox = ctk.CTkCheckBox(
             self.scrollable_frame, text="Grizli templates", command=self._test_event
         )
         self.grizli_temp_checkbox.grid(
-            row=8, column=0, padx=20, pady=(10, 0), sticky="w"
+            row=6, column=0, padx=20, pady=(10, 0), sticky="w"
         )
             
 
@@ -379,7 +391,6 @@ class SpecFrame(ctk.CTkFrame):
                 - cube_hdul[1].header["CRPIX3"]
             ) * cube_hdul[1].header["CD3_3"] + cube_hdul[1].header["CRVAL3"]
             # print (tab_row)
-            print (tab_row["v3_ra"])
             MUSE_spec = self.cube_extract_spectra(
                 cube_hdul[1].data,
                 cube_wcs,
@@ -489,9 +500,13 @@ class SpecFrame(ctk.CTkFrame):
         if line_type is None:
             return
         xlims = self.fig_axes.get_xlim()
+        # print (self.current_redshift.get())
         for line_key, line_data in self._root().full_config["lines"][line_type].items():
+            # print (line_data["centre"].dtype)
+            # print (float(self.current_redshift.get()).dtype)
+            # print (f"{line_key}: {line_data['centre'] * float(self.current_redshift.get())}")
             self.plotted_components[line_type][line_key] = self.fig.get_axes()[0].axvline(
-                line_data["centre"] * self.current_redshift.get(),
+                line_data["centre"] * float(self.current_redshift.get()),
                 c="0.7",
                 alpha=0.7,
                 linewidth=2,
@@ -501,6 +516,12 @@ class SpecFrame(ctk.CTkFrame):
         self.pyplot_canvas.draw()
 
     def update_lines(self, event=None):
+        if type(event)==float:
+            self.current_redshift.set(np.round(event, decimals=8))
+        else:
+            # print (event)
+            self.redshift_slider.set(float(self.current_redshift.get()))
+        # print (self.current_redshift.get())
         for line_type in ["emission", "absorption"]:
             try:
                 for line_key, line_data in (
@@ -509,15 +530,17 @@ class SpecFrame(ctk.CTkFrame):
                     current_line = self.plotted_components[line_type][line_key]
                     current_line.set_data(
                         [
-                            line_data["centre"] * (1 + self.current_redshift.get()),
-                            line_data["centre"] * (1 + self.current_redshift.get()),
+                            line_data["centre"] * (1 + float(self.current_redshift.get())),
+                            line_data["centre"] * (1 + float(self.current_redshift.get())),
                         ],
                         [0, 1],
                     )
-            except:
+            except:# Exception as e:
+                # print (e)
                 pass
 
         self.fig.canvas.draw()
+        self.update()
 
     def hover(self, event):
         if event.inaxes == self.fig_axes:
@@ -640,3 +663,19 @@ def zoom_factory(ax, base_scale=1.1):
 
     # return the disconnect function
     return disconnect_zoom
+
+class ValidateFloatVar(ctk.StringVar):
+    """StringVar subclass that only allows valid float values to be put in it."""
+
+    def __init__(self, master=None, value=None, name=None):
+        ctk.StringVar.__init__(self, master, value, name)
+        self._old_value = self.get()
+        self.trace('w', self._validate)
+
+    def _validate(self, *_):
+        new_value = self.get()
+        try:
+            new_value == '' or float(new_value)
+            self._old_value = new_value
+        except ValueError:
+            ctk.StringVar.set(self, self._old_value)
