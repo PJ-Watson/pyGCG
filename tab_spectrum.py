@@ -49,9 +49,11 @@ class SpecFrame(ctk.CTkFrame):
 
         self.redshift_frame = ctk.CTkFrame(self.scrollable_frame)
         self.redshift_frame.grid(row=3, sticky="ew")
-        self.redshift_frame.columnconfigure([0,1], weight=1)
+        self.redshift_frame.columnconfigure([0, 1], weight=1)
         self.redshift_label = ctk.CTkLabel(self.redshift_frame, text="Redshift:")
-        self.redshift_label.grid(row=0, column=0, columnspan=2,padx=10, pady=(10, 0), sticky="w")
+        self.redshift_label.grid(
+            row=0, column=0, columnspan=2, padx=10, pady=(10, 0), sticky="w"
+        )
         self.current_redshift = ValidateFloatVar(
             master=self,
             value=0,
@@ -71,7 +73,9 @@ class SpecFrame(ctk.CTkFrame):
             "<Return>",
             self.update_lines,
         )
-        self.reset_redshift_button = ctk.CTkButton(self.redshift_frame, text="Reset")
+        self.reset_redshift_button = ctk.CTkButton(
+            self.redshift_frame, text="Reset", command=self.reset_redshift
+        )
         self.reset_redshift_button.grid(
             row=1,
             column=1,
@@ -81,95 +85,79 @@ class SpecFrame(ctk.CTkFrame):
         )
         self.redshift_slider = ctk.CTkSlider(
             self.redshift_frame,
-            # variable=self.current_redshift,
             from_=0,
             to=2,
-            # orientation="horizontal",
             command=self.update_lines,
-            # border_width=20,
             number_of_steps=200,
         )
         self.redshift_slider.grid(
             row=2,
             column=0,
             columnspan=2,
-            # padx=(10,10),
-            # padx=(30,40),
-            # padx=(10,0),
-            # padx=(0,20),
             padx=(20, 10),
             pady=10,
             sticky="we",
         )
 
         self.muse_checkbox = ctk.CTkCheckBox(
-            self.scrollable_frame, text="MUSE spectrum", command=self._test_event
+            self.scrollable_frame, text="MUSE spectrum", command=self.change_components
         )
-        self.muse_checkbox.grid(
-            row=4, column=0, padx=20, pady=(10, 0), sticky="w"
-        )
+        self.muse_checkbox.grid(row=4, column=0, padx=20, pady=(10, 0), sticky="w")
         self.grizli_checkbox = ctk.CTkCheckBox(
-            self.scrollable_frame, text="NIRISS spectrum", command=self._test_event
+            self.scrollable_frame,
+            text="NIRISS spectrum",
+            command=self.change_components,
         )
         self.grizli_checkbox.select()
-        self.grizli_checkbox.grid(
-            row=5, column=0, padx=20, pady=(10, 0), sticky="w"
-        )
+        self.grizli_checkbox.grid(row=5, column=0, padx=20, pady=(10, 0), sticky="w")
         self.grizli_temp_checkbox = ctk.CTkCheckBox(
-            self.scrollable_frame, text="Grizli templates", command=self._test_event
+            self.scrollable_frame,
+            text="Grizli templates",
+            command=self.change_components,
         )
         self.grizli_temp_checkbox.grid(
             row=6, column=0, padx=20, pady=(10, 0), sticky="w"
         )
-            
 
-    def _test_event(self, event=None):
-        # checkboxes = 
+    def reset_redshift(self):
+        self.current_redshift.set(self.grizli_redshift)
+        self.redshift_slider.set(self.grizli_redshift)
+        self.update_lines()
+
+    def change_components(self, event=None):
         if self.muse_checkbox.get():
-            self.plot_MUSE_spec(
-                gal_id=self.gal_id,
-            )
-            self.pyplot_canvas.draw()
-        else:
-            if "MUSE_spec" in self.plotted_components.keys():
-                self.plotted_components["MUSE_spec"].remove()
-                del self.plotted_components["MUSE_spec"]
-            self.pyplot_canvas.draw()
-            self.update()
-        
+            self.plot_MUSE_spec()
+        elif "MUSE_spec" in self.plotted_components.keys():
+            self.plotted_components["MUSE_spec"].remove()
+            del self.plotted_components["MUSE_spec"]
+
         if self.grizli_checkbox.get():
-            self.plot_grizli(
-                gal_id=self.gal_id,
-            )
-            self.pyplot_canvas.draw()
-        else:
-            if "grisms" in self.plotted_components.keys():
-                for v in self.plotted_components["grisms"].values():
-                    v.remove()
-                del self.plotted_components["grisms"]
-            self.pyplot_canvas.draw()
-            self.update()
+            self.plot_grizli()
+        elif "grisms" in self.plotted_components.keys():
+            for v in self.plotted_components["grisms"].values():
+                v.remove()
+            del self.plotted_components["grisms"]
 
         if self.grizli_temp_checkbox.get():
-            self.plot_grizli(
-                gal_id=self.gal_id,
-                templates=True,
-            )
-            self.pyplot_canvas.draw()
-        else:
-            if "grism_templates" in self.plotted_components.keys():
-                for v in self.plotted_components["grism_templates"].values():
-                    v.remove()
-                del self.plotted_components["grism_templates"]
-            self.pyplot_canvas.draw()
-            self.update()
+            self.plot_grizli(templates=True)
+        elif "grism_templates" in self.plotted_components.keys():
+            for v in self.plotted_components["grism_templates"].values():
+                v.remove()
+            del self.plotted_components["grism_templates"]
+
+        self.pyplot_canvas.draw()
+        self.update()
 
     def change_lines(self):
-        if self.emission_checkbox.get() and len(self.plotted_components["emission"]) == 0:
+        if (
+            self.emission_checkbox.get()
+            and len(self.plotted_components["emission"]) == 0
+        ):
             self.add_lines(line_type="emission")
             self.update_lines()
         elif (
-            not self.emission_checkbox.get() and len(self.plotted_components["emission"]) > 0
+            not self.emission_checkbox.get()
+            and len(self.plotted_components["emission"]) > 0
         ):
             for line in self.fig_axes.get_lines():
                 if line in self.plotted_components["emission"].values():
@@ -200,8 +188,38 @@ class SpecFrame(ctk.CTkFrame):
         self.pyplot_canvas.draw()
         self.update()
 
+    def _update_all(self):
+        _path = [
+            *(
+                Path(self._root().full_config["files"]["extractions_dir"])
+                .expanduser()
+                .resolve()
+            ).glob(f"*{self.gal_id:0>5}.row.fits")
+        ][0]
+        with pf.open(_path) as hdul:
+            self.grizli_redshift = Table(hdul[1].data)["redshift"].value[0]
+            self.current_redshift.set(self.grizli_redshift)
+            self.redshift_slider.set(self.grizli_redshift)
+
+        if self.grizli_checkbox.get():
+            self.plot_grizli()
+        if self.grizli_temp_checkbox.get():
+            self.plot_grizli(templates=True)
+        if self.muse_checkbox.get():
+            self.plot_MUSE_spec()
+        try:
+            tab_row = self._root().cat[self._root().cat["v3_id"] == self.gal_id]
+            self.fig_axes.set_title(
+                f"IDs: v3={tab_row['v3_id'].value}, Xin={tab_row['Xin_id'].value}, NIRCAM={tab_row['NIRCAM_id'].value}"
+            )
+        except Exception as e:
+            print(e)
+            pass
+
     def update_plot(self):
         if not hasattr(self, "pyplot_canvas"):
+            self.gal_id = int(self._root().current_gal_id.get())
+
             self.fig = Figure(constrained_layout=True)
             self.pyplot_canvas = FigureCanvasTkAgg(
                 figure=self.fig,
@@ -223,32 +241,9 @@ class SpecFrame(ctk.CTkFrame):
             )
             self.custom_annotation.set_visible(False)
 
-            _path = [
-                *(
-                    Path(self._root().full_config["files"]["extractions_dir"])
-                    .expanduser()
-                    .resolve()
-                ).glob(f"*{self.gal_id:0>5}.row.fits")
-            ][0]
-            with pf.open(_path) as hdul:
-                self.current_redshift.set(Table(hdul[1].data)["redshift"].value[0])
+            self._update_all()
 
-            if self.grizli_checkbox.get():
-                self.plot_grizli(
-                    gal_id=int(self._root().current_gal_id.get()),
-                )
-            if self.grizli_temp_checkbox.get():
-                self.plot_grizli(
-                    gal_id=int(self._root().current_gal_id.get()),
-                    templates=True,
-                )
-            if self.muse_checkbox.get():
-                self.plot_MUSE_spec(
-                    gal_id=int(self._root().current_gal_id.get()),
-                )
             self.add_lines()
-
-            self.gal_id = int(self._root().current_gal_id.get())
 
             f = zoom_factory(self.fig_axes)
 
@@ -258,57 +253,19 @@ class SpecFrame(ctk.CTkFrame):
             toolbar.grid(row=1, column=0, sticky="news")
 
         if self.gal_id != int(self._root().current_gal_id.get()):
-            print ("running this")
             self.gal_id = int(self._root().current_gal_id.get())
-
-            _path = [
-                *(
-                    Path(self._root().full_config["files"]["extractions_dir"])
-                    .expanduser()
-                    .resolve()
-                ).glob(f"*{self.gal_id:0>5}.row.fits")
-            ][0]
-            with pf.open(_path) as hdul:
-                self.current_redshift.set(Table(hdul[1].data)["redshift"].value[0])
-
-            if self.grizli_checkbox.get():
-                self.plot_grizli(
-                    gal_id=int(self._root().current_gal_id.get()),
-                )
-            if self.grizli_temp_checkbox.get():
-                self.plot_grizli(
-                    gal_id=int(self._root().current_gal_id.get()),
-                    templates=True,
-                )
-            if self.muse_checkbox.get():
-                self.plot_MUSE_spec(
-                    gal_id=int(self._root().current_gal_id.get()),
-                )
+            self._update_all()
             self.update_lines()
-            try:
-                tab_row = self._root().cat[self._root().cat["v3_id"] == int(self.gal_id)]
-                self.fig_axes.set_title(
-                    f"IDs: v3={tab_row['v3_id'].value}, Xin={tab_row['Xin_id'].value}, NIRCAM={tab_row['NIRCAM_id'].value}"
-                )
-                # print (tab_row['v3_id'])
-            except Exception as e:
-                print (e)
-                pass
             self.pyplot_canvas.draw()
-
             self.update()
 
-    def plot_grizli(
-        self,
-        gal_id,
-        templates=False
-    ):
+    def plot_grizli(self, templates=False):
         file_path = [
             *(
                 Path(self._root().full_config["files"]["extractions_dir"])
                 .expanduser()
                 .resolve()
-            ).glob(f"*{gal_id:0>5}.1D.fits")
+            ).glob(f"*{self.gal_id:0>5}.1D.fits")
         ][0]
 
         if templates:
@@ -333,11 +290,7 @@ class SpecFrame(ctk.CTkFrame):
                 pass
         with pf.open(file_path) as hdul:
             for hdu in hdul[1:]:
-                # print (hdu)
                 data_table = Table(hdu.data)
-                # print (self.clip*len(data_table["wave"]))
-                # print (np.percentile(data_table["flux"]/data_table["flat"]/1e-19,[1,99]))
-                # print (hdu.name)
                 clip = data_table["err"] > 0
                 if clip.sum() == 0:
                     clip = np.isfinite(data_table["err"])
@@ -346,21 +299,29 @@ class SpecFrame(ctk.CTkFrame):
                         data_table["wave"][clip],
                         data_table["line"][clip] / data_table["flat"][clip] / 1e-19,
                         c="tab:red",
-                        alpha=0.7
+                        alpha=0.7,
                     )
                 else:
-                    y_vals = data_table["flux"][clip] / data_table["flat"][clip] / data_table["pscale"][clip] / 1e-19
-                    self.plotted_components[dict_key][hdu.name] = self.fig_axes.errorbar(
+                    y_vals = (
+                        data_table["flux"][clip]
+                        / data_table["flat"][clip]
+                        / data_table["pscale"][clip]
+                        / 1e-19
+                    )
+                    self.plotted_components[dict_key][
+                        hdu.name
+                    ] = self.fig_axes.errorbar(
                         data_table["wave"][clip],
                         y_vals,
-                        yerr=data_table["err"][clip] / data_table["flat"][clip] /data_table["pscale"][clip] / 1e-19,
+                        yerr=data_table["err"][clip]
+                        / data_table["flat"][clip]
+                        / data_table["pscale"][clip]
+                        / 1e-19,
                         fmt="o",
                         markersize=3,
                         ecolor=colors.to_rgba(colours[hdu.name], 0.5),
                         c=colours[hdu.name],
                     )
-                # print (self.plotted_grisms[hdu.name])
-                # print (self.fig_axes.get_children())
                     ymax = np.nanmax([ymax, np.nanmax(y_vals)])
 
         if not templates:
@@ -368,7 +329,6 @@ class SpecFrame(ctk.CTkFrame):
 
     def plot_MUSE_spec(
         self,
-        gal_id,
     ):
         cube_path = (
             Path(self._root().full_config["files"]["cube_path"]).expanduser().resolve()
@@ -382,7 +342,7 @@ class SpecFrame(ctk.CTkFrame):
                     line.remove()
 
         with pf.open(cube_path) as cube_hdul:
-            tab_row = self._root().cat[self._root().cat["v3_id"] == gal_id]
+            tab_row = self._root().cat[self._root().cat["v3_id"] == self.gal_id]
 
             cube_wcs = WCS(cube_hdul[1].header)
 
@@ -390,7 +350,6 @@ class SpecFrame(ctk.CTkFrame):
                 (np.arange(cube_hdul[1].header["NAXIS3"]) + 1.0)
                 - cube_hdul[1].header["CRPIX3"]
             ) * cube_hdul[1].header["CD3_3"] + cube_hdul[1].header["CRVAL3"]
-            # print (tab_row)
             MUSE_spec = self.cube_extract_spectra(
                 cube_hdul[1].data,
                 cube_wcs,
@@ -398,13 +357,6 @@ class SpecFrame(ctk.CTkFrame):
                 tab_row["v3_dec"],
                 # radius=tab_row["r50_SE"][0],
             )
-            # if not hasattr(self, "plotted_components"):
-            #     self.plotted_components = dict(emission={}, absorption={})
-
-            # self.fig.clear()
-            # ax = self.fig.add_subplot(111)
-
-            # self.fig.canvas.mpl_connect("motion_notify_event", self.hover)
 
             (self.plotted_components["MUSE_spec"],) = self.fig_axes.plot(
                 wavelengths,
@@ -414,9 +366,6 @@ class SpecFrame(ctk.CTkFrame):
                 linewidth=0.5,
                 c="k",
             )
-            # self.fig_axes.set_title(
-            #     f"IDs: v3={tab_row['v3_id'][0]}, Xin={tab_row['Xin_id'][0]}, NIRCAM={tab_row['NIRCAM_id'][0]}"
-            # )
 
     def cube_extract_spectra(
         self,
@@ -433,7 +382,8 @@ class SpecFrame(ctk.CTkFrame):
         )
         try:
             with pf.open(
-                temp_dir / f"{ra[0]:.6f}_{dec[0]:.6f}_r{radius:.6f}_c{kernel_sig:.3f}.fits"
+                temp_dir
+                / f"{ra[0]:.6f}_{dec[0]:.6f}_r{radius:.6f}_c{kernel_sig:.3f}.fits"
             ) as hdul:
                 return hdul[0].data
         except Exception as e:
@@ -456,8 +406,6 @@ class SpecFrame(ctk.CTkFrame):
             except:
                 print("failed")
                 radius *= u.arcsec
-            # print (radius)
-            # print (radius.unit)
 
             pix_c = np.hstack(sc.to_pixel(cube_wcs.celestial)[:])
             pix_r = radius / np.sqrt(cube_wcs.celestial.proj_plane_pixel_area()).to(
@@ -481,14 +429,15 @@ class SpecFrame(ctk.CTkFrame):
 
             kernel = Gaussian1DKernel(kernel_sig)
             spectrum = convolve(spectrum, kernel)
-            print (spectrum)
+            print(spectrum)
 
             new_hdul = pf.HDUList()
             new_hdul.append(
                 pf.ImageHDU(data=spectrum, header=cube_wcs.spectral.to_header())
             )
             new_hdul.writeto(
-                temp_dir / f"{ra[0]:.6f}_{dec[0]:.6f}_r{radius.value:.6f}_c{kernel_sig:.3f}.fits"
+                temp_dir
+                / f"{ra[0]:.6f}_{dec[0]:.6f}_r{radius.value:.6f}_c{kernel_sig:.3f}.fits"
             )
 
             return spectrum
@@ -500,12 +449,10 @@ class SpecFrame(ctk.CTkFrame):
         if line_type is None:
             return
         xlims = self.fig_axes.get_xlim()
-        # print (self.current_redshift.get())
         for line_key, line_data in self._root().full_config["lines"][line_type].items():
-            # print (line_data["centre"].dtype)
-            # print (float(self.current_redshift.get()).dtype)
-            # print (f"{line_key}: {line_data['centre'] * float(self.current_redshift.get())}")
-            self.plotted_components[line_type][line_key] = self.fig.get_axes()[0].axvline(
+            self.plotted_components[line_type][line_key] = self.fig.get_axes()[
+                0
+            ].axvline(
                 line_data["centre"] * float(self.current_redshift.get()),
                 c="0.7",
                 alpha=0.7,
@@ -516,12 +463,10 @@ class SpecFrame(ctk.CTkFrame):
         self.pyplot_canvas.draw()
 
     def update_lines(self, event=None):
-        if type(event)==float:
+        if type(event) == float:
             self.current_redshift.set(np.round(event, decimals=8))
         else:
-            # print (event)
             self.redshift_slider.set(float(self.current_redshift.get()))
-        # print (self.current_redshift.get())
         for line_type in ["emission", "absorption"]:
             try:
                 for line_key, line_data in (
@@ -530,13 +475,14 @@ class SpecFrame(ctk.CTkFrame):
                     current_line = self.plotted_components[line_type][line_key]
                     current_line.set_data(
                         [
-                            line_data["centre"] * (1 + float(self.current_redshift.get())),
-                            line_data["centre"] * (1 + float(self.current_redshift.get())),
+                            line_data["centre"]
+                            * (1 + float(self.current_redshift.get())),
+                            line_data["centre"]
+                            * (1 + float(self.current_redshift.get())),
                         ],
                         [0, 1],
                     )
-            except:# Exception as e:
-                # print (e)
+            except:
                 pass
 
         self.fig.canvas.draw()
@@ -549,7 +495,9 @@ class SpecFrame(ctk.CTkFrame):
                     for line_key, line_data in (
                         self._root().full_config["lines"][line_type].items()
                     ):
-                        if self.plotted_components[line_type][line_key].contains(event)[0]:
+                        if self.plotted_components[line_type][line_key].contains(event)[
+                            0
+                        ]:
                             self.custom_annotation.xy = [event.xdata, event.ydata]
                             self.custom_annotation.set_text(
                                 self._root().full_config["lines"][line_type][line_key][
@@ -562,6 +510,7 @@ class SpecFrame(ctk.CTkFrame):
                             return
         self.custom_annotation.set_visible(False)
         self.fig.canvas.draw()
+
 
 # based on https://gist.github.com/tacaswell/3144287
 def zoom_factory(ax, base_scale=1.1):
@@ -590,15 +539,8 @@ def zoom_factory(ax, base_scale=1.1):
         fig.canvas.capture_scroll = True
     has_toolbar = hasattr(fig.canvas, "toolbar") and fig.canvas.toolbar is not None
     if has_toolbar:
-        # it might be possible to have an interactive backend without
-        # a toolbar. I'm not sure so being safe here
         toolbar = fig.canvas.toolbar
         toolbar.push_current()
-    # orig_xlim = ax.get_xlim()
-    # orig_ylim = ax.get_ylim()
-    # orig_yrange = limits_to_range(orig_ylim)
-    # orig_xrange = limits_to_range(orig_xlim)
-    # orig_center = ((orig_xlim[0] + orig_xlim[1]) / 2, (orig_ylim[0] + orig_ylim[1]) / 2)
 
     def zoom_fun(event):
         if event.inaxes is not ax:
@@ -608,15 +550,8 @@ def zoom_factory(ax, base_scale=1.1):
         cur_ylim = ax.get_ylim()
         cur_yrange = limits_to_range(cur_ylim)
         cur_xrange = limits_to_range(cur_xlim)
-        # cur_center = ((orig_xlim[0] + orig_xlim[1]) / 2, (orig_ylim[0] + orig_ylim[1]) / 2)
-        # set the range
-        # (cur_xlim[1] - cur_xlim[0]) * 0.5
-        # (cur_ylim[1] - cur_ylim[0]) * 0.5
         xdata = event.xdata  # get event x location
         ydata = event.ydata  # get event y location
-
-        # print (f"Current position: ({xdata},{ydata}).")
-        # print (f"Current limits: ([{cur_xlim}],[{cur_ylim}]).")
 
         if event.button == "up":
             # deal with zoom in
@@ -636,18 +571,9 @@ def zoom_factory(ax, base_scale=1.1):
             ydata - (ydata - cur_ylim[0]) / scale_factor,
             ydata + (cur_ylim[1] - ydata) / scale_factor,
         ]
-        # print (f"New limits: ([{new_xlim}],[{new_ylim}]).")
 
         new_yrange = limits_to_range(new_ylim)
         new_xrange = limits_to_range(new_xlim)
-
-        # print (f"Old range, f{orig_xrange}")
-        # print (f"New range, f{new_xrange}")
-
-        # if np.abs(new_yrange) > np.abs(orig_yrange):
-        #     new_ylim = orig_center[1] - new_yrange / 2, orig_center[1] + new_yrange / 2
-        # if np.abs(new_xrange) > np.abs(orig_xrange):
-        #     new_xlim = orig_center[0] - new_xrange / 2, orig_center[0] + new_xrange / 2
         ax.set_xlim(new_xlim)
         ax.set_ylim(new_ylim)
 
@@ -664,18 +590,19 @@ def zoom_factory(ax, base_scale=1.1):
     # return the disconnect function
     return disconnect_zoom
 
+# From https://stackoverflow.com/questions/4140437/
 class ValidateFloatVar(ctk.StringVar):
     """StringVar subclass that only allows valid float values to be put in it."""
 
     def __init__(self, master=None, value=None, name=None):
         ctk.StringVar.__init__(self, master, value, name)
         self._old_value = self.get()
-        self.trace('w', self._validate)
+        self.trace("w", self._validate)
 
     def _validate(self, *_):
         new_value = self.get()
         try:
-            new_value == '' or float(new_value)
+            new_value == "" or float(new_value)
             self._old_value = new_value
         except ValueError:
             ctk.StringVar.set(self, self._old_value)

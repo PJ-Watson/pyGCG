@@ -113,14 +113,19 @@ class App(ctk.CTk):
             # sticky="news",
         )
 
-        self.id_list = np.array(sorted([
-            f.stem[-8:-3] for f in (
-                Path(self._root().full_config["files"]["extractions_dir"])
-                .expanduser()
-                .resolve()
-            ).glob(f"*.1D.fits")
-        ]))
-        print (self.id_list)
+        self.id_list = np.array(
+            sorted(
+                [
+                    f.stem[-8:-3]
+                    for f in (
+                        Path(self._root().full_config["files"]["extractions_dir"])
+                        .expanduser()
+                        .resolve()
+                    ).glob(f"*.1D.fits")
+                ]
+            )
+        )
+        print(self.id_list)
 
         # self.current_gal_entry = ctk.CTkEntry(
         #     self,
@@ -415,15 +420,15 @@ class App(ctk.CTk):
             },
             "HeI_10830": {
                 "latex_name": r"HeI",
-                "centre" : 10830.3398,
+                "centre": 10830.3398,
             },
             "OIII_4960": {
                 "latex_name": r"OIII",
-                "centre" : 4960.295,
+                "centre": 4960.295,
             },
             "OIII_5008": {
                 "latex_name": r"OIII",
-                "centre" : 5008.240,
+                "centre": 5008.240,
             },
         }
 
@@ -525,20 +530,20 @@ class App(ctk.CTk):
         print("Save button clicked!")
 
     def prev_gal_button_callback(self, event=None):
-        print (f"{self.current_gal_id.get():0>5}")
+        print(f"{self.current_gal_id.get():0>5}")
         current_idx = (self.id_list == f"{self.current_gal_id.get():0>5}").nonzero()[0]
-        print (self.id_list[current_idx])
-        print (current_idx)
-        self.current_gal_id.set(self.id_list[current_idx-1][0])
+        print(self.id_list[current_idx])
+        print(current_idx)
+        self.current_gal_id.set(self.id_list[current_idx - 1][0])
         print("Previous galaxy button clicked!")
         self.main_tabs_update()
 
     def next_gal_button_callback(self, event=None):
-        print (f"{self.current_gal_id.get():0>5}")
+        print(f"{self.current_gal_id.get():0>5}")
         current_idx = (self.id_list == f"{self.current_gal_id.get():0>5}").nonzero()[0]
-        print (self.id_list[current_idx])
-        print (current_idx)
-        self.current_gal_id.set(self.id_list[current_idx+1][0])
+        print(self.id_list[current_idx])
+        print(current_idx)
+        self.current_gal_id.set(self.id_list[current_idx + 1][0])
         # self.current_gal_id.set(str(int(self.current_gal_id.get()) + 1))
         print("Next galaxy button clicked!")
         self.main_tabs_update()

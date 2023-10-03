@@ -19,7 +19,7 @@ from astropy.visualization import (
     ImageNormalize,
     LinearStretch,
     LogStretch,
-    ManualInterval
+    ManualInterval,
 )
 
 
@@ -392,9 +392,9 @@ class BeamSubFrame(ctk.CTkFrame):
                 #     print (self.plotted_images["kernel"])
                 #     self.plotted_images["kernel"].remove()
 
-                if self.limits=="grizli default":
-                    vmax_kern = 1.1*np.percentile(data, 99.5)
-                    interval = ManualInterval(vmin=-0.1*vmax_kern, vmax=vmax_kern)
+                if self.limits == "grizli default":
+                    vmax_kern = 1.1 * np.percentile(data, 99.5)
+                    interval = ManualInterval(vmin=-0.1 * vmax_kern, vmax=vmax_kern)
 
                 norm = ImageNormalize(
                     data,
@@ -425,33 +425,32 @@ class BeamSubFrame(ctk.CTkFrame):
             try:
                 # print (hdul["SCI","F115W"])
                 # print (hdul.info())
-                if self.ext=="RESIDUALS":
+                if self.ext == "RESIDUALS":
                     data = hdul["SCI", self.extver].data
-                    m=hdul["MODEL", self.extver].data
+                    m = hdul["MODEL", self.extver].data
                 else:
                     data = hdul[self.ext, self.extver].data
-                    m=0
+                    m = 0
 
-                if self.limits=="grizli default":
+                if self.limits == "grizli default":
                     # print ("oh boy")
                     wht_i = hdul["WHT", self.extver]
                     clip = wht_i.data > 0
                     if clip.sum() == 0:
                         clip = np.isfinite(wht_i.data)
 
-                    avg_rms = 1/np.median(np.sqrt(wht_i.data[clip]))
-                    vmax = np.maximum(1.1*np.percentile(data[clip], 98),
-                                    5*avg_rms)
-                    vmin=-0.1*vmax
-                    interval = ManualInterval(vmin=vmin,vmax=vmax)
+                    avg_rms = 1 / np.median(np.sqrt(wht_i.data[clip]))
+                    vmax = np.maximum(1.1 * np.percentile(data[clip], 98), 5 * avg_rms)
+                    vmin = -0.1 * vmax
+                    interval = ManualInterval(vmin=vmin, vmax=vmax)
 
                 norm = ImageNormalize(
                     data,
-                    interval= interval,
+                    interval=interval,
                     stretch=self.stretch_fn(),
                 )
                 self.plotted_images["beam"] = self.fig_axes[1].imshow(
-                    data-m,
+                    data - m,
                     origin="lower",
                     cmap=self.cmap,
                     aspect="auto",
