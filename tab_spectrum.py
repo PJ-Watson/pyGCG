@@ -119,102 +119,8 @@ class SpecFrame(ctk.CTkFrame):
             row=6, column=0, padx=20, pady=(10, 0), sticky="w"
         )
 
-    def reset_redshift(self):
-        self.current_redshift.set(self.grizli_redshift)
-        self.redshift_slider.set(self.grizli_redshift)
-        self.update_lines()
-
-    def change_components(self, event=None):
-        if self.muse_checkbox.get():
-            self.plot_MUSE_spec()
-        elif "MUSE_spec" in self.plotted_components.keys():
-            self.plotted_components["MUSE_spec"].remove()
-            del self.plotted_components["MUSE_spec"]
-
-        if self.grizli_checkbox.get():
-            self.plot_grizli()
-        elif "grisms" in self.plotted_components.keys():
-            for v in self.plotted_components["grisms"].values():
-                v.remove()
-            del self.plotted_components["grisms"]
-
-        if self.grizli_temp_checkbox.get():
-            self.plot_grizli(templates=True)
-        elif "grism_templates" in self.plotted_components.keys():
-            for v in self.plotted_components["grism_templates"].values():
-                v.remove()
-            del self.plotted_components["grism_templates"]
-
-        self.pyplot_canvas.draw()
-        self.update()
-
-    def change_lines(self):
-        if (
-            self.emission_checkbox.get()
-            and len(self.plotted_components["emission"]) == 0
-        ):
-            self.add_lines(line_type="emission")
-            self.update_lines()
-        elif (
-            not self.emission_checkbox.get()
-            and len(self.plotted_components["emission"]) > 0
-        ):
-            for line in self.fig_axes.get_lines():
-                if line in self.plotted_components["emission"].values():
-                    line.remove()
-            for line_key, line_data in (
-                self._root().full_config["lines"]["emission"].items()
-            ):
-                del self.plotted_components["emission"][line_key]
-
-        if (
-            self.absorption_checkbox.get()
-            and len(self.plotted_components["absorption"]) == 0
-        ):
-            self.add_lines(line_type="absorption")
-            self.update_lines()
-        elif (
-            not self.absorption_checkbox.get()
-            and len(self.plotted_components["absorption"]) > 0
-        ):
-            for line in self.fig_axes.get_lines():
-                if line in self.plotted_components["absorption"].values():
-                    line.remove()
-            for line_key, line_data in (
-                self._root().full_config["lines"]["absorption"].items()
-            ):
-                del self.plotted_components["absorption"][line_key]
-
-        self.pyplot_canvas.draw()
-        self.update()
-
-    def _update_all(self):
-        _path = [
-            *(
-                Path(self._root().full_config["files"]["extractions_dir"])
-                .expanduser()
-                .resolve()
-            ).glob(f"*{self.gal_id:0>5}.row.fits")
-        ][0]
-        with pf.open(_path) as hdul:
-            self.grizli_redshift = Table(hdul[1].data)["redshift"].value[0]
-            self.current_redshift.set(self.grizli_redshift)
-            self.redshift_slider.set(self.grizli_redshift)
-
-        if self.grizli_checkbox.get():
-            self.plot_grizli()
-        if self.grizli_temp_checkbox.get():
-            self.plot_grizli(templates=True)
-        if self.muse_checkbox.get():
-            self.plot_MUSE_spec()
-        try:
-            tab_row = self._root().cat[self._root().cat["v3_id"] == self.gal_id]
-            self.fig_axes.set_title(
-                f"IDs: v3={tab_row['v3_id'].value}, Xin={tab_row['Xin_id'].value}, NIRCAM={tab_row['NIRCAM_id'].value}"
-            )
-        except Exception as e:
-            print(e)
-            pass
+        self.seg_frame = SegMapFrame(self.scrollable_frame, gal_id=self.gal_id)
+        self.seg_frame.grid(row=7,column=0)
 
     def update_plot(self):
         if not hasattr(self, "pyplot_canvas"):
@@ -258,6 +164,34 @@ class SpecFrame(ctk.CTkFrame):
             self.update_lines()
             self.pyplot_canvas.draw()
             self.update()
+
+    def _update_all(self):
+        _path = [
+            *(
+                Path(self._root().full_config["files"]["extractions_dir"])
+                .expanduser()
+                .resolve()
+            ).glob(f"*{self.gal_id:0>5}.row.fits")
+        ][0]
+        with pf.open(_path) as hdul:
+            self.grizli_redshift = Table(hdul[1].data)["redshift"].value[0]
+            self.current_redshift.set(self.grizli_redshift)
+            self.redshift_slider.set(self.grizli_redshift)
+
+        if self.grizli_checkbox.get():
+            self.plot_grizli()
+        if self.grizli_temp_checkbox.get():
+            self.plot_grizli(templates=True)
+        if self.muse_checkbox.get():
+            self.plot_MUSE_spec()
+        try:
+            tab_row = self._root().cat[self._root().cat["v3_id"] == self.gal_id]
+            self.fig_axes.set_title(
+                f"IDs: v3={tab_row['v3_id'].value}, Xin={tab_row['Xin_id'].value}, NIRCAM={tab_row['NIRCAM_id'].value}"
+            )
+        except Exception as e:
+            print(e)
+            pass
 
     def plot_grizli(self, templates=False):
         file_path = [
@@ -488,6 +422,75 @@ class SpecFrame(ctk.CTkFrame):
         self.fig.canvas.draw()
         self.update()
 
+    def reset_redshift(self):
+        self.current_redshift.set(self.grizli_redshift)
+        self.redshift_slider.set(self.grizli_redshift)
+        self.update_lines()
+
+    def change_components(self, event=None):
+        if self.muse_checkbox.get():
+            self.plot_MUSE_spec()
+        elif "MUSE_spec" in self.plotted_components.keys():
+            self.plotted_components["MUSE_spec"].remove()
+            del self.plotted_components["MUSE_spec"]
+
+        if self.grizli_checkbox.get():
+            self.plot_grizli()
+        elif "grisms" in self.plotted_components.keys():
+            for v in self.plotted_components["grisms"].values():
+                v.remove()
+            del self.plotted_components["grisms"]
+
+        if self.grizli_temp_checkbox.get():
+            self.plot_grizli(templates=True)
+        elif "grism_templates" in self.plotted_components.keys():
+            for v in self.plotted_components["grism_templates"].values():
+                v.remove()
+            del self.plotted_components["grism_templates"]
+
+        self.pyplot_canvas.draw()
+        self.update()
+
+    def change_lines(self):
+        if (
+            self.emission_checkbox.get()
+            and len(self.plotted_components["emission"]) == 0
+        ):
+            self.add_lines(line_type="emission")
+            self.update_lines()
+        elif (
+            not self.emission_checkbox.get()
+            and len(self.plotted_components["emission"]) > 0
+        ):
+            for line in self.fig_axes.get_lines():
+                if line in self.plotted_components["emission"].values():
+                    line.remove()
+            for line_key, line_data in (
+                self._root().full_config["lines"]["emission"].items()
+            ):
+                del self.plotted_components["emission"][line_key]
+
+        if (
+            self.absorption_checkbox.get()
+            and len(self.plotted_components["absorption"]) == 0
+        ):
+            self.add_lines(line_type="absorption")
+            self.update_lines()
+        elif (
+            not self.absorption_checkbox.get()
+            and len(self.plotted_components["absorption"]) > 0
+        ):
+            for line in self.fig_axes.get_lines():
+                if line in self.plotted_components["absorption"].values():
+                    line.remove()
+            for line_key, line_data in (
+                self._root().full_config["lines"]["absorption"].items()
+            ):
+                del self.plotted_components["absorption"][line_key]
+
+        self.pyplot_canvas.draw()
+        self.update()
+
     def hover(self, event):
         if event.inaxes == self.fig_axes:
             for line_type in ["emission", "absorption"]:
@@ -606,3 +609,169 @@ class ValidateFloatVar(ctk.StringVar):
             self._old_value = new_value
         except ValueError:
             ctk.StringVar.set(self, self._old_value)
+
+class SegMapFrame(ctk.CTkFrame):
+    def __init__(self, master, gal_id, **kwargs):
+        super().__init__(master, **kwargs)
+
+        self.gal_id = gal_id
+
+        self.rowconfigure(0,weight=1)
+        self.columnconfigure(0,weight=1)
+
+        self.update_seg_path()
+
+        self.fig = Figure(constrained_layout=True)
+        self.pyplot_canvas = FigureCanvasTkAgg(
+            figure=self.fig,
+            master=self,
+        )
+
+        self.fig_axes = self.fig.add_subplot(111)
+
+        # self.fig.canvas.mpl_connect("motion_notify_event", self.hover)
+
+        # toolbar = NavigationToolbar2Tk(self.fig.canvas, self, pack_toolbar=False)
+        # toolbar.update()
+
+        # self.fig_axes.set_xlabel(r"Wavelength (${\rm \AA}$)")
+        # self.fig_axes.set_ylabel("Flux")
+
+        # self.custom_annotation = self.fig_axes.annotate(
+        #     "", xy=(0, 0), xytext=(0, 0), textcoords="offset points"
+        # )
+        # self.custom_annotation.set_visible(False)
+
+        # self._update_all()
+
+        # self.add_lines()
+
+        # f = zoom_factory(self.fig_axes)
+
+        self.pyplot_canvas.draw_idle()
+
+        self.pyplot_canvas.get_tk_widget().grid(row=0, column=0, sticky="news")  
+
+        if self._root().main_tabs.get()=="Spec view":
+            self.plot_seg_map()
+
+    def update_seg_path(self, pattern="*seg.fits"):
+
+        self.seg_path = [
+            *(
+                Path(self._root().full_config["files"]["prep_dir"])
+                .expanduser()
+                .resolve()
+            ).glob(pattern)
+        ]
+        if len(self.seg_path)==0:
+            print ("Segmentation map not found.")
+            self.seg_path = None
+        else:
+            self.seg_path = self.seg_path[0]
+            # toolbar.grid(row=1, column=0, sticky="news")
+
+    def plot_seg_map(self):
+        if self.seg_path is None:
+            print ("Currently nothing to do here.")
+        else:
+            with pf.open(self.seg_path) as hdul:
+                seg_wcs = WCS(hdul[0].header)
+                print (seg_wcs)
+                tab_row = self._root().cat[self._root().cat["v3_id"] == self.gal_id][0]
+                radius = extract_pixel_radius(tab_row,  seg_wcs, "v3_flux_radius").value
+                radius = 1.1*extract_pixel_radius(tab_row,  seg_wcs, "v3_kron_rcirc").value
+                print ("here")
+                y_c, x_c = extract_pixel_ra_dec(tab_row, seg_wcs).value
+
+                cutout = hdul[0].data[
+                    int(np.clip(x_c-radius, 0, hdul[0].data.shape[0])):int(np.clip(x_c+radius, 0, hdul[0].data.shape[0])),
+                    int(np.clip(y_c-radius, 0, hdul[0].data.shape[1])):int(np.clip(y_c+radius,0, hdul[0].data.shape[1]))
+                ]
+                print (cutout)
+                self.fig_axes.imshow(cutout)
+
+
+
+def extract_pixel_radius(q_table,celestial_wcs, key="flux_radius" ):
+    # The assumption is that SExtractor radii are typically measured in pixel units
+    radius = q_table[key]
+    if hasattr(radius, "unit") and radius.unit!=None:
+        radius = radius.value*radius.unit # Avoiding problems with columns
+        if radius.unit == u.pix:
+            pass
+        elif u.get_physical_type(radius) == "dimensionless":
+            radius*=u.pix
+        elif u.get_physical_type(radius) == "angle":
+            pixel_scale = np.sqrt(celestial_wcs.proj_plane_pixel_area()).to(u.arcsec)/u.pix
+            radius /= pixel_scale
+        else:
+            raise ValueError("The units of this radius cannot be automatically converted.")
+    else:
+        print ("Radius has no unit, assuming pixels.")
+        if hasattr(radius, "value"):
+            radius = radius.value*u.pix
+        else:
+            radius = radius*u.pix
+
+    return radius
+
+def extract_pixel_ra_dec(q_table, celestial_wcs, key_ra="ra", key_dec="dec"):
+
+    try:
+        orig_ra = q_table[key_ra]
+        orig_dec = q_table[key_dec]
+    except:
+        print ("No match found for supplied ra, dec keys. Performing automatic search instead.")
+        lower_colnames = np.array([x.lower() for x in q_table.colnames])
+        for r, d in [[key_ra, key_dec], ["ra", "dec"]]:
+            possible_names = []
+            for n in lower_colnames:
+                if d.lower() in n:
+                    possible_names.append(n)
+            possible_names = sorted(possible_names, key=lambda x: (len(x), x))
+            # print (possible_names)
+            # print (possible_names.sort())
+            for n in possible_names:
+                r_poss = n.replace(d.lower(), r.lower())
+                if r_poss in lower_colnames:
+                    # idx = (lower_colnames == d_poss).nonzero()[0]
+                    # print (idx.dtype)
+                    # # print (q_table.colnames[idx])
+                    orig_ra = q_table[q_table.colnames[int((lower_colnames == r_poss).nonzero()[0])]]
+                    orig_dec = q_table[q_table.colnames[int((lower_colnames == n).nonzero()[0])]]
+                    break
+            else:
+                continue
+            break
+    
+    # new_ra, new_dec = 0,0
+
+    def check_deg(orig):
+        if hasattr(orig, "unit") and orig.unit!=None:
+            new = orig.value*orig.unit # Avoiding problems with columns
+            if new.unit == u.pix:
+                return new
+            elif u.get_physical_type(new) == "dimensionless":
+                new*=u.deg
+            if u.get_physical_type(new) == "angle":
+                new = new.to(u.deg)
+        else:
+            print ("Coordinate has no unit, assuming degrees.")
+            if hasattr(orig, "value"):
+                new = orig.value*u.deg
+            else:
+                new = orig*u.deg
+        return new
+
+    new_ra, new_dec = check_deg(orig_ra), check_deg(orig_dec)
+    if new_ra.unit == u.pix:
+        return new_ra, new_dec
+        
+    sc = SkyCoord(new_ra, new_dec)
+    pix_c = np.hstack(sc.to_pixel(celestial_wcs)[:])*u.pix
+    return pix_c
+
+
+
+    # return new_ra, new_dec

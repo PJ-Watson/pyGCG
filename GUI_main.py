@@ -1,7 +1,7 @@
 import customtkinter as ctk
 from pathlib import Path
 import tomlkit
-from astropy.table import Table
+from astropy.table import QTable
 from tab_spectrum import SpecFrame
 from tab_beams import BeamFrame
 import numpy as np
@@ -141,7 +141,7 @@ class App(ctk.CTk):
         # )
         self.current_gal_id = ctk.StringVar(
             master=self,
-            value=self.id_list[0],
+            value=self.id_list[-6],
         )
         self.current_gal_label = ctk.CTkLabel(
             self,
@@ -172,7 +172,8 @@ class App(ctk.CTk):
 
         self.main_tabs = MyTabView(
             master=self,
-            tab_names=["Beam view", "Spec view"],
+            # tab_names=["Beam view", "Spec view"],
+            tab_names=["Spec view", "Beam view"],
             command=self.main_tabs_update,
             # expose_bind_fns=[self._test_pr
             # int_e, self._test_print_e]
@@ -281,6 +282,14 @@ class App(ctk.CTk):
             )
 
         try:
+            files["prep_dir"]
+        except:
+            files.add("prep_dir", "")
+            files["prep_dir"].comment(
+                "The directory containing the segmentation map and direct images."
+            )
+
+        try:
             files["cube_path"]
         except:
             files.add("cube_path", "")
@@ -298,7 +307,7 @@ class App(ctk.CTk):
                 "[optional] The file path of the NIRISS catalogue (FINISH DESCRIPTION LATER)."
             )
         try:
-            self.cat = Table.read(Path(files["cat_path"]).expanduser().resolve())
+            self.cat = QTable.read(Path(files["cat_path"]).expanduser().resolve())
         except:
             self.cat = None
 
@@ -751,10 +760,18 @@ class SettingsWindow(ctk.CTkToplevel):
             "extractions_dir",
             setting_is_dir=True,
         )
+                
+        prep_settings = SettingsSelection(
+            self.scrollable_frame,
+            9,
+            "Prep directory",
+            "prep_dir",
+            setting_is_dir=True,
+        )
 
         cat_settings = SettingsSelection(
             self.scrollable_frame,
-            9,
+            11,
             "Catalogue filepath",
             "cat_path",
             setting_is_dir=False,
