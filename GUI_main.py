@@ -802,3 +802,8 @@ if __name__ == "__main__":
 # Marz (MUSE redshift fits)
 # Goel Noiret (noinet)
 # Bergamini (multiple images)
+
+
+# Reset redshift to default
+# Rearrange layout to focus on single PA at a time
+# RGB image and segmentation map viewer

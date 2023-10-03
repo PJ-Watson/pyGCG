@@ -15,6 +15,7 @@ from photutils.aperture import (
     CircularAperture,
 )
 from astropy.table import Table
+from astropy.convolution import convolve, Gaussian1DKernel
 
 
 class SpecFrame(ctk.CTkFrame):
@@ -313,8 +314,11 @@ class SpecFrame(ctk.CTkFrame):
         if dict_key not in self.plotted_components.keys():
             self.plotted_components[dict_key] = dict()
         else:
-            for v in self.plotted_components[dict_key].values():
-                v.remove()
+            try:
+                for v in self.plotted_components[dict_key].values():
+                    v.remove()
+            except:
+                pass
         with pf.open(file_path) as hdul:
             for hdu in hdul[1:]:
                 # print (hdu)
@@ -375,12 +379,13 @@ class SpecFrame(ctk.CTkFrame):
                 - cube_hdul[1].header["CRPIX3"]
             ) * cube_hdul[1].header["CD3_3"] + cube_hdul[1].header["CRVAL3"]
             # print (tab_row)
+            print (tab_row["v3_ra"])
             MUSE_spec = self.cube_extract_spectra(
                 cube_hdul[1].data,
                 cube_wcs,
                 tab_row["v3_ra"],
                 tab_row["v3_dec"],
-                radius=tab_row["r50_SE"][0],
+                # radius=tab_row["r50_SE"][0],
             )
             # if not hasattr(self, "plotted_components"):
             #     self.plotted_components = dict(emission={}, absorption={})
@@ -410,13 +415,14 @@ class SpecFrame(ctk.CTkFrame):
         dec,
         radius=0.5,
         cube_error=None,
+        kernel_sig=5,
     ):
         temp_dir = (
             Path(self._root().full_config["files"]["temp_dir"]).expanduser().resolve()
         )
         try:
             with pf.open(
-                temp_dir / f"{ra[0]:.6f}_{dec[0]:.6f}_r{radius:.6f}.fits"
+                temp_dir / f"{ra[0]:.6f}_{dec[0]:.6f}_r{radius:.6f}_c{kernel_sig:.3f}.fits"
             ) as hdul:
                 return hdul[0].data
         except Exception as e:
@@ -462,12 +468,16 @@ class SpecFrame(ctk.CTkFrame):
                     cube_slice, aperture, error=cube_error
                 )["aperture_sum"]
 
+            kernel = Gaussian1DKernel(kernel_sig)
+            spectrum = convolve(spectrum, kernel)
+            print (spectrum)
+
             new_hdul = pf.HDUList()
             new_hdul.append(
                 pf.ImageHDU(data=spectrum, header=cube_wcs.spectral.to_header())
             )
             new_hdul.writeto(
-                temp_dir / f"{ra[0]:.6f}_{dec[0]:.6f}_r{radius.value:.6f}.fits"
+                temp_dir / f"{ra[0]:.6f}_{dec[0]:.6f}_r{radius.value:.6f}_c{kernel_sig:.3f}.fits"
             )
 
             return spectrum
