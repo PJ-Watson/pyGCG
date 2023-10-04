@@ -125,8 +125,6 @@ class App(ctk.CTk):
                 ]
             )
         )
-        print(self.id_list)
-
         # self.current_gal_entry = ctk.CTkEntry(
         #     self,
         #     text="Save Galaxy",
@@ -539,22 +537,22 @@ class App(ctk.CTk):
         print("Save button clicked!")
 
     def prev_gal_button_callback(self, event=None):
-        print(f"{self.current_gal_id.get():0>5}")
+        # print(f"{self.current_gal_id.get():0>5}")
         current_idx = (self.id_list == f"{self.current_gal_id.get():0>5}").nonzero()[0]
-        print(self.id_list[current_idx])
-        print(current_idx)
+        # print(self.id_list[current_idx])
+        # print(current_idx)
         self.current_gal_id.set(self.id_list[current_idx - 1][0])
-        print("Previous galaxy button clicked!")
+        # print("Previous galaxy button clicked!")
         self.main_tabs_update()
 
     def next_gal_button_callback(self, event=None):
-        print(f"{self.current_gal_id.get():0>5}")
+        # print(f"{self.current_gal_id.get():0>5}")
         current_idx = (self.id_list == f"{self.current_gal_id.get():0>5}").nonzero()[0]
-        print(self.id_list[current_idx])
-        print(current_idx)
+        # print(self.id_list[current_idx])
+        # print(current_idx)
         self.current_gal_id.set(self.id_list[current_idx + 1][0])
         # self.current_gal_id.set(str(int(self.current_gal_id.get()) + 1))
-        print("Next galaxy button clicked!")
+        # print("Next galaxy button clicked!")
         self.main_tabs_update()
 
     def change_gal_id(self, event=None):
