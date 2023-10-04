@@ -121,10 +121,10 @@ class SpecFrame(ctk.CTkFrame):
         )
 
         self.seg_frame = SegMapFrame(self.scrollable_frame, gal_id=self.gal_id)
-        self.seg_frame.grid(row=7,column=0, sticky="news")
+        self.seg_frame.grid(row=7, column=0, sticky="news")
         self.scrollable_frame.grid_rowconfigure(7, weight=1)
 
-        if self._root().main_tabs.get()=="Spec view":
+        if self._root().main_tabs.get() == "Spec view":
             self.update_plot()
 
     def update_plot(self):
@@ -599,6 +599,7 @@ def zoom_factory(ax, base_scale=1.1):
     # return the disconnect function
     return disconnect_zoom
 
+
 # From https://stackoverflow.com/questions/4140437/
 class ValidateFloatVar(ctk.StringVar):
     """StringVar subclass that only allows valid float values to be put in it."""
@@ -616,20 +617,21 @@ class ValidateFloatVar(ctk.StringVar):
         except ValueError:
             ctk.StringVar.set(self, self._old_value)
 
+
 class SegMapFrame(ctk.CTkFrame):
     def __init__(self, master, gal_id, **kwargs):
         super().__init__(master, **kwargs)
 
         self.gal_id = gal_id
 
-        self.rowconfigure(0,weight=1)
-        self.columnconfigure(0,weight=1)
+        self.rowconfigure(0, weight=1)
+        self.columnconfigure(0, weight=1)
 
         self.update_seg_path()
 
         self.fig = Figure(
             constrained_layout=True,
-            figsize=(1,1),
+            figsize=(1, 1),
         )
         self.pyplot_canvas = FigureCanvasTkAgg(
             figure=self.fig,
@@ -638,8 +640,10 @@ class SegMapFrame(ctk.CTkFrame):
 
         self.fig_axes = self.fig.add_subplot(111)
 
-        prop_cycle = plt.rcParams['axes.prop_cycle']
-        self.default_cmap = colors.LinearSegmentedColormap.from_list("default", prop_cycle.by_key()['color'][:7])
+        prop_cycle = plt.rcParams["axes.prop_cycle"]
+        self.default_cmap = colors.LinearSegmentedColormap.from_list(
+            "default", prop_cycle.by_key()["color"][:7]
+        )
         # print (plt.rcParams['axes.prop_cycle'])
 
         # self.fig.canvas.mpl_connect("motion_notify_event", self.hover)
@@ -663,13 +667,12 @@ class SegMapFrame(ctk.CTkFrame):
 
         self.fig.canvas.draw_idle()
 
-        self.fig.canvas.get_tk_widget().grid(row=0, column=0, sticky="news")  
+        self.fig.canvas.get_tk_widget().grid(row=0, column=0, sticky="news")
 
-        if self._root().main_tabs.get()=="Spec view":
+        if self._root().main_tabs.get() == "Spec view":
             self.plot_seg_map()
 
     def update_seg_path(self, pattern="*seg.fits"):
-
         self.seg_path = [
             *(
                 Path(self._root().full_config["files"]["prep_dir"])
@@ -677,8 +680,8 @@ class SegMapFrame(ctk.CTkFrame):
                 .resolve()
             ).glob(pattern)
         ]
-        if len(self.seg_path)==0:
-            print ("Segmentation map not found.")
+        if len(self.seg_path) == 0:
+            print("Segmentation map not found.")
             self.seg_path = None
         else:
             self.seg_path = self.seg_path[0]
@@ -686,34 +689,44 @@ class SegMapFrame(ctk.CTkFrame):
 
     def plot_seg_map(self, border=5):
         if self.seg_path is None:
-            print ("Currently nothing to do here.")
+            print("Currently nothing to do here.")
         else:
             with pf.open(self.seg_path) as hdul:
                 seg_wcs = WCS(hdul[0].header)
                 seg_data = hdul[0].data
-                print (seg_wcs)
+                print(seg_wcs)
                 tab_row = self._root().cat[self._root().cat["v3_id"] == self.gal_id][0]
-                radius = extract_pixel_radius(tab_row,  seg_wcs, "v3_flux_radius").value
-                radius = 1.1*extract_pixel_radius(tab_row,  seg_wcs, "v3_kron_rcirc").value
+                radius = extract_pixel_radius(tab_row, seg_wcs, "v3_flux_radius").value
+                radius = (
+                    1.1 * extract_pixel_radius(tab_row, seg_wcs, "v3_kron_rcirc").value
+                )
                 y_c, x_c = extract_pixel_ra_dec(tab_row, seg_wcs).value
-                print (x_c, y_c)
-                
-                print (np.where(seg_data==self.gal_id)[0])
-                location = np.where(seg_data==self.gal_id)
-                print (np.nanmin(np.where(seg_data==self.gal_id)[0]), )
-                print (np.nanmin(location[0]))
+                print(x_c, y_c)
+
+                print(np.where(seg_data == self.gal_id)[0])
+                location = np.where(seg_data == self.gal_id)
+                print(
+                    np.nanmin(np.where(seg_data == self.gal_id)[0]),
+                )
+                print(np.nanmin(location[0]))
 
                 cutout = hdul[0].data[
-                    int(np.clip(x_c-radius, 0, hdul[0].data.shape[0])):int(np.clip(x_c+radius, 0, hdul[0].data.shape[0])),
-                    int(np.clip(y_c-radius, 0, hdul[0].data.shape[1])):int(np.clip(y_c+radius,0, hdul[0].data.shape[1]))
+                    int(np.clip(x_c - radius, 0, hdul[0].data.shape[0])) : int(
+                        np.clip(x_c + radius, 0, hdul[0].data.shape[0])
+                    ),
+                    int(np.clip(y_c - radius, 0, hdul[0].data.shape[1])) : int(
+                        np.clip(y_c + radius, 0, hdul[0].data.shape[1])
+                    ),
                 ]
-                print (cutout)
+                print(cutout)
                 cutout = seg_data[
-                    np.nanmin(location[0])-border:np.nanmax(location[0])+border,
-                    np.nanmin(location[1])-border:np.nanmax(location[1])+border,
+                    np.nanmin(location[0]) - border : np.nanmax(location[0]) + border,
+                    np.nanmin(location[1]) - border : np.nanmax(location[1]) + border,
                 ].astype(float)
-                cutout[cutout==0] = np.nan
-                self.fig_axes.imshow(cutout%7, origin="lower", cmap=self.default_cmap, aspect="equal")
+                cutout[cutout == 0] = np.nan
+                self.fig_axes.imshow(
+                    cutout % 7, origin="lower", cmap=self.default_cmap, aspect="equal"
+                )
                 self.pyplot_canvas.draw_idle()
                 self.update()
 
@@ -727,37 +740,42 @@ class SegMapFrame(ctk.CTkFrame):
             self.plot_seg_map()
 
 
-
-def extract_pixel_radius(q_table,celestial_wcs, key="flux_radius" ):
+def extract_pixel_radius(q_table, celestial_wcs, key="flux_radius"):
     # The assumption is that SExtractor radii are typically measured in pixel units
     radius = q_table[key]
-    if hasattr(radius, "unit") and radius.unit!=None:
-        radius = radius.value*radius.unit # Avoiding problems with columns
+    if hasattr(radius, "unit") and radius.unit != None:
+        radius = radius.value * radius.unit  # Avoiding problems with columns
         if radius.unit == u.pix:
             pass
         elif u.get_physical_type(radius) == "dimensionless":
-            radius*=u.pix
+            radius *= u.pix
         elif u.get_physical_type(radius) == "angle":
-            pixel_scale = np.sqrt(celestial_wcs.proj_plane_pixel_area()).to(u.arcsec)/u.pix
+            pixel_scale = (
+                np.sqrt(celestial_wcs.proj_plane_pixel_area()).to(u.arcsec) / u.pix
+            )
             radius /= pixel_scale
         else:
-            raise ValueError("The units of this radius cannot be automatically converted.")
+            raise ValueError(
+                "The units of this radius cannot be automatically converted."
+            )
     else:
-        print ("Radius has no unit, assuming pixels.")
+        print("Radius has no unit, assuming pixels.")
         if hasattr(radius, "value"):
-            radius = radius.value*u.pix
+            radius = radius.value * u.pix
         else:
-            radius = radius*u.pix
+            radius = radius * u.pix
 
     return radius
 
-def extract_pixel_ra_dec(q_table, celestial_wcs, key_ra="ra", key_dec="dec"):
 
+def extract_pixel_ra_dec(q_table, celestial_wcs, key_ra="ra", key_dec="dec"):
     try:
         orig_ra = q_table[key_ra]
         orig_dec = q_table[key_dec]
     except:
-        print ("No match found for supplied ra, dec keys. Performing automatic search instead.")
+        print(
+            "No match found for supplied ra, dec keys. Performing automatic search instead."
+        )
         lower_colnames = np.array([x.lower() for x in q_table.colnames])
         for r, d in [[key_ra, key_dec], ["ra", "dec"]]:
             possible_names = []
@@ -773,40 +791,42 @@ def extract_pixel_ra_dec(q_table, celestial_wcs, key_ra="ra", key_dec="dec"):
                     # idx = (lower_colnames == d_poss).nonzero()[0]
                     # print (idx.dtype)
                     # # print (q_table.colnames[idx])
-                    orig_ra = q_table[q_table.colnames[int((lower_colnames == r_poss).nonzero()[0])]]
-                    orig_dec = q_table[q_table.colnames[int((lower_colnames == n).nonzero()[0])]]
+                    orig_ra = q_table[
+                        q_table.colnames[int((lower_colnames == r_poss).nonzero()[0])]
+                    ]
+                    orig_dec = q_table[
+                        q_table.colnames[int((lower_colnames == n).nonzero()[0])]
+                    ]
                     break
             else:
                 continue
             break
-    
+
     # new_ra, new_dec = 0,0
 
     def check_deg(orig):
-        if hasattr(orig, "unit") and orig.unit!=None:
-            new = orig.value*orig.unit # Avoiding problems with columns
+        if hasattr(orig, "unit") and orig.unit != None:
+            new = orig.value * orig.unit  # Avoiding problems with columns
             if new.unit == u.pix:
                 return new
             elif u.get_physical_type(new) == "dimensionless":
-                new*=u.deg
+                new *= u.deg
             if u.get_physical_type(new) == "angle":
                 new = new.to(u.deg)
         else:
-            print ("Coordinate has no unit, assuming degrees.")
+            print("Coordinate has no unit, assuming degrees.")
             if hasattr(orig, "value"):
-                new = orig.value*u.deg
+                new = orig.value * u.deg
             else:
-                new = orig*u.deg
+                new = orig * u.deg
         return new
 
     new_ra, new_dec = check_deg(orig_ra), check_deg(orig_dec)
     if new_ra.unit == u.pix:
         return new_ra, new_dec
-        
+
     sc = SkyCoord(new_ra, new_dec)
-    pix_c = np.hstack(sc.to_pixel(celestial_wcs)[:])*u.pix
+    pix_c = np.hstack(sc.to_pixel(celestial_wcs)[:]) * u.pix
     return pix_c
-
-
 
     # return new_ra, new_dec

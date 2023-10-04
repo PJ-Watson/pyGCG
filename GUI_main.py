@@ -758,7 +758,7 @@ class SettingsWindow(ctk.CTkToplevel):
             "extractions_dir",
             setting_is_dir=True,
         )
-                
+
         prep_settings = SettingsSelection(
             self.scrollable_frame,
             9,
