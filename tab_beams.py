@@ -20,6 +20,7 @@ from astropy.visualization import (
     LinearStretch,
     LogStretch,
     ManualInterval,
+    PercentileInterval
 )
 
 
@@ -39,41 +40,41 @@ class BeamFrame(ctk.CTkFrame):
             columnspan=3,
             sticky="ew",
         )
-        ext_label = ctk.CTkLabel(self.settings_frame, text="Extension:")
-        ext_label.grid(row=0, column=0, padx=(20, 5), pady=20, sticky="e")
-        self.ext_menu = ctk.CTkOptionMenu(
-            self.settings_frame,
-            values=["SCI", "WHT", "CONTAM", "MODEL", "RESIDUALS"],
-            command=self.change_ext,
-        )
-        self.ext_menu.grid(row=0, column=1, padx=(5, 20), pady=20, sticky="w")
+        # ext_label = ctk.CTkLabel(self.settings_frame, text="Extension:")
+        # ext_label.grid(row=0, column=0, padx=(20, 5), pady=20, sticky="e")
+        # self.ext_menu = ctk.CTkOptionMenu(
+        #     self.settings_frame,
+        #     values=["SCI", "WHT", "CONTAM", "MODEL", "RESIDUALS"],
+        #     command=self.change_ext,
+        # )
+        # self.ext_menu.grid(row=0, column=1, padx=(5, 20), pady=20, sticky="w")
 
         cmap_label = ctk.CTkLabel(self.settings_frame, text="Colourmap:")
-        cmap_label.grid(row=0, column=2, padx=(20, 5), pady=20, sticky="e")
+        cmap_label.grid(row=0, column=0, padx=(20, 5), pady=20, sticky="e")
         self.cmap_menu = ctk.CTkOptionMenu(
             self.settings_frame,
-            values=["plasma", "viridis_r", "jet", "binary"],
+            values=["plasma", "plasma_r", "viridis", "viridis_r", "jet", "binary", "binary_r"],
             command=self.change_cmap,
         )
-        self.cmap_menu.grid(row=0, column=3, padx=(5, 20), pady=20, sticky="w")
+        self.cmap_menu.grid(row=0, column=1, padx=(5, 20), pady=20, sticky="w")
 
         stretch_label = ctk.CTkLabel(self.settings_frame, text="Image stretch:")
-        stretch_label.grid(row=0, column=4, padx=(20, 5), pady=20, sticky="e")
+        stretch_label.grid(row=0, column=2, padx=(20, 5), pady=20, sticky="e")
         self.stretch_menu = ctk.CTkOptionMenu(
             self.settings_frame,
             values=["Linear", "Square root", "Logarithmic"],
             command=self.change_stretch,
         )
-        self.stretch_menu.grid(row=0, column=5, padx=(5, 20), pady=20, sticky="w")
+        self.stretch_menu.grid(row=0, column=3, padx=(5, 20), pady=20, sticky="w")
 
         limits_label = ctk.CTkLabel(self.settings_frame, text="Colourmap limits:")
-        limits_label.grid(row=0, column=6, padx=(20, 5), pady=20, sticky="e")
+        limits_label.grid(row=0, column=4, padx=(20, 5), pady=20, sticky="e")
         self.limits_menu = ctk.CTkOptionMenu(
             self.settings_frame,
-            values=["grizli default", "Min-max", "99.9%", "99.5%", "99%", "98%", "95%"],
+            values=["grizli default", "Min-max", "99.9%", "99.5%", "99%", "98%", "95%", "90%"],
             command=self.change_limits,
         )
-        self.limits_menu.grid(row=0, column=7, padx=(5, 20), pady=20, sticky="w")
+        self.limits_menu.grid(row=0, column=5, padx=(5, 20), pady=20, sticky="w")
 
         self.gal_id = int(gal_id)
         try:
@@ -109,19 +110,41 @@ class BeamFrame(ctk.CTkFrame):
         self.update_grid(force_update=True)
 
     def update_grid(self, force_update=False):
-        print ("why though")
-        # if self.gal_id == int(self._root().current_gal_id.get()) and not force_update:
+
+        if self.gal_id == int(self._root().current_gal_id.get()) and not force_update:
+            pass
+        else:
         #     print("No need to panic.")
         # else:
-        #     self.gal_id = int(self._root().current_gal_id.get())
-        #     self.file_path = [
-        #         *(
-        #             Path(self._root().full_config["files"]["extractions_dir"])
-        #             .expanduser()
-        #             .resolve()
-        #         ).glob(f"*{self.gal_id:0>5}.stack.fits")
-        #     ][0]
-        #     with pf.open(self.file_path) as hdul:
+            self.gal_id = int(self._root().current_gal_id.get())
+            self.file_path = [
+                *(
+                    Path(self._root().full_config["files"]["extractions_dir"])
+                    .expanduser()
+                    .resolve()
+                ).glob(f"*{self.gal_id:0>5}.stack.fits")
+            ][0]
+            with pf.open(self.file_path) as hdul:
+
+                header = hdul[0].header
+                n_grism = header["NGRISM"]
+                n_pa = np.nanmax(
+                    [header[f"N{header[f'GRISM{n:0>3}']}"] for n in range(1, n_grism + 1)]
+                )
+                self.beam_frame_list = []
+                row = 0
+                extver_list = []
+                # for row, col in np.ndindex(n_pa, n_grism):
+                for i in range(n_grism):
+                    grism_name = header[f"GRISM{i+1:0>3}"]
+                    pa = "," + str(header[f'{grism_name}{row+1:0>2}'])
+                    extver = grism_name + pa
+                    extver_list.append(extver)
+                # self.beam_single_PA_frame = SinglePABeamFrame(self, extvers = extver_list)
+                self.beam_single_PA_frame.update_plots()
+
+            # self.grid_rowconfigure(1, weight=1)
+            # self.grid_columnconfigure(0, weight=1)
         #         header = hdul[0].header
         #         n_grism = header["NGRISM"]
         #         n_pa = np.nanmax(
@@ -154,10 +177,6 @@ class BeamFrame(ctk.CTkFrame):
             n_pa = np.nanmax(
                 [header[f"N{header[f'GRISM{n:0>3}']}"] for n in range(1, n_grism + 1)]
             )
-            # for n in range(1,header["NGRISM"]+1):
-            #     print (n)
-            #     print (header[f"GRISM{n:0>3}"])
-            #     print (header[f"N{header[f'GRISM{n:0>3}']}"])
             self.beam_frame_list = []
             # for 
             # This is where I'll set which pa is being used
@@ -165,70 +184,17 @@ class BeamFrame(ctk.CTkFrame):
             extver_list = []
             # for row, col in np.ndindex(n_pa, n_grism):
             for i in range(n_grism):
-                # flat_idx = np.ravel_multi_index((row, col), (n_pa + 1, n_grism))
-                # print (flat_idx)
-                # print (row, col)
-                # print (header[f"GRISM{col+1:0>3}"])
-                # print (header)
-                # if row != n_grism - 1:
-                #     # print (header[f"{header[f'{header[f"GRISM{col+1:0>3}"]}{row+1:0>2}']}"])
-                #     pa = "," + str(header[f'{header[f"GRISM{col+1:0>3}"]}{row+1:0>2}'])
-                # else:
-                #     pa = ""
                 grism_name = header[f"GRISM{i+1:0>3}"]
                 pa = "," + str(header[f'{grism_name}{row+1:0>2}'])
                 extver = grism_name + pa
-                print (extver)
                 extver_list.append(extver)
-                # self.beam_frame_list.append(
-                #     BeamSubFrame(
-                #         self,
-                #         self.gal_id,
-                #         extver=extver,
-                #         ext=self.ext,
-                #         cmap=self.cmap,
-                #         limits=self.limits,
-                #         stretch=self.stretch,  # height = self.main_tabs.tab("Beam view").winfo_height()/2
-                #     )
-                # )
-                # self.beam_frame_list[flat_idx].grid(
-                #     row=row + 1, column=col, sticky="ew"
-                # )
-                # print (hdul["SCI", header[f"GRISM{col+1:0>3}"]+pa])
-            
-            print (extver_list)
             self.beam_single_PA_frame = SinglePABeamFrame(self, extvers = extver_list)
             self.beam_single_PA_frame.grid(
                 row=1, column=0, sticky="news"
             )
-            # self.beam_single_PA_frame.place()
-            print ("no?")
 
             self.grid_rowconfigure(1, weight=1)
             self.grid_columnconfigure(0, weight=1)
-            # self.grid_columnconfigure((0,1,2), weight=1)
-        # print (self.main_tabs.tab("Beam view").winfo_height())
-        # for idx, name in enumerate(["F115W", "F150W", "F200W"]):
-        #     self.beam_frame = BeamSubFrame(
-        #         self, self.gal_id, extver=name+",72.0", ext="MODEL", #height = self.main_tabs.tab("Beam view").winfo_height()/2
-        #     )
-        #     # self.muse_spec_frame.grid(row=0, column=0, padx=20, pady=20, sticky="nsew")
-        #     # self.beam_frame.pack(fill="both", expand=1)
-        #     self.beam_frame.grid(row=0, column=idx, sticky="ew")
-        # for idx, name in enumerate(["F115W", "F150W", "F200W"]):
-        #     self.beam_frame = BeamSubFrame(
-        #         self, self.gal_id, extver=name+",341.0", ext="MODEL"# height = self.main_tabs.tab("Beam view").winfo_height()/2
-        #     )
-        #     # self.muse_spec_frame.grid(row=0, column=0, padx=20, pady=20, sticky="nsew")
-        #     # self.beam_frame.pack(fill="both", expand=1)
-        #     self.beam_frame.grid(row=1, column=idx, sticky="ew")
-        # for idx, name in enumerate(["F115W", "F150W", "F200W"]):
-        #     self.beam_frame = BeamSubFrame(
-        #         self, self.gal_id, extver=name, ext="MODEL",# height = self.main_tabs.tab("Beam view").winfo_height()/2,
-        #     )
-        #     # self.muse_spec_frame.grid(row=0, column=0, padx=20, pady=20, sticky="nsew")
-        #     # self.beam_frame.pack(fill="both", expand=1)
-        #     self.beam_frame.grid(row=2, column=idx, sticky="ew")
 
 
 class BeamSubFrame(ctk.CTkFrame):
@@ -255,13 +221,6 @@ class BeamSubFrame(ctk.CTkFrame):
         self.rowconfigure(0, weight=1)
         self.rowconfigure(1, weight=0)
         self.columnconfigure(1, weight=1)
-
-        # print (dir(self))
-        # self.grid_columnconfigure(0, weight=1)
-        # self.grid_columnconfigure(1, weight=0)
-
-        # self.scrollable_frame = ctk.CTkScrollableFrame(self)
-        # self.scrollable_frame.grid(row=0, column=1, sticky="news")
 
         self.label = ctk.CTkLabel(self, text="Contamination:")
         self.label.grid(row=1, column=0, padx=10, pady=(10, 10), sticky="e")
@@ -497,76 +456,37 @@ class SinglePABeamFrame(ctk.CTkFrame):
     ):
         super().__init__(master, **kwargs)
 
-        # self.gal_id = gal_id
-        # self.extver = extver
-        # self.ext = ext
-        # self.cmap = cmap
-        # self.stretch = stretch
-        # self.limits = limits
         self.rowconfigure(0, weight=1)
-        # self.rowconfigure(1, weight=0)
         self.columnconfigure(0, weight=1)
 
-        # print (dir(self.place()))
-        # self.grid_columnconfigure(0, weight=1)
-        # self.grid_columnconfigure(1, weight=0)
-
-
-        self.pad_frame = ctk.CTkFrame(self, fg_color="blue")
+        self.pad_frame = ctk.CTkFrame(self)
         self.pad_frame.grid(row=0, column=0, sticky="news")
-        self.canvas_frame = ctk.CTkFrame(self.pad_frame, fg_color="red")
+        self.canvas_frame = ctk.CTkFrame(self.pad_frame)
         self.canvas_frame.grid(row=0, column=0, sticky="news")
-
-        self.set_aspect()
+        self.canvas_frame.rowconfigure(0,weight=1)
+        self.canvas_frame.columnconfigure(0,weight=1)
 
         self.fig = Figure(
             constrained_layout=True,
-            # figsize=(1,1),
         )
         self.pyplot_canvas = FigureCanvasTkAgg(
             figure=self.fig,
             master=self.canvas_frame,
         )
-        print ("Canvas created")
 
         self.extvers = extvers
         widths = [1 / 3, 1]*len(self.extvers)
-        # self.fig_axes = self.fig.add_subplot(111)
         self.fig_axes = self.fig.subplots(
             4,
             2*len(self.extvers),
             sharey=True,
-            # aspect="auto",
-            # width_ratios=[1,shape_sci/shape_kernel],
-            # width_ratios=[0.5,1]
             width_ratios=widths,
         )
-        # self.extver = extvers[0]
-        # print (self.extver)
+        
+        self.quality_frame = MultiQualityFrame(self.canvas_frame, values = self.extvers)
+        self.quality_frame.grid(row=1, column=0, sticky="ew")
 
-        self.cont_frame = ctk.CTkFrame(self,fg_color="red")
-        self.cont_frame.grid(row=1, column=0, sticky="ew")
-
-        self.label = ctk.CTkLabel(self.cont_frame, text="Contamination:")
-        self.label.grid(row=0, column=0, padx=10, pady=(10, 10), sticky="e")
-        self.cont_value = ctk.StringVar(value="None")  # set initial value
-        self.cont_menu = ctk.CTkOptionMenu(
-            self.cont_frame,
-            values=["None", "Mild", "Strong", "Incomplete trace"],
-            command=self.optionmenu_callback,
-            variable=self.cont_value,
-        )
-        self.cont_menu.grid(row=0, column=1, sticky="w")
-        # print (master.file_path)
-        # print (self.master)
-
-        # self.file_path = [
-        #     *(
-        #         Path(self._root().full_config["files"]["extractions_dir"])
-        #         .expanduser()
-        #         .resolve()
-        #     ).glob(f"*{gal_id:0>5}.stack.fits")
-        # ][0]
+        self.set_aspect()
         self.plotted_images = dict()
         self.update_plots()
 
@@ -585,9 +505,9 @@ class SinglePABeamFrame(ctk.CTkFrame):
 
             # if the window is too tall to fit, use the height as
             # the controlling dimension
-            if desired_height > event.height:
-                desired_height = event.height
-                desired_width = int(event.height * aspect_ratio)
+            if desired_height > event.height-self.quality_frame.winfo_height():
+                desired_height = event.height-self.quality_frame.winfo_height()
+                desired_width = int((event.height-self.quality_frame.winfo_height()) * aspect_ratio)
 
             # place the window, giving it an explicit size
             self.canvas_frame.place(in_=self.pad_frame, x=0, y=0, 
@@ -595,10 +515,10 @@ class SinglePABeamFrame(ctk.CTkFrame):
 
         self.pad_frame.bind("<Configure>", enforce_aspect_ratio)
 
-    def optionmenu_callback(choice):
-        print("optionmenu dropdown clicked:", choice)
+    # def optionmenu_callback(choice):
+    #     print("optionmenu dropdown clicked:", choice)
 
-    def update_plots(self):
+    def update_plots(self, extvers=None):
         self.master.gal_id = self._root().current_gal_id.get()
 
         if self.master.stretch.lower() == "linear":
@@ -616,7 +536,9 @@ class SinglePABeamFrame(ctk.CTkFrame):
                 self.plot_beam(self.fig_axes[j,(2*i)+1], name, ver)
         self.fig.canvas.draw_idle()
 
-        self.fig.canvas.get_tk_widget().pack(fill="both", expand=1)
+        # self.fig.canvas.get_tk_widget().pack(fill="both", expand=1)
+        # print (self.fig.canvas.get_tk_widget())
+        self.fig.canvas.get_tk_widget().grid(row=0, column=0, sticky="news")
 
         self.update()
 
@@ -633,10 +555,14 @@ class SinglePABeamFrame(ctk.CTkFrame):
                 if self.master.limits == "grizli default":
                     vmax_kern = 1.1 * np.percentile(data, 99.5)
                     interval = ManualInterval(vmin=-0.1 * vmax_kern, vmax=vmax_kern)
+                elif self.master.limits == "Min-max":
+                    interval = MinMaxInterval()
+                else:
+                    interval = PercentileInterval(float(self.master.limits.replace("%","")))
 
                 norm = ImageNormalize(
                     data,
-                    #  interval=MinMaxInterval(),
+                    interval=interval,
                     stretch=self.stretch_fn(),
                 )
                 self.plotted_images[ext+extver]["kernel"] = ax.imshow(
@@ -679,7 +605,6 @@ class SinglePABeamFrame(ctk.CTkFrame):
                 extent = [header['WMIN'], header['WMAX'], 0, data.shape[0]]
 
                 if self.master.limits == "grizli default":
-                    # print ("oh boy")
                     wht_i = hdul["WHT", extver]
                     clip = wht_i.data > 0
                     if clip.sum() == 0:
@@ -689,6 +614,10 @@ class SinglePABeamFrame(ctk.CTkFrame):
                     vmax = np.maximum(1.1 * np.percentile(data[clip], 98), 5 * avg_rms)
                     vmin = -0.1 * vmax
                     interval = ManualInterval(vmin=vmin, vmax=vmax)
+                elif self.master.limits == "Min-max":
+                    interval = MinMaxInterval()
+                else:
+                    interval = PercentileInterval(float(self.master.limits.replace("%","")))
 
                 norm = ImageNormalize(
                     data,
@@ -714,25 +643,49 @@ class SinglePABeamFrame(ctk.CTkFrame):
                 print (e)
                 pass
 
-class MultiContamFrame(customtkinter.CTkFrame):
+class MultiQualityFrame(ctk.CTkFrame):
     def __init__(self, master, values, **kwargs):
         super().__init__(master, **kwargs)
-        self.grid_columnconfigure(0, weight=1)
+        self.grid_columnconfigure((0,1,2,3,4,5), weight=1)
         self.values = values
-        self.title = title
+        # self.title = title
         self.checkboxes = []
+        print (self.checkboxes)
 
-        self.title = customtkinter.CTkLabel(self, text=self.title, fg_color="gray30", corner_radius=6)
-        self.title.grid(row=0, column=0, padx=10, pady=(10, 0), sticky="ew")
+        # self.title = customtkinter.CTkLabel(self, text=self.title, fg_color="gray30", corner_radius=6)
+        # self.title.grid(row=0, column=0, padx=10, pady=(10, 0), sticky="ew")
+
+        # self.label = ctk.CTkLabel(self.cont_frame, text="Contamination:")
+        # self.label.grid(row=0, column=0, padx=10, pady=(10, 10), sticky="e")
+        # self.cont_value = ctk.StringVar(value="None")  # set initial value
+        # self.cont_menu = ctk.CTkOptionMenu(
+        #     self.cont_frame,
+        #     values=["None", "Mild", "Strong", "Incomplete trace"],
+        #     command=self.optionmenu_callback,
+        #     variable=self.cont_value,
+        # )
+        # self.cont_menu.grid(row=0, column=1, sticky="w")
 
         for i, value in enumerate(self.values):
-            checkbox = customtkinter.CTkCheckBox(self, text=value)
-            checkbox.grid(row=i+1, column=0, padx=10, pady=(10, 0), sticky="w")
-            self.checkboxes.append(checkbox)
+            label = ctk.CTkLabel(self, text="Beam Quality")
+            label.grid(row=0, column=2*i, padx=10, pady=(10, 10), sticky="e")
+            # print ('yarp')
+            # cont_value = ctk.StringVar(value="None")  # set initial value
+            cont_menu = ctk.CTkOptionMenu(
+                self,
+                values=["No contam.", "Mild contam.", "Strong contam.", "Incomplete trace", "No data"],
+                # command=self.optionmenu_callback,
+                # variable=self.cont_value,
+            )
+            # print ('maybe')
+            cont_menu.grid(row=0, column=2*i+1, padx=10, pady=(10, 10), sticky="w")
+            # checkbox = ctk.CTkCheckBox(self, text=value)
+            # checkbox.grid(row=0, column=2*i+1, padx=10, pady=(10, 0), sticky="w")
+            self.checkboxes.append(cont_menu)
 
-    def get(self):
-        checked_checkboxes = []
-        for checkbox in self.checkboxes:
-            if checkbox.get() == 1:
-                checked_checkboxes.append(checkbox.cget("text"))
-        return checked_checkboxes
+    # def get(self):
+    #     checked_checkboxes = []
+    #     for checkbox in self.checkboxes:
+    #         if checkbox.get() == 1:
+    #             checked_checkboxes.append(checkbox.cget("text"))
+    #     return checked_checkboxes
