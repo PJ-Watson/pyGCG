@@ -1,4 +1,5 @@
 import customtkinter as ctk
+import matplotlib.pyplot as plt
 from matplotlib.figure import Figure
 import matplotlib.colors as colors
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2Tk
@@ -120,7 +121,11 @@ class SpecFrame(ctk.CTkFrame):
         )
 
         self.seg_frame = SegMapFrame(self.scrollable_frame, gal_id=self.gal_id)
-        self.seg_frame.grid(row=7,column=0)
+        self.seg_frame.grid(row=7,column=0, sticky="news")
+        self.scrollable_frame.grid_rowconfigure(7, weight=1)
+
+        if self._root().main_tabs.get()=="Spec view":
+            self.update_plot()
 
     def update_plot(self):
         if not hasattr(self, "pyplot_canvas"):
@@ -192,6 +197,7 @@ class SpecFrame(ctk.CTkFrame):
         except Exception as e:
             print(e)
             pass
+        self.seg_frame.update_seg_map()
 
     def plot_grizli(self, templates=False):
         file_path = [
@@ -621,13 +627,20 @@ class SegMapFrame(ctk.CTkFrame):
 
         self.update_seg_path()
 
-        self.fig = Figure(constrained_layout=True)
+        self.fig = Figure(
+            constrained_layout=True,
+            figsize=(1,1),
+        )
         self.pyplot_canvas = FigureCanvasTkAgg(
             figure=self.fig,
             master=self,
         )
 
         self.fig_axes = self.fig.add_subplot(111)
+
+        prop_cycle = plt.rcParams['axes.prop_cycle']
+        self.default_cmap = colors.LinearSegmentedColormap.from_list("default", prop_cycle.by_key()['color'][:7])
+        # print (plt.rcParams['axes.prop_cycle'])
 
         # self.fig.canvas.mpl_connect("motion_notify_event", self.hover)
 
@@ -648,9 +661,9 @@ class SegMapFrame(ctk.CTkFrame):
 
         # f = zoom_factory(self.fig_axes)
 
-        self.pyplot_canvas.draw_idle()
+        self.fig.canvas.draw_idle()
 
-        self.pyplot_canvas.get_tk_widget().grid(row=0, column=0, sticky="news")  
+        self.fig.canvas.get_tk_widget().grid(row=0, column=0, sticky="news")  
 
         if self._root().main_tabs.get()=="Spec view":
             self.plot_seg_map()
@@ -671,25 +684,47 @@ class SegMapFrame(ctk.CTkFrame):
             self.seg_path = self.seg_path[0]
             # toolbar.grid(row=1, column=0, sticky="news")
 
-    def plot_seg_map(self):
+    def plot_seg_map(self, border=5):
         if self.seg_path is None:
             print ("Currently nothing to do here.")
         else:
             with pf.open(self.seg_path) as hdul:
                 seg_wcs = WCS(hdul[0].header)
+                seg_data = hdul[0].data
                 print (seg_wcs)
                 tab_row = self._root().cat[self._root().cat["v3_id"] == self.gal_id][0]
                 radius = extract_pixel_radius(tab_row,  seg_wcs, "v3_flux_radius").value
                 radius = 1.1*extract_pixel_radius(tab_row,  seg_wcs, "v3_kron_rcirc").value
-                print ("here")
                 y_c, x_c = extract_pixel_ra_dec(tab_row, seg_wcs).value
+                print (x_c, y_c)
+                
+                print (np.where(seg_data==self.gal_id)[0])
+                location = np.where(seg_data==self.gal_id)
+                print (np.nanmin(np.where(seg_data==self.gal_id)[0]), )
+                print (np.nanmin(location[0]))
 
                 cutout = hdul[0].data[
                     int(np.clip(x_c-radius, 0, hdul[0].data.shape[0])):int(np.clip(x_c+radius, 0, hdul[0].data.shape[0])),
                     int(np.clip(y_c-radius, 0, hdul[0].data.shape[1])):int(np.clip(y_c+radius,0, hdul[0].data.shape[1]))
                 ]
                 print (cutout)
-                self.fig_axes.imshow(cutout)
+                cutout = seg_data[
+                    np.nanmin(location[0])-border:np.nanmax(location[0])+border,
+                    np.nanmin(location[1])-border:np.nanmax(location[1])+border,
+                ].astype(float)
+                cutout[cutout==0] = np.nan
+                self.fig_axes.imshow(cutout%7, origin="lower", cmap=self.default_cmap, aspect="equal")
+                self.pyplot_canvas.draw_idle()
+                self.update()
+
+        self.fig_axes.set_facecolor("0.7")
+        self.fig_axes.set_xticklabels("")
+        self.fig_axes.set_yticklabels("")
+
+    def update_seg_map(self, force=False):
+        if self.gal_id != int(self._root().current_gal_id.get()) or force:
+            self.gal_id = int(self._root().current_gal_id.get())
+            self.plot_seg_map()
 
 
 
