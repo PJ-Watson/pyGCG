@@ -172,8 +172,8 @@ class App(ctk.CTk):
 
         self.main_tabs = MyTabView(
             master=self,
-            # tab_names=["Beam view", "Spec view"],
-            tab_names=["Spec view", "Beam view"],
+            tab_names=["Beam view", "Spec view"],
+            # tab_names=["Spec view", "Beam view"],
             command=self.main_tabs_update,
             # expose_bind_fns=[self._test_pr
             # int_e, self._test_print_e]
