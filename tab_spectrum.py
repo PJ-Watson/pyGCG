@@ -15,6 +15,7 @@ from photutils.aperture import (
     SkyCircularAperture,
     CircularAperture,
 )
+from astropy.visualization import make_lupton_rgb
 from astropy.table import Table
 from astropy.convolution import convolve, Gaussian1DKernel
 
@@ -30,7 +31,7 @@ class SpecFrame(ctk.CTkFrame):
         self.grid_columnconfigure(1, weight=0)
 
         self.scrollable_frame = ctk.CTkScrollableFrame(self)
-        self.scrollable_frame.grid(row=0, column=1, sticky="news")
+        self.scrollable_frame.grid(row=0, column=1, rowspan=2, sticky="news")
         self.scrollable_frame.grid_columnconfigure(0, weight=1)
 
         self.reference_lines_label = ctk.CTkLabel(
@@ -120,9 +121,13 @@ class SpecFrame(ctk.CTkFrame):
             row=6, column=0, padx=20, pady=(10, 0), sticky="w"
         )
 
-        self.seg_frame = SegMapFrame(self.scrollable_frame, gal_id=self.gal_id)
-        self.seg_frame.grid(row=7, column=0, sticky="news")
-        self.scrollable_frame.grid_rowconfigure(7, weight=1)
+        self.images_frame = ctk.CTkFrame(self, bg_color="red")
+        self.images_frame.grid(row=2, column=0, columnspan=2, sticky="news")
+        self.seg_frame = SegMapFrame(self.images_frame, gal_id=self.gal_id)
+        self.seg_frame.grid(row=0, column=0, sticky="news")
+        self.rgb_frame = RGBImageFrame(self.images_frame, gal_id=self.gal_id)
+        self.rgb_frame.grid(row=0, column=1, sticky="news")
+        # self.scrollable_frame.grid_rowconfigure(7, weight=1)
 
         if self._root().main_tabs.get() == "Spec view":
             self.update_plot()
@@ -198,6 +203,7 @@ class SpecFrame(ctk.CTkFrame):
             print(e)
             pass
         self.seg_frame.update_seg_map()
+        self.rgb_frame.update_rgb_img()
 
     def plot_grizli(self, templates=False):
         file_path = [
@@ -637,33 +643,22 @@ class SegMapFrame(ctk.CTkFrame):
             figure=self.fig,
             master=self,
         )
+        # print (dir(self))
+        # print (self.cget("fg_color"))
+        # print (self.winfo_rgb(self.cget("fg_color")[-1]))
+        self.fig.set_facecolor("none")
+        self.pyplot_canvas.get_tk_widget().config(bg=self.cget("bg_color")[-1])
 
         self.fig_axes = self.fig.add_subplot(111)
+        self.fig_axes.set_xticklabels("")
+        self.fig_axes.set_yticklabels("")
+        self.fig_axes.tick_params(axis="both", direction="in", top=True, right=True)
 
         prop_cycle = plt.rcParams["axes.prop_cycle"]
         self.default_cmap = colors.LinearSegmentedColormap.from_list(
             "default", prop_cycle.by_key()["color"][1:7]
         )
-        # print (plt.rcParams['axes.prop_cycle'])
-
-        # self.fig.canvas.mpl_connect("motion_notify_event", self.hover)
-
-        # toolbar = NavigationToolbar2Tk(self.fig.canvas, self, pack_toolbar=False)
-        # toolbar.update()
-
-        # self.fig_axes.set_xlabel(r"Wavelength (${\rm \AA}$)")
-        # self.fig_axes.set_ylabel("Flux")
-
-        # self.custom_annotation = self.fig_axes.annotate(
-        #     "", xy=(0, 0), xytext=(0, 0), textcoords="offset points"
-        # )
-        # self.custom_annotation.set_visible(False)
-
-        # self._update_all()
-
-        # self.add_lines()
-
-        # f = zoom_factory(self.fig_axes)
+        self.default_cmap = colors.ListedColormap(["C1", "C0", "C2", "C3", "C4", "C5"])
 
         self.plotted_components = {}
 
@@ -687,7 +682,6 @@ class SegMapFrame(ctk.CTkFrame):
             self.seg_path = None
         else:
             self.seg_path = self.seg_path[0]
-            # toolbar.grid(row=1, column=0, sticky="news")
 
     def plot_seg_map(self, border=5):
         if self.seg_path is None:
@@ -699,24 +693,14 @@ class SegMapFrame(ctk.CTkFrame):
             with pf.open(self.seg_path) as hdul:
                 seg_wcs = WCS(hdul[0].header)
                 seg_data = hdul[0].data
-                # print(seg_wcs)
                 tab_row = self._root().cat[self._root().cat["v3_id"] == self.gal_id][0]
                 radius = extract_pixel_radius(tab_row, seg_wcs, "v3_flux_radius").value
                 radius = (
                     1.1 * extract_pixel_radius(tab_row, seg_wcs, "v3_kron_rcirc").value
                 )
                 y_c, x_c = extract_pixel_ra_dec(tab_row, seg_wcs).value
-                print(x_c, y_c)
-                print(self.gal_id)
-                print(seg_data[int(y_c), int(x_c)])
-                print(seg_data[int(x_c), int(y_c)])
 
                 location = np.where(seg_data == self.gal_id)
-                # size = np.nanmax([
-                #     np.nanmax(location[0]) - np.nanmin(location[0]),
-                #     np.nanmax(location[1]) - np.nanmin(location[1]),
-                # ]
-                # )
                 width = np.nanmax(location[0]) - np.nanmin(location[0])
                 height = np.nanmax(location[1]) - np.nanmin(location[1])
                 if width > height:
@@ -726,56 +710,31 @@ class SegMapFrame(ctk.CTkFrame):
                     h_d = 0
                     w_d = (height - width) / 2
 
-                print(w_d, h_d)
-                print(width, height)
-                print(
+                self.cutout_dimensions = [
                     int(
                         np.clip(
                             np.nanmin(location[0]) - border - w_d, 0, seg_data.shape[0]
                         )
-                    )
-                )
-                print(
+                    ),
                     int(
                         np.clip(
                             np.nanmax(location[0]) + border + w_d, 0, seg_data.shape[0]
                         )
-                    )
-                )
-                print(
+                    ),
                     int(
                         np.clip(
                             np.nanmin(location[1]) - border - h_d, 0, seg_data.shape[1]
                         )
-                    )
-                )
-                print(
+                    ),
                     int(
                         np.clip(
                             np.nanmax(location[1]) + border + h_d, 0, seg_data.shape[1]
                         )
-                    )
-                )
-
+                    ),
+                ]
                 cutout = seg_data[
-                    int(
-                        np.clip(
-                            np.nanmin(location[0]) - border - w_d, 0, seg_data.shape[0]
-                        )
-                    ) : int(
-                        np.clip(
-                            np.nanmax(location[0]) + border + w_d, 0, seg_data.shape[0]
-                        )
-                    ),
-                    int(
-                        np.clip(
-                            np.nanmin(location[1]) - border - h_d, 0, seg_data.shape[1]
-                        )
-                    ) : int(
-                        np.clip(
-                            np.nanmax(location[1]) + border + h_d, 0, seg_data.shape[1]
-                        )
-                    ),
+                    self.cutout_dimensions[0] : self.cutout_dimensions[1],
+                    self.cutout_dimensions[2] : self.cutout_dimensions[3],
                 ].astype(float)
                 cutout[cutout == 0] = np.nan
 
@@ -810,8 +769,6 @@ class SegMapFrame(ctk.CTkFrame):
                 )
 
         # self.fig_axes.set_facecolor("0.7")
-        self.fig_axes.set_xticklabels("")
-        self.fig_axes.set_yticklabels("")
 
         self.pyplot_canvas.draw_idle()
         self.update()
@@ -824,6 +781,160 @@ class SegMapFrame(ctk.CTkFrame):
         ):
             self.gal_id = int(self._root().current_gal_id.get())
             self.plot_seg_map()
+
+
+class RGBImageFrame(ctk.CTkFrame):
+    def __init__(self, master, gal_id, **kwargs):
+        super().__init__(master, **kwargs)
+
+        self.gal_id = gal_id
+
+        self.rowconfigure(0, weight=1)
+        self.columnconfigure(0, weight=1)
+
+        self.update_rgb_path()
+
+        self.fig = Figure(
+            constrained_layout=True,
+            figsize=(3, 3),
+        )
+        self.fig.patch.set_alpha(0.0)
+        self.pyplot_canvas = FigureCanvasTkAgg(
+            figure=self.fig,
+            master=self,
+        )
+        self.fig.set_facecolor("none")
+        self.pyplot_canvas.get_tk_widget().config(bg=self.cget("bg_color")[-1])
+
+        self.fig_axes = self.fig.add_subplot(111)
+        self.fig_axes.set_xticklabels("")
+        self.fig_axes.set_yticklabels("")
+        self.fig_axes.tick_params(axis="both", direction="in", top=True, right=True)
+
+        self.plotted_components = {}
+
+        self.fig.canvas.draw_idle()
+
+        self.fig.canvas.get_tk_widget().grid(row=0, column=0, sticky="news")
+
+        if self._root().main_tabs.get() == "Spec view":
+            self.plot_seg_map()
+
+    def update_rgb_path(self, pattern="*seg.fits"):
+        self.rgb_path = {}
+        self.rgb_path["r"] = [
+            *(
+                Path(self._root().full_config["files"]["prep_dir"])
+                .expanduser()
+                .resolve()
+            ).glob("*f200w_drz_sci.fits")
+        ][0]
+
+        self.rgb_path["g"] = [
+            *(
+                Path(self._root().full_config["files"]["prep_dir"])
+                .expanduser()
+                .resolve()
+            ).glob("*f150w_drz_sci.fits")
+        ][0]
+        self.rgb_path["b"] = [
+            *(
+                Path(self._root().full_config["files"]["prep_dir"])
+                .expanduser()
+                .resolve()
+            ).glob("*f115w_drz_sci.fits")
+        ][0]
+
+        # print (self.rgb_path)
+
+        # main_dir = [
+        #     *(
+        #         Path(self._root().full_config["files"]["prep_dir"])
+        #         .expanduser()
+        #         .resolve()
+        #     ).glob(pattern)
+        # ]
+        # print (main_dir)
+        # # if len(self.seg_path) == 0:
+        # #     print("Segmentation map not found.")
+        # #     self.seg_path = None
+        # # else:
+        # #     self.seg_path = self.seg_path[0]
+        # self.seg_path = main_dir
+
+    def plot_rgb_img(self, border=5):
+        if len(self.rgb_path) == 0:
+            print("Currently nothing to do here.")
+        else:
+            for k, v in self.plotted_components.items():
+                v.remove()
+            self.plotted_components = {}
+
+            print(dir(self.master.children))
+            print(self.master.master.seg_frame.cutout_dimensions)
+            cutout_coords = self.master.master.seg_frame.cutout_dimensions
+
+            self.rgb_data = np.empty(
+                (
+                    3,
+                    cutout_coords[1] - cutout_coords[0],
+                    cutout_coords[3] - cutout_coords[2],
+                )
+            )
+
+            for i, v in enumerate(self.rgb_path.values()):
+                print(v)
+                with pf.open(v) as hdul:
+                    # hdul.info()
+                    self.rgb_data[i] = (
+                        hdul[0].data[
+                            cutout_coords[0] : cutout_coords[1],
+                            cutout_coords[2] : cutout_coords[3],
+                        ]
+                        * 10
+                    )
+
+            self.rgb_data = make_lupton_rgb(
+                self.rgb_data[0], self.rgb_data[1], self.rgb_data[2], stretch=0.1, Q=10
+            )
+            self.plotted_components["img"] = self.fig_axes.imshow(
+                self.rgb_data,
+                origin="lower",
+                # cmap=self.default_cmap,
+                aspect="equal",
+                extent=[0, self.rgb_data.shape[0], 0, self.rgb_data.shape[1]],
+            )
+            self.fig_axes.set_xlim(xmax=self.rgb_data.shape[0])
+            self.fig_axes.set_ylim(ymax=self.rgb_data.shape[1])
+
+            # self.plotted_components["marker"] = self.fig_axes.scatter(
+            #     y_c
+            #     - int(
+            #         np.clip(
+            #             np.nanmin(location[1]) - border - h_d, 0, seg_data.shape[1]
+            #         )
+            #     ),
+            #     x_c
+            #     - int(
+            #         np.clip(
+            #             np.nanmin(location[0]) - border - w_d, 0, seg_data.shape[0]
+            #         )
+            #     ),
+            #     marker="P",
+            #     c="k",
+            # )
+
+        self.pyplot_canvas.draw_idle()
+        self.update()
+
+    def update_rgb_img(self, force=False):
+        if (
+            self.gal_id != int(self._root().current_gal_id.get())
+            or force
+            or len(self.plotted_components) == 0
+        ):
+            self.gal_id = int(self._root().current_gal_id.get())
+            self.plot_rgb_img()
 
 
 def extract_pixel_radius(q_table, celestial_wcs, key="flux_radius"):
