@@ -575,6 +575,9 @@ class SinglePABeamFrame(ctk.CTkFrame):
     #     print("optionmenu dropdown clicked:", choice)
 
     def update_plots(self, extvers=None):
+        
+        self.quality_frame.get()
+
         if extvers != None and extvers != self.extvers:
             # print ("Wrong!")
             # print (extvers)
@@ -594,19 +597,20 @@ class SinglePABeamFrame(ctk.CTkFrame):
         # print (self.extvers)
 
         # print(self.extvers)
-        pa = None
+        self.pa_var = None
         for e in self.extvers:
             try:
-                pa = e.split(",")[1]
+                self.pa_var = e.split(",")[1]
                 break
             except:
                 pass
-        if pa is None:
+        if self.pa_var is None:
             self.PA_plot_label.configure(
                 text="Stack of all grism pointings (Contamination map not available)"
             )
+            self.pa_var="Stack"
         else:
-            self.PA_plot_label.configure(text=f"Current PA = {pa}deg")
+            self.PA_plot_label.configure(text=f"Current PA = {self.pa_var}deg")
 
         self.master.gal_id = self._root().current_gal_id.get()
 
@@ -739,6 +743,7 @@ class SinglePABeamFrame(ctk.CTkFrame):
 
 class MultiQualityFrame(ctk.CTkFrame):
     def __init__(self, master, values, **kwargs):
+
         super().__init__(master, **kwargs)
         self.columnconfigure((0, 1, 2, 3, 4, 5), weight=1)
         self.values = values
@@ -764,9 +769,20 @@ class MultiQualityFrame(ctk.CTkFrame):
             cov_menu.grid(row=1, column=2 * i + 1, padx=10, pady=(10, 10), sticky="w")
             self.coverage_menus.append(cov_menu)
 
-    # def get(self):
-    #     checked_checkboxes = []
-    #     for checkbox in self.checkboxes:
-    #         if checkbox.get() == 1:
-    #             checked_checkboxes.append(checkbox.cget("text"))
-    #     return checked_checkboxes
+    def get(self):
+        
+        # self._root().current_gal_data[master.master.master.pa_var] = "test"
+        print (self._root().current_gal_data)
+        for v, cont, cov in zip(self.values, self.contamination_menus, self.coverage_menus):
+            # print (v, cont.get(), cov.get())
+            if v not in self._root().current_gal_data.keys():
+                self._root().current_gal_data[v] = {}
+            self._root().current_gal_data[v]["contamination"] = cont.get()
+            self._root().current_gal_data[v]["coverage"] = cov.get()
+        # print ([c.get() for c in self.coverage_menus])
+        print (self._root().current_gal_data)
+        # checked_checkboxes = []
+        # for checkbox in self.checkboxes:
+        #     if checkbox.get() == 1:
+        #         checked_checkboxes.append(checkbox.cget("text"))
+        # return checked_checkboxes

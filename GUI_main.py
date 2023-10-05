@@ -37,6 +37,7 @@ class App(ctk.CTk):
 
         self.initialise_configuration()
         self.settings_window = None
+        self.comments_window = None
 
         # Key bindings
         self.protocol("WM_DELETE_WINDOW", self.quit_gracefully)
@@ -48,20 +49,7 @@ class App(ctk.CTk):
         self.grid_rowconfigure(0, weight=1)
         self.grid_columnconfigure((0, 1, 2, 3, 4), weight=1)
 
-        # # Setup top navigation buttons
-        # self.change_appearance_menu = ctk.CTkOptionMenu(
-        #     self,
-        #     # text="Previous Galaxy",
-        #     values=["System", "Light", "Dark"],
-        #     command=self.change_appearance_menu_callback,
-        # )
-        # self.change_appearance_menu.grid(
-        #     row=0,
-        #     column=0,
-        #     padx=20,
-        #     pady=20,
-        #     # sticky="news",
-        # )
+        # Setup bottom navigation buttons
         self.open_settings_button = ctk.CTkButton(
             self,
             text="Settings",
@@ -72,13 +60,12 @@ class App(ctk.CTk):
             column=1,
             padx=20,
             pady=20,
-            sticky="ns",
+            sticky="ew",
         )
 
-        # Setup bottom navigation buttons
         self.prev_gal_button = ctk.CTkButton(
             self,
-            text="Previous Galaxy",
+            text="Previous",
             command=self.prev_gal_button_callback,
         )
         self.prev_gal_button.grid(
@@ -86,11 +73,10 @@ class App(ctk.CTk):
             column=0,
             padx=20,
             pady=20,
-            # sticky="news",
         )
         self.next_gal_button = ctk.CTkButton(
             self,
-            text="Next Galaxy",
+            text="Next",
             command=self.next_gal_button_callback,
         )
         self.next_gal_button.grid(
@@ -98,19 +84,18 @@ class App(ctk.CTk):
             column=5,
             padx=20,
             pady=20,
-            # sticky="news",
         )
-        self.save_gal_button = ctk.CTkButton(
+        self.comments_button = ctk.CTkButton(
             self,
-            text="Save Galaxy",
-            command=self.save_gal_button_callback,
+            text="Comments",
+            command=self.gal_comments_button_callback,
         )
-        self.save_gal_button.grid(
+        self.comments_button.grid(
             row=1,
             column=4,
             padx=20,
             pady=20,
-            # sticky="news",
+            sticky="ew",
         )
 
         self.id_list = np.array(
@@ -125,6 +110,9 @@ class App(ctk.CTk):
                 ]
             )
         )
+
+        self.current_gal_data = {}
+
         # self.current_gal_entry = ctk.CTkEntry(
         #     self,
         #     text="Save Galaxy",
@@ -533,34 +521,71 @@ class App(ctk.CTk):
         else:
             self.settings_window.focus()
 
-    def save_gal_button_callback(self):
-        print("Save button clicked!")
+    def gal_comments_button_callback(self):
+        # print("Comments button clicked!")
+
+        if self.comments_window is None or not self.comments_window.winfo_exists():
+            self.comments_window = CommentsWindow(
+                self
+            )  # create window if its None or destroyed
+        else:
+            self.comments_window.focus()
 
     def prev_gal_button_callback(self, event=None):
-        # print(f"{self.current_gal_id.get():0>5}")
-        current_idx = (self.id_list == f"{self.current_gal_id.get():0>5}").nonzero()[0]
-        # print(self.id_list[current_idx])
-        # print(current_idx)
-        self.current_gal_id.set(self.id_list[current_idx - 1][0])
-        # print("Previous galaxy button clicked!")
-        self.main_tabs_update()
+        if self.main_tabs.get() == "Beam view":
+            current_PA_idx = self.full_beam_frame.PA_menu.cget("values").index(self.full_beam_frame.PA_menu.get())
+            if current_PA_idx==0:
+                current_gal_idx = (self.id_list == f"{self.current_gal_id.get():0>5}").nonzero()[0]
+                self.current_gal_id.set(self.id_list[current_gal_idx - 1][0])
+                self.main_tabs.set("Spec view")
+                self.change_gal_id()
+                # self.muse_spec_frame.update_plot()
+            elif current_PA_idx==1:
+                self.full_beam_frame.PA = self.full_beam_frame.PA_menu.cget("values")[0]
+                self.full_beam_frame.PA_menu.set(self.full_beam_frame.PA)
+                self.full_beam_frame.update_grid()
+            elif current_PA_idx==2:
+                self.full_beam_frame.PA = self.full_beam_frame.PA_menu.cget("values")[1]
+                self.full_beam_frame.PA_menu.set(self.full_beam_frame.PA)
+                self.full_beam_frame.update_grid()
+        elif self.main_tabs.get() == "Spec view":
+                self.main_tabs.set("Beam view")
+                self.full_beam_frame.PA = self.full_beam_frame.PA_menu.cget("values")[1]
+                self.full_beam_frame.PA_menu.set(self.full_beam_frame.PA)
+                self.change_gal_id()
+                # self.full_beam_frame.update_grid()
 
     def next_gal_button_callback(self, event=None):
-        # print(f"{self.current_gal_id.get():0>5}")
-        current_idx = (self.id_list == f"{self.current_gal_id.get():0>5}").nonzero()[0]
-        # print(self.id_list[current_idx])
-        # print(current_idx)
-        self.current_gal_id.set(self.id_list[current_idx + 1][0])
-        # self.current_gal_id.set(str(int(self.current_gal_id.get()) + 1))
-        # print("Next galaxy button clicked!")
-        self.main_tabs_update()
+
+        if self.main_tabs.get() == "Beam view":
+            current_PA_idx = self.full_beam_frame.PA_menu.cget("values").index(self.full_beam_frame.PA_menu.get())
+            if current_PA_idx==0:
+                self.full_beam_frame.PA = self.full_beam_frame.PA_menu.cget("values")[1]
+                self.full_beam_frame.PA_menu.set(self.full_beam_frame.PA)
+                self.full_beam_frame.update_grid(force_update=True)
+            elif current_PA_idx==1 or current_PA_idx==2:
+                self.main_tabs.set("Spec view")
+                self.muse_spec_frame.update_plot()
+        elif self.main_tabs.get() == "Spec view":
+            current_gal_idx = (self.id_list == f"{self.current_gal_id.get():0>5}").nonzero()[0]
+            self.current_gal_id.set(self.id_list[current_gal_idx + 1][0])
+            self.main_tabs.set("Beam view")
+            self.full_beam_frame.PA = self.full_beam_frame.PA_menu.cget("values")[0]
+            self.full_beam_frame.PA_menu.set(self.full_beam_frame.PA)
+            self.change_gal_id()
+            # self.full_beam_frame.update_grid()
+                # self.full_beam_frame.PA = self.full_beam_frame.PA_menu.cget("values")[1]
+                # self.full_beam_frame.PA_menu.set(self.full_beam_frame.PA)
+                # self.full_beam_frame.update_grid(force_update=True)
+
 
     def change_gal_id(self, event=None):
         # print (event)
         # self.current_gal_id.set(str(int(self.current_gal_id.get())+1))
         # self.current_gal_id += relative_change
         # print(self.current_gal_id)
-
+        ### This is where the logic for loading/updating the tables will go
+        self.current_gal_data = {}
         self.main_tabs_update()
 
     def main_tabs_update(self):
@@ -812,6 +837,108 @@ class SettingsWindow(ctk.CTkToplevel):
         # Put some lines here to save current output
         self._root().write_full_config(self._root().full_config)
         self.destroy()
+
+class CommentsWindow(ctk.CTkToplevel):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.geometry("720x568")
+        self.title("Comments")
+
+        # Key bindings
+        self.protocol("WM_DELETE_WINDOW", self.quit_comments_gracefully)
+        self.bind("<Control-q>", self.quit_comments_gracefully)
+
+        self.main_frame = ctk.CTkFrame(self)
+        self.main_frame.grid_columnconfigure(0, weight=1)
+        self.main_frame.grid_rowconfigure(1, weight=1)
+        # self.scrollable_frame.grid_columnconfigure(1, weight=1)
+        self.main_frame.pack(side="top", fill="both", expand=True)
+
+        # self.comments_var = ctk.StringVar(
+        #     self, ""
+        # )
+        self.comments_label = ctk.CTkLabel(
+            self.main_frame, text="Insert any additional comments here:"
+        )
+        self.comments_label.grid(
+            row=0,
+            column=0,
+            padx=20,
+            pady=(10, 0),
+        )
+
+        self.comments_box = ctk.CTkTextbox(
+            self.main_frame,
+            # textvariable=self.comments_var,
+        )
+        if "comments" in self._root().current_gal_data.keys():
+            self.comments_box.insert("1.0", self._root().current_gal_data["comments"])
+
+        self.comments_box.grid(row=1, column=0, padx=20, pady=(10, 0), sticky="news")
+        self.comments_box.bind("<Control-s>", self.quit_comments_gracefully)
+        self.comments_box.bind("<Control-Key-a>", self.select_all)
+        self.comments_box.bind("<Control-Key-A>", self.select_all)
+
+        self.comments_save_button = ctk.CTkButton(
+            self.main_frame,
+            text="Save",
+            command=self.browse_config_path,
+        )
+        self.comments_save_button.grid(
+            row=2,
+            column=0,
+            padx=20,
+            pady=(5, 10),
+            # sticky="",
+        )
+
+
+    def select_all(self, event=None):
+        self.comments_box.tag_add("sel", "1.0", "end")
+        self.comments_box.mark_set("insert", "1.0")
+        self.comments_box.see("insert")
+        return 'break'
+
+    def change_appearance_menu_callback(self, choice):
+        ctk.set_appearance_mode(choice.lower())
+        self._root().full_config["appearance"]["appearance_mode"] = choice.lower()
+        self._root().write_full_config(self._root().full_config)
+
+    def change_config_path_callback(self, event=None):
+        self._root().base_config["files"]["full_config_path"] = str(
+            Path(self.config_path_value.get()).expanduser().resolve()
+        )
+        with open(
+            Path(__file__).parent / "base_config.toml", mode="wt", encoding="utf-8"
+        ) as fp:
+            tomlkit.dump(self._root().base_config, fp)
+
+        self._root().full_config["files"]["full_config_path"] = str(
+            Path(self.config_path_value.get()).expanduser().resolve()
+        )
+        self._root().write_full_config(self._root().full_config)
+
+    def browse_config_path(self):
+        path_output = str(
+            ctk.filedialog.askopenfilename(
+                parent=self,
+                initialdir=Path(self.config_path_value.get())
+                .expanduser()
+                .resolve()
+                .parent,
+            )
+        )
+        if Path(path_output) is not None and Path(path_output).is_file():
+            self.config_path_value.set(path_output)
+            self.change_config_path_callback()
+
+    def quit_comments_gracefully(self, event=None):
+        # Put some lines here to save current output
+        # print ("need to save comments here")
+        # print (self.comments_box.get("1.0", "end"))
+        self._root().current_gal_data["comments"] = self.comments_box.get("1.0", "end")
+        self.destroy()
+
 
 
 if __name__ == "__main__":

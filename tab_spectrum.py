@@ -129,6 +129,7 @@ class SpecFrame(ctk.CTkFrame):
         self.grizli_temp_checkbox.grid(
             row=6, column=0, padx=20, pady=(10, 0), sticky="w"
         )
+        self.grizli_temp_checkbox.select()
 
         self.images_frame = ctk.CTkFrame(self)#, bg_color="red")
         self.images_frame.grid(row=2, column=0, columnspan=2, sticky="news")
@@ -661,7 +662,7 @@ class SegMapFrame(ctk.CTkFrame):
 
         self.fig = Figure(
             constrained_layout=True,
-            figsize=(2, 2),
+            figsize=(2.2, 2.2),
         )
         self.pyplot_canvas = FigureCanvasTkAgg(
             figure=self.fig,
@@ -727,12 +728,15 @@ class SegMapFrame(ctk.CTkFrame):
                 location = np.where(seg_data == self.gal_id)
                 width = np.nanmax(location[0]) - np.nanmin(location[0])
                 height = np.nanmax(location[1]) - np.nanmin(location[1])
+
                 if width > height:
                     w_d = 0
                     h_d = (width - height) / 2
                 elif height > width:
                     h_d = 0
                     w_d = (height - width) / 2
+                else:
+                    w_d, h_d = 0, 0
 
                 self.cutout_dimensions = [
                     int(
@@ -821,7 +825,7 @@ class RGBImageFrame(ctk.CTkFrame):
 
         self.fig = Figure(
             constrained_layout=True,
-            figsize=(8, 2),
+            figsize=(8.8, 2.2),
         )
         self.fig.patch.set_alpha(0.0)
         self.pyplot_canvas = FigureCanvasTkAgg(
@@ -931,11 +935,11 @@ class RGBImageFrame(ctk.CTkFrame):
                             cutout_coords[0] : cutout_coords[1],
                             cutout_coords[2] : cutout_coords[3],
                         ]
-                        * 10
+                        *10**((hdul[0].header["ZP"]-25)/2.5)
                     )
 
             self.rgb_stretched = make_lupton_rgb(
-                self.rgb_data[0], self.rgb_data[1], self.rgb_data[2], stretch=0.1, Q=10
+                self.rgb_data[0], self.rgb_data[1], self.rgb_data[2], stretch=0.1, #Q=10
             )
             self.plotted_components["rgb"] = self.fig_axes[-1].imshow(
                 self.rgb_stretched,
