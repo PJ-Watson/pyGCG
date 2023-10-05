@@ -15,7 +15,16 @@ from photutils.aperture import (
     SkyCircularAperture,
     CircularAperture,
 )
-from astropy.visualization import make_lupton_rgb
+from astropy.visualization import (
+    make_lupton_rgb,
+    MinMaxInterval,
+    SqrtStretch,
+    ImageNormalize,
+    LinearStretch,
+    LogStretch,
+    ManualInterval,
+    PercentileInterval,
+)
 from astropy.table import Table
 from astropy.convolution import convolve, Gaussian1DKernel
 
@@ -121,7 +130,7 @@ class SpecFrame(ctk.CTkFrame):
             row=6, column=0, padx=20, pady=(10, 0), sticky="w"
         )
 
-        self.images_frame = ctk.CTkFrame(self, bg_color="red")
+        self.images_frame = ctk.CTkFrame(self)#, bg_color="red")
         self.images_frame.grid(row=2, column=0, columnspan=2, sticky="news")
         self.seg_frame = SegMapFrame(self.images_frame, gal_id=self.gal_id)
         self.seg_frame.grid(row=0, column=0, sticky="news")
@@ -248,21 +257,36 @@ class SpecFrame(ctk.CTkFrame):
                         alpha=0.7,
                     )
                 else:
-                    y_vals = (
-                        data_table["flux"][clip]
-                        / data_table["flat"][clip]
-                        / data_table["pscale"][clip]
-                        / 1e-19
-                    )
+                    try:
+                        y_vals = (
+                            data_table["flux"][clip]
+                            / data_table["flat"][clip]
+                            / data_table["pscale"][clip]
+                            / 1e-19
+                        )
+                        y_err = (
+                            data_table["err"][clip]
+                            / data_table["flat"][clip]
+                            / data_table["pscale"][clip]
+                            / 1e-19
+                        )
+                    except:
+                        y_vals = (
+                            data_table["flux"][clip]
+                            / data_table["flat"][clip]
+                            / 1e-19
+                        )
+                        y_err = (
+                            data_table["err"][clip]
+                            / data_table["flat"][clip]
+                            / 1e-19
+                        )
                     self.plotted_components[dict_key][
                         hdu.name
                     ] = self.fig_axes.errorbar(
                         data_table["wave"][clip],
                         y_vals,
-                        yerr=data_table["err"][clip]
-                        / data_table["flat"][clip]
-                        / data_table["pscale"][clip]
-                        / 1e-19,
+                        yerr=y_err,
                         fmt="o",
                         markersize=3,
                         ecolor=colors.to_rgba(colours[hdu.name], 0.5),
@@ -637,7 +661,7 @@ class SegMapFrame(ctk.CTkFrame):
 
         self.fig = Figure(
             constrained_layout=True,
-            figsize=(3, 3),
+            figsize=(2, 2),
         )
         self.pyplot_canvas = FigureCanvasTkAgg(
             figure=self.fig,
@@ -784,10 +808,11 @@ class SegMapFrame(ctk.CTkFrame):
 
 
 class RGBImageFrame(ctk.CTkFrame):
-    def __init__(self, master, gal_id, **kwargs):
+    def __init__(self, master, gal_id, filter_names=["F200W", "F150W", "F115W"], **kwargs):
         super().__init__(master, **kwargs)
 
         self.gal_id = gal_id
+        self.filter_names = filter_names
 
         self.rowconfigure(0, weight=1)
         self.columnconfigure(0, weight=1)
@@ -796,7 +821,7 @@ class RGBImageFrame(ctk.CTkFrame):
 
         self.fig = Figure(
             constrained_layout=True,
-            figsize=(3, 3),
+            figsize=(8, 2),
         )
         self.fig.patch.set_alpha(0.0)
         self.pyplot_canvas = FigureCanvasTkAgg(
@@ -806,10 +831,18 @@ class RGBImageFrame(ctk.CTkFrame):
         self.fig.set_facecolor("none")
         self.pyplot_canvas.get_tk_widget().config(bg=self.cget("bg_color")[-1])
 
-        self.fig_axes = self.fig.add_subplot(111)
-        self.fig_axes.set_xticklabels("")
-        self.fig_axes.set_yticklabels("")
-        self.fig_axes.tick_params(axis="both", direction="in", top=True, right=True)
+        self.fig_axes = self.fig.subplots(
+            1,
+            4,
+            sharey=True,
+            # aspect="auto",
+            # width_ratios=[1,shape_sci/shape_kernel],
+            # width_ratios=[0.5,1]
+        )
+        for a in self.fig_axes:
+            a.set_xticklabels("")
+            a.set_yticklabels("")
+            a.tick_params(axis="both", direction="in", top=True, right=True)
 
         self.plotted_components = {}
 
@@ -820,30 +853,37 @@ class RGBImageFrame(ctk.CTkFrame):
         if self._root().main_tabs.get() == "Spec view":
             self.plot_seg_map()
 
-    def update_rgb_path(self, pattern="*seg.fits"):
-        self.rgb_path = {}
-        self.rgb_path["r"] = [
-            *(
-                Path(self._root().full_config["files"]["prep_dir"])
-                .expanduser()
-                .resolve()
-            ).glob("*f200w_drz_sci.fits")
-        ][0]
+    def update_rgb_path(self):
+        self.rgb_paths = []
+        # print (filter_names.sort())
+        for p in self.filter_names:
+            rgb_path = [
+                *(
+                    Path(self._root().full_config["files"]["prep_dir"])
+                    .expanduser()
+                    .resolve()
+                ).glob(f"*{p.lower()}_drz_sci.fits")
+            ]
+            if len(rgb_path) == 0:
+                print(f"{p} image not found.")
+                self.rgb_paths.append(None)
+            else:
+                self.rgb_paths.append(rgb_path[0])
 
-        self.rgb_path["g"] = [
-            *(
-                Path(self._root().full_config["files"]["prep_dir"])
-                .expanduser()
-                .resolve()
-            ).glob("*f150w_drz_sci.fits")
-        ][0]
-        self.rgb_path["b"] = [
-            *(
-                Path(self._root().full_config["files"]["prep_dir"])
-                .expanduser()
-                .resolve()
-            ).glob("*f115w_drz_sci.fits")
-        ][0]
+        # self.rgb_path.append([
+        #     *(
+        #         Path(self._root().full_config["files"]["prep_dir"])
+        #         .expanduser()
+        #         .resolve()
+        #     ).glob("*f150w_drz_sci.fits")
+        # ][0])
+        # self.rgb_path.append([
+        #     *(
+        #         Path(self._root().full_config["files"]["prep_dir"])
+        #         .expanduser()
+        #         .resolve()
+        #     ).glob("*f115w_drz_sci.fits")
+        # ][0])
 
         # print (self.rgb_path)
 
@@ -863,15 +903,15 @@ class RGBImageFrame(ctk.CTkFrame):
         # self.seg_path = main_dir
 
     def plot_rgb_img(self, border=5):
-        if len(self.rgb_path) == 0:
+        if len(self.rgb_paths) == 0:
             print("Currently nothing to do here.")
         else:
             for k, v in self.plotted_components.items():
                 v.remove()
             self.plotted_components = {}
 
-            print(dir(self.master.children))
-            print(self.master.master.seg_frame.cutout_dimensions)
+            # print(dir(self.master.children))
+            # print(self.master.master.seg_frame.cutout_dimensions)
             cutout_coords = self.master.master.seg_frame.cutout_dimensions
 
             self.rgb_data = np.empty(
@@ -882,8 +922,8 @@ class RGBImageFrame(ctk.CTkFrame):
                 )
             )
 
-            for i, v in enumerate(self.rgb_path.values()):
-                print(v)
+            for i, v in enumerate(self.rgb_paths):
+                # print(v)
                 with pf.open(v) as hdul:
                     # hdul.info()
                     self.rgb_data[i] = (
@@ -894,35 +934,70 @@ class RGBImageFrame(ctk.CTkFrame):
                         * 10
                     )
 
-            self.rgb_data = make_lupton_rgb(
+            self.rgb_stretched = make_lupton_rgb(
                 self.rgb_data[0], self.rgb_data[1], self.rgb_data[2], stretch=0.1, Q=10
             )
-            self.plotted_components["img"] = self.fig_axes.imshow(
-                self.rgb_data,
+            self.plotted_components["rgb"] = self.fig_axes[-1].imshow(
+                self.rgb_stretched,
                 origin="lower",
                 # cmap=self.default_cmap,
                 aspect="equal",
-                extent=[0, self.rgb_data.shape[0], 0, self.rgb_data.shape[1]],
+                extent=[0, self.rgb_stretched.shape[0], 0, self.rgb_stretched.shape[1]],
             )
-            self.fig_axes.set_xlim(xmax=self.rgb_data.shape[0])
-            self.fig_axes.set_ylim(ymax=self.rgb_data.shape[1])
+            self.fig_axes[-1].set_xlim(xmax=self.rgb_stretched.shape[0])
+            self.fig_axes[-1].set_ylim(ymax=self.rgb_stretched.shape[1])
 
-            # self.plotted_components["marker"] = self.fig_axes.scatter(
-            #     y_c
-            #     - int(
-            #         np.clip(
-            #             np.nanmin(location[1]) - border - h_d, 0, seg_data.shape[1]
-            #         )
-            #     ),
-            #     x_c
-            #     - int(
-            #         np.clip(
-            #             np.nanmin(location[0]) - border - w_d, 0, seg_data.shape[0]
-            #         )
-            #     ),
-            #     marker="P",
-            #     c="k",
-            # )
+            vmax = np.nanmax([1.1 * np.percentile(self.rgb_data, 98), 5 * np.std(self.rgb_data)])
+            vmin = -0.1 * vmax
+            interval = ManualInterval(vmin=vmin, vmax=vmax)
+            for a, d, f in zip(self.fig_axes[:-1][::-1], self.rgb_data, self.filter_names):
+                norm = ImageNormalize(
+                    d,
+                    interval=interval,
+                    stretch=SqrtStretch(),
+                )
+                self.plotted_components[f] = a.imshow(
+                    d,
+                    origin="lower",
+                    cmap="binary",
+                    aspect="equal",
+                    extent=[0, d.shape[0], 0, d.shape[1]],
+                    norm=norm,
+                )
+                self.plotted_components[f"{f}_text"] = a.text(
+                    0.05,0.95,
+                    f,
+                    transform = a.transAxes,
+                    ha="left",
+                    va="top",
+                    c="red"
+                )
+                # self.
+                # print (np.std(self.rgb_data))
+                # print (np.nanmax([1.1 * np.percentile(self.rgb_data, 98), 5 * np.std(self.rgb_data)]))
+                # avg_rms = 1 / np.median(np.sqrt(wht_i.data[clip]))
+                #     vmax = np.maximum(1.1 * np.percentile(data[clip], 98), 5 * avg_rms)
+                #     vmin = -0.1 * vmax
+                #     interval = ManualInterval(vmin=vmin, vmax=vmax)
+                # print (self.fig_axes)
+
+
+                # self.plotted_components[f"{f}_marker"] = a.scatter(
+                #     y_c
+                #     - int(
+                #         np.clip(
+                #             np.nanmin(location[1]) - border - h_d, 0, seg_data.shape[1]
+                #         )
+                #     ),
+                #     x_c
+                #     - int(
+                #         np.clip(
+                #             np.nanmin(location[0]) - border - w_d, 0, seg_data.shape[0]
+                #         )
+                #     ),
+                #     marker="P",
+                #     c="k",
+                # )
 
         self.pyplot_canvas.draw_idle()
         self.update()

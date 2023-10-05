@@ -30,7 +30,7 @@ class BeamFrame(ctk.CTkFrame):
 
         self.cmap = "plasma"
         self.PA = "PA 1"
-        self.stretch = "Linear"
+        self.stretch = "Square root"
         self.limits = "grizli default"
 
         self.settings_frame = ctk.CTkFrame(self)
@@ -77,6 +77,7 @@ class BeamFrame(ctk.CTkFrame):
             values=["Linear", "Square root", "Logarithmic"],
             command=self.change_stretch,
         )
+        self.stretch_menu.set("Square root")
         self.stretch_menu.grid(row=0, column=5, padx=(5, 20), pady=20, sticky="w")
 
         limits_label = ctk.CTkLabel(self.settings_frame, text="Colourmap limits:")
@@ -592,7 +593,7 @@ class SinglePABeamFrame(ctk.CTkFrame):
             self.extvers = extvers
         # print (self.extvers)
 
-        print(self.extvers)
+        # print(self.extvers)
         pa = None
         for e in self.extvers:
             try:
