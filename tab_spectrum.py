@@ -631,7 +631,7 @@ class SegMapFrame(ctk.CTkFrame):
 
         self.fig = Figure(
             constrained_layout=True,
-            figsize=(1, 1),
+            figsize=(3, 3),
         )
         self.pyplot_canvas = FigureCanvasTkAgg(
             figure=self.fig,
@@ -642,7 +642,7 @@ class SegMapFrame(ctk.CTkFrame):
 
         prop_cycle = plt.rcParams["axes.prop_cycle"]
         self.default_cmap = colors.LinearSegmentedColormap.from_list(
-            "default", prop_cycle.by_key()["color"][:7]
+            "default", prop_cycle.by_key()["color"][1:7]
         )
         # print (plt.rcParams['axes.prop_cycle'])
 
@@ -664,6 +664,8 @@ class SegMapFrame(ctk.CTkFrame):
         # self.add_lines()
 
         # f = zoom_factory(self.fig_axes)
+
+        self.plotted_components = {}
 
         self.fig.canvas.draw_idle()
 
@@ -691,10 +693,13 @@ class SegMapFrame(ctk.CTkFrame):
         if self.seg_path is None:
             print("Currently nothing to do here.")
         else:
+            for k, v in self.plotted_components.items():
+                v.remove()
+            self.plotted_components = {}
             with pf.open(self.seg_path) as hdul:
                 seg_wcs = WCS(hdul[0].header)
                 seg_data = hdul[0].data
-                print(seg_wcs)
+                # print(seg_wcs)
                 tab_row = self._root().cat[self._root().cat["v3_id"] == self.gal_id][0]
                 radius = extract_pixel_radius(tab_row, seg_wcs, "v3_flux_radius").value
                 radius = (
@@ -702,40 +707,121 @@ class SegMapFrame(ctk.CTkFrame):
                 )
                 y_c, x_c = extract_pixel_ra_dec(tab_row, seg_wcs).value
                 print(x_c, y_c)
+                print(self.gal_id)
+                print(seg_data[int(y_c), int(x_c)])
+                print(seg_data[int(x_c), int(y_c)])
 
-                print(np.where(seg_data == self.gal_id)[0])
                 location = np.where(seg_data == self.gal_id)
-                print(
-                    np.nanmin(np.where(seg_data == self.gal_id)[0]),
-                )
-                print(np.nanmin(location[0]))
+                # size = np.nanmax([
+                #     np.nanmax(location[0]) - np.nanmin(location[0]),
+                #     np.nanmax(location[1]) - np.nanmin(location[1]),
+                # ]
+                # )
+                width = np.nanmax(location[0]) - np.nanmin(location[0])
+                height = np.nanmax(location[1]) - np.nanmin(location[1])
+                if width > height:
+                    w_d = 0
+                    h_d = (width - height) / 2
+                elif height > width:
+                    h_d = 0
+                    w_d = (height - width) / 2
 
-                cutout = hdul[0].data[
-                    int(np.clip(x_c - radius, 0, hdul[0].data.shape[0])) : int(
-                        np.clip(x_c + radius, 0, hdul[0].data.shape[0])
-                    ),
-                    int(np.clip(y_c - radius, 0, hdul[0].data.shape[1])) : int(
-                        np.clip(y_c + radius, 0, hdul[0].data.shape[1])
-                    ),
-                ]
-                print(cutout)
+                print(w_d, h_d)
+                print(width, height)
+                print(
+                    int(
+                        np.clip(
+                            np.nanmin(location[0]) - border - w_d, 0, seg_data.shape[0]
+                        )
+                    )
+                )
+                print(
+                    int(
+                        np.clip(
+                            np.nanmax(location[0]) + border + w_d, 0, seg_data.shape[0]
+                        )
+                    )
+                )
+                print(
+                    int(
+                        np.clip(
+                            np.nanmin(location[1]) - border - h_d, 0, seg_data.shape[1]
+                        )
+                    )
+                )
+                print(
+                    int(
+                        np.clip(
+                            np.nanmax(location[1]) + border + h_d, 0, seg_data.shape[1]
+                        )
+                    )
+                )
+
                 cutout = seg_data[
-                    np.nanmin(location[0]) - border : np.nanmax(location[0]) + border,
-                    np.nanmin(location[1]) - border : np.nanmax(location[1]) + border,
+                    int(
+                        np.clip(
+                            np.nanmin(location[0]) - border - w_d, 0, seg_data.shape[0]
+                        )
+                    ) : int(
+                        np.clip(
+                            np.nanmax(location[0]) + border + w_d, 0, seg_data.shape[0]
+                        )
+                    ),
+                    int(
+                        np.clip(
+                            np.nanmin(location[1]) - border - h_d, 0, seg_data.shape[1]
+                        )
+                    ) : int(
+                        np.clip(
+                            np.nanmax(location[1]) + border + h_d, 0, seg_data.shape[1]
+                        )
+                    ),
                 ].astype(float)
                 cutout[cutout == 0] = np.nan
-                self.fig_axes.imshow(
-                    cutout % 7, origin="lower", cmap=self.default_cmap, aspect="equal"
-                )
-                self.pyplot_canvas.draw_idle()
-                self.update()
 
-        self.fig_axes.set_facecolor("0.7")
+                cutout_copy = cutout % 5 + 1
+                cutout_copy[cutout == self.gal_id] = 0
+
+                self.plotted_components["img"] = self.fig_axes.imshow(
+                    cutout_copy,
+                    origin="lower",
+                    cmap=self.default_cmap,
+                    aspect="equal",
+                    extent=[0, cutout_copy.shape[0], 0, cutout_copy.shape[1]],
+                )
+                self.fig_axes.set_xlim(xmax=cutout_copy.shape[0])
+                self.fig_axes.set_ylim(ymax=cutout_copy.shape[1])
+
+                self.plotted_components["marker"] = self.fig_axes.scatter(
+                    y_c
+                    - int(
+                        np.clip(
+                            np.nanmin(location[1]) - border - h_d, 0, seg_data.shape[1]
+                        )
+                    ),
+                    x_c
+                    - int(
+                        np.clip(
+                            np.nanmin(location[0]) - border - w_d, 0, seg_data.shape[0]
+                        )
+                    ),
+                    marker="P",
+                    c="k",
+                )
+
+        # self.fig_axes.set_facecolor("0.7")
         self.fig_axes.set_xticklabels("")
         self.fig_axes.set_yticklabels("")
 
+        self.pyplot_canvas.draw_idle()
+        self.update()
+
     def update_seg_map(self, force=False):
-        if self.gal_id != int(self._root().current_gal_id.get()) or force:
+        if (
+            self.gal_id != int(self._root().current_gal_id.get())
+            or force
+            or len(self.plotted_components) == 0
+        ):
             self.gal_id = int(self._root().current_gal_id.get())
             self.plot_seg_map()
 

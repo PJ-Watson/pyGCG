@@ -668,7 +668,7 @@ class SinglePABeamFrame(ctk.CTkFrame):
                 if ax in self.fig_axes[:, 0]:
                     ax.set_ylabel(ext)
             except Exception as e:
-                print("error", e)
+                print(e)
                 pass
 
     def plot_beam(self, ax, ext, extver):
