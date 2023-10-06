@@ -33,6 +33,8 @@ class SpecFrame(ctk.CTkFrame):
     def __init__(self, master, gal_id, **kwargs):
         super().__init__(master, **kwargs)
 
+        if gal_id == "":
+            return
         self.gal_id = int(gal_id)
         self.plotted_components = dict(emission={}, absorption={})
         self.grid_rowconfigure(0, weight=1)
@@ -855,7 +857,7 @@ class RGBImageFrame(ctk.CTkFrame):
         self.fig.canvas.get_tk_widget().grid(row=0, column=0, sticky="news")
 
         if self._root().main_tabs.get() == "Spec view":
-            self.plot_seg_map()
+            self.plot_rgb_img()
 
     def update_rgb_path(self):
         self.rgb_paths = []

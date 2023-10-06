@@ -2,14 +2,14 @@ import customtkinter as ctk
 from pathlib import Path
 import tomlkit
 from astropy.table import QTable
-from tab_spectrum import SpecFrame
-from tab_beams import BeamFrame
+from .tabs.spectrum import SpecFrame
+from .tabs.beams import BeamFrame
 from .windows.settings import SettingsWindow
 from .windows.comments import CommentsWindow
 import numpy as np
 
 class GCG(ctk.CTk):
-    def __init__(self):
+    def __init__(self, config_file=None):
         super().__init__()
 
         # Geometry
@@ -19,7 +19,7 @@ class GCG(ctk.CTk):
         # self.attributes("-zoomed", True)
         self.title("GLASS-JWST Classification GUI")
 
-        self.initialise_configuration()
+        self.initialise_configuration(config_file)
         self.settings_window = None
         self.comments_window = None
 
@@ -87,7 +87,7 @@ class GCG(ctk.CTk):
                 [
                     f.stem[-8:-3]
                     for f in (
-                        Path(self._root().full_config["files"]["extractions_dir"])
+                        Path(self.full_config["files"]["extractions_dir"])
                         .expanduser()
                         .resolve()
                     ).glob(f"*.1D.fits")
@@ -111,8 +111,10 @@ class GCG(ctk.CTk):
         # )
         self.current_gal_id = ctk.StringVar(
             master=self,
-            value=self.id_list[-6],
+            # value=self.id_list,
         )
+        if len(self.id_list)!=0:
+            self.current_gal_id.set(self.id_list[0])
         self.current_gal_label = ctk.CTkLabel(
             self,
             text="Current ID:",
@@ -142,8 +144,8 @@ class GCG(ctk.CTk):
 
         self.main_tabs = MyTabView(
             master=self,
-            tab_names=["Beam view", "Spec view"],
-            # tab_names=["Spec view", "Beam view"],
+            # tab_names=["Beam view", "Spec view"],
+            tab_names=["Spec view", "Beam view"],
             command=self.main_tabs_update,
             # expose_bind_fns=[self._test_pr
             # int_e, self._test_print_e]
@@ -171,9 +173,13 @@ class GCG(ctk.CTk):
 
         # print (dir(self.main_tabs.tab("Spec view")))
 
-    def initialise_configuration(self):
+    def initialise_configuration(self, config_file=None):
+        if config_file is not None:
+            test_path = config_file
+        else:
+            test_path = Path(__file__).parent / "base_config.toml"
         try:
-            with open(Path(__file__).parent / "base_config.toml", "rt") as fp:
+            with open(test_path, "rt") as fp:
                 self.base_config = tomlkit.load(fp)
                 assert self.base_config["files"]["full_config_path"]
         except:
@@ -581,8 +587,8 @@ class GCG(ctk.CTk):
     def quit_gracefully(self, event=None):
         # Put some lines here to save current output
         self.write_full_config(self.full_config)
+        # quit()
         self.quit()
-
 
 class MyTabView(ctk.CTkTabview):
     def __init__(self, master, tab_names, expose_bind_fns=None, **kwargs):
@@ -597,11 +603,15 @@ class MyTabView(ctk.CTkTabview):
             except:
                 pass
 
-
-
-if __name__ == "__main__":
-    app = GCG()
+def run_app(**kwargs):
+    app = GCG(**kwargs)
     app.mainloop()
+    app.withdraw()
+    # app.destroy()
+    # del app
+
+# if __name__ == "__main__":
+#     run_app()
 
 # PyCube (redshift visualisation)
 # Marz (MUSE redshift fits)
@@ -620,3 +630,5 @@ if __name__ == "__main__":
 # Add PaE vs [SIII]
 # Look at low redshift cluster members - flag up emission/absorption
 # Attempt extraction of stripped/jellyfish galaxies
+
+# Figure out how to load/reload app without any galaxy IDs

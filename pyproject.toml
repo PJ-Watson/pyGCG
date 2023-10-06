@@ -1,0 +1,34 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pyGCG"
+version = "0.0.16dev"
+authors = [
+  { name="Peter Watson", email="peter.watson+pygcg@inaf.it" },
+]
+description = "A GUI to aid in viewing and classifying NIRISS data products from GLASS-JWST."
+readme = "README.md"
+requires-python = ">=3.11"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
+    "Operating System :: OS Independent",
+]
+dependencies = [
+    "astropy>=5.3",
+    "numpy>=1.24",
+    "tomlkit>=0.12",
+    "customtkinter>=5.2",
+    "matplotlib>=3.6",
+    "tqdm>=4.66",
+    "photutils>=1.9"
+]
+
+[project.urls]
+"Homepage" = "https://github.com/PJ-Watson/pyGCG"
+"Bug Tracker" = "https://github.com/PJ-Watson/pyGCG/issues"
+
+[tool.setuptools.package-data]
+"*" = ["*.*"]
