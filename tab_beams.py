@@ -576,7 +576,7 @@ class SinglePABeamFrame(ctk.CTkFrame):
 
     def update_plots(self, extvers=None):
         
-        self.quality_frame.get()
+        # self.quality_frame.get()
 
         if extvers != None and extvers != self.extvers:
             # print ("Wrong!")
@@ -592,8 +592,9 @@ class SinglePABeamFrame(ctk.CTkFrame):
                 self.plotted_images = dict()
             except:
                 pass
-
+            
             self.extvers = extvers
+            self.quality_frame.reload_values(new_values=self.extvers)
         # print (self.extvers)
 
         # print(self.extvers)
@@ -756,6 +757,7 @@ class MultiQualityFrame(ctk.CTkFrame):
             cont_menu = ctk.CTkOptionMenu(
                 self,
                 values=["None", "Mild", "Strong"],
+                # command
             )
             cont_menu.grid(row=0, column=2 * i + 1, padx=10, pady=(10, 0), sticky="w")
             self.contamination_menus.append(cont_menu)
@@ -768,6 +770,12 @@ class MultiQualityFrame(ctk.CTkFrame):
             )
             cov_menu.grid(row=1, column=2 * i + 1, padx=10, pady=(10, 10), sticky="w")
             self.coverage_menus.append(cov_menu)
+
+
+    def reload_values(self, new_values):
+
+        print (new_values, self.values)
+
 
     def get(self):
         
