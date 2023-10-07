@@ -161,4 +161,4 @@ cython_debug/
 
 *.odg
 *.testing_base_config.toml
-./config.toml
+config.toml
