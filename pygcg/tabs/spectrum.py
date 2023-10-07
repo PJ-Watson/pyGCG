@@ -190,7 +190,7 @@ class SpecFrame(ctk.CTkFrame):
     def _update_all(self):
         _path = [
             *(
-                Path(self._root().full_config["files"]["extractions_dir"])
+                Path(self._root().config["files"]["extractions_dir"])
                 .expanduser()
                 .resolve()
             ).glob(f"*{self.gal_id:0>5}.row.fits")
@@ -220,7 +220,7 @@ class SpecFrame(ctk.CTkFrame):
     def plot_grizli(self, templates=False):
         file_path = [
             *(
-                Path(self._root().full_config["files"]["extractions_dir"])
+                Path(self._root().config["files"]["extractions_dir"])
                 .expanduser()
                 .resolve()
             ).glob(f"*{self.gal_id:0>5}.1D.fits")
@@ -304,7 +304,7 @@ class SpecFrame(ctk.CTkFrame):
         self,
     ):
         cube_path = (
-            Path(self._root().full_config["files"]["cube_path"]).expanduser().resolve()
+            Path(self._root().config["files"]["cube_path"]).expanduser().resolve()
         )
         if not cube_path.is_file():
             print("no cube file")
@@ -350,12 +350,12 @@ class SpecFrame(ctk.CTkFrame):
         cube_error=None,
         kernel_sig=5,
     ):
-        temp_dir = (
-            Path(self._root().full_config["files"]["temp_dir"]).expanduser().resolve()
-        )
+        # temp_dir = (
+        #     Path(self._root().config["files"]["temp_dir"]).expanduser().resolve()
+        # )
         try:
             with pf.open(
-                temp_dir
+                self.temp_dir
                 / f"{ra[0]:.6f}_{dec[0]:.6f}_r{radius:.6f}_c{kernel_sig:.3f}.fits"
             ) as hdul:
                 return hdul[0].data
@@ -409,7 +409,7 @@ class SpecFrame(ctk.CTkFrame):
                 pf.ImageHDU(data=spectrum, header=cube_wcs.spectral.to_header())
             )
             new_hdul.writeto(
-                temp_dir
+                self.temp_dir
                 / f"{ra[0]:.6f}_{dec[0]:.6f}_r{radius.value:.6f}_c{kernel_sig:.3f}.fits"
             )
 
@@ -422,7 +422,7 @@ class SpecFrame(ctk.CTkFrame):
         if line_type is None:
             return
         xlims = self.fig_axes.get_xlim()
-        for line_key, line_data in self._root().full_config["lines"][line_type].items():
+        for line_key, line_data in self._root().config["lines"][line_type].items():
             self.plotted_components[line_type][line_key] = self.fig.get_axes()[
                 0
             ].axvline(
@@ -443,7 +443,7 @@ class SpecFrame(ctk.CTkFrame):
         for line_type in ["emission", "absorption"]:
             try:
                 for line_key, line_data in (
-                    self._root().full_config["lines"][line_type].items()
+                    self._root().config["lines"][line_type].items()
                 ):
                     current_line = self.plotted_components[line_type][line_key]
                     current_line.set_data(
@@ -505,7 +505,7 @@ class SpecFrame(ctk.CTkFrame):
                 if line in self.plotted_components["emission"].values():
                     line.remove()
             for line_key, line_data in (
-                self._root().full_config["lines"]["emission"].items()
+                self._root().config["lines"]["emission"].items()
             ):
                 del self.plotted_components["emission"][line_key]
 
@@ -523,7 +523,7 @@ class SpecFrame(ctk.CTkFrame):
                 if line in self.plotted_components["absorption"].values():
                     line.remove()
             for line_key, line_data in (
-                self._root().full_config["lines"]["absorption"].items()
+                self._root().config["lines"]["absorption"].items()
             ):
                 del self.plotted_components["absorption"][line_key]
 
@@ -535,14 +535,14 @@ class SpecFrame(ctk.CTkFrame):
             for line_type in ["emission", "absorption"]:
                 if len(self.plotted_components[line_type]) > 0:
                     for line_key, line_data in (
-                        self._root().full_config["lines"][line_type].items()
+                        self._root().config["lines"][line_type].items()
                     ):
                         if self.plotted_components[line_type][line_key].contains(event)[
                             0
                         ]:
                             self.custom_annotation.xy = [event.xdata, event.ydata]
                             self.custom_annotation.set_text(
-                                self._root().full_config["lines"][line_type][line_key][
+                                self._root().config["lines"][line_type][line_key][
                                     "latex_name"
                                 ]
                             )
@@ -699,7 +699,7 @@ class SegMapFrame(ctk.CTkFrame):
     def update_seg_path(self, pattern="*seg.fits"):
         self.seg_path = [
             *(
-                Path(self._root().full_config["files"]["prep_dir"])
+                Path(self._root().config["files"]["prep_dir"])
                 .expanduser()
                 .resolve()
             ).glob(pattern)
@@ -865,7 +865,7 @@ class RGBImageFrame(ctk.CTkFrame):
         for p in self.filter_names:
             rgb_path = [
                 *(
-                    Path(self._root().full_config["files"]["prep_dir"])
+                    Path(self._root().config["files"]["prep_dir"])
                     .expanduser()
                     .resolve()
                 ).glob(f"*{p.lower()}_drz_sci.fits")
@@ -878,14 +878,14 @@ class RGBImageFrame(ctk.CTkFrame):
 
         # self.rgb_path.append([
         #     *(
-        #         Path(self._root().full_config["files"]["prep_dir"])
+        #         Path(self._root().config["files"]["prep_dir"])
         #         .expanduser()
         #         .resolve()
         #     ).glob("*f150w_drz_sci.fits")
         # ][0])
         # self.rgb_path.append([
         #     *(
-        #         Path(self._root().full_config["files"]["prep_dir"])
+        #         Path(self._root().config["files"]["prep_dir"])
         #         .expanduser()
         #         .resolve()
         #     ).glob("*f115w_drz_sci.fits")
@@ -895,7 +895,7 @@ class RGBImageFrame(ctk.CTkFrame):
 
         # main_dir = [
         #     *(
-        #         Path(self._root().full_config["files"]["prep_dir"])
+        #         Path(self._root().config["files"]["prep_dir"])
         #         .expanduser()
         #         .resolve()
         #     ).glob(pattern)

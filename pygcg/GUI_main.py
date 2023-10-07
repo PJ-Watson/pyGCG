@@ -87,9 +87,7 @@ class GCG(ctk.CTk):
                 [
                     f.stem[-8:-3]
                     for f in (
-                        Path(self.full_config["files"]["extractions_dir"])
-                        .expanduser()
-                        .resolve()
+                        fpe(self.config["files"]["extractions_dir"])
                     ).glob(f"*.1D.fits")
                 ]
             )
@@ -174,126 +172,105 @@ class GCG(ctk.CTk):
         # print (dir(self.main_tabs.tab("Spec view")))
 
     def initialise_configuration(self, config_file=None):
-        if config_file is not None:
-            test_path = config_file
-        else:
-            test_path = Path(__file__).parent / "base_config.toml"
         try:
-            with open(test_path, "rt") as fp:
-                self.base_config = tomlkit.load(fp)
-                assert self.base_config["files"]["full_config_path"]
-        except:
-            self.base_config = self.write_base_config()
-
-        try:
+            assert config_file is not None
+            self.config_file_path = config_file
+            with open(config_file, "rt") as fp:
+                self.config = tomlkit.load(fp)
+            self.write_config()
+        except Exception as e:
+            print (e)
+            print ("No valid config file supplied. Creating config.toml in the current working directory.")
+            example_path = Path(__file__).parent / "example_config.toml"
+            with open(example_path, "rt") as fp:
+                self.config = tomlkit.load(fp)
+            self.config_file_path = fpe(Path.cwd() / "config.toml")
             with open(
-                Path(self.base_config["files"]["full_config_path"])
-                .expanduser()
-                .resolve(),
-                "rt",
+                self.config_file_path,
+                mode="wt",
+                encoding="utf-8",
             ) as fp:
-                self.full_config = tomlkit.load(fp)
-                self.write_full_config(self.full_config)
+                tomlkit.dump(self.config, fp)
 
-        except FileNotFoundError:
-            print(
-                "Configuration file not found at the specified location. Creating new config from defaults."
-            )
-            self.full_config = self.write_full_config(self.base_config)
+        # fpe(files["temp_dir"]).mkdir(
+        #     exist_ok=True, parents=True
+        # )
+        # try:
+        #     with open(test_path, "rt") as fp:
+        #         self.base_config = tomlkit.load(fp)
+        #         assert self.base_config["files"]["full_config_path"]
+        # except:
+        #     self.base_config = self.write_base_config()
+
+        # try:
+        #     with open(
+        #         fpe(self.base_config["files"]["full_config_path"]),
+        #         "rt",
+        #     ) as fp:
+        #         self.full_config = tomlkit.load(fp)
+        #         self.write_full_config(self.full_config)
+
+        # except FileNotFoundError:
+        #     print(
+        #         "Configuration file not found at the specified location. Creating new config from defaults."
+        #     )
+        #     self.full_config = self.write_full_config(self.base_config)
 
         ctk.set_appearance_mode(
-            self.full_config["appearance"]["appearance_mode"].lower()
+            self.config["appearance"]["appearance_mode"].lower()
         )
-        ctk.set_default_color_theme(self.full_config["appearance"]["theme"].lower())
+        ctk.set_default_color_theme(self.config["appearance"]["theme"].lower())
 
-    def write_base_config(self):
-        doc = tomlkit.document()
-        doc.add(
-            tomlkit.comment(
-                "This is the base configuration file, which stores the settings used previously."
-            )
-        )
-        doc.add(tomlkit.nl())
-        doc.add("title", "Base Configuration")
+    def write_config(self):
 
-        files = tomlkit.table()
-        files.add("full_config_path", str(Path(__file__).parent / "base_config.toml"))
-        files["full_config_path"].comment(
-            "The location of the primary configuration file."
-        )
-
-        doc.add("files", files)
-
-        with open(files["full_config_path"], mode="wt", encoding="utf-8") as fp:
-            tomlkit.dump(doc, fp)
-
-        return doc
-
-    def write_full_config(self, doc):
-        # Files
         try:
-            files = doc["files"]
+            files = self.config["files"]
         except:
             files_tab = tomlkit.table()
-            doc.add("files", files_tab)
-            files = doc["files"]
+            self.config.add("files", files_tab)
+            files = self.config["files"]
 
-        try:
-            files["temp_dir"]
-        except:
-            files.add("temp_dir", "~/.pyGCG_temp")
-            files["temp_dir"].comment(
-                "The directory in which temporary files are stored."
-            )
-        Path(files["temp_dir"]).expanduser().resolve().mkdir(
-            exist_ok=True, parents=True
-        )
+        for f in ["out_dir", "extractions_dir", "cat_path"]:
+            try:
+                files[f]
+            except:
+                files.add(f, "")
 
-        try:
-            files["extractions_dir"]
-        except:
-            files.add("extractions_dir", "")
-            files["extractions_dir"].comment(
-                "The directory in which NIRISS extractions are stored."
-            )
+        if len(files["out_dir"]) > 0:
+            try:
+                fpe(files["out_dir"]).mkdir(exist_ok=True, parents=True)
+                self.out_dir = fpe(files["out_dir"])
+                if len(files["temp_dir"]) > 0:
+                    fpe(files["temp_dir"]).mkdir(exist_ok=True, parents=True)
+                    self.temp_dir = fpe(files["temp_dir"])
+                else:
+                    self.temp_dir = self.out_dir / ".temp"
+                    self.temp_dir.mkdir(exist_ok=True)
+            except:
+                print ("Could not find or create output directory.")
 
+        self.quit()
+        # try:
+        #     files["cat_path"]
+        # except Exception as e:
+        #     print(e)
+        #     self.cat = None
+        #     files.add("cat_path", "")
+        #     files["cat_path"].comment(
+        #         "[optional] The file path of the NIRISS catalogue (FINISH DESCRIPTION LATER)."
+        #     )
         try:
-            files["prep_dir"]
-        except:
-            files.add("prep_dir", "")
-            files["prep_dir"].comment(
-                "The directory containing the segmentation map and direct images."
-            )
-
-        try:
-            files["cube_path"]
-        except:
-            files.add("cube_path", "")
-            files["cube_path"].comment(
-                "[optional] The file path of the corresponding MUSE datacube."
-            )
-
-        try:
-            files["cat_path"]
-        except Exception as e:
-            print(e)
-            self.cat = None
-            files.add("cat_path", "")
-            files["cat_path"].comment(
-                "[optional] The file path of the NIRISS catalogue (FINISH DESCRIPTION LATER)."
-            )
-        try:
-            self.cat = QTable.read(Path(files["cat_path"]).expanduser().resolve())
+            self.cat = QTable.read(fpe(files["cat_path"]))
         except:
             self.cat = None
 
         # Appearance
         try:
-            appearance = doc["appearance"]
+            appearance = self.config["appearance"]
         except:
             appearance_tab = tomlkit.table()
-            doc.add("appearance", appearance_tab)
-            appearance = doc["appearance"]
+            self.config.add("appearance", appearance_tab)
+            appearance = self.config["appearance"]
 
         try:
             appearance["appearance_mode"]
@@ -312,7 +289,7 @@ class GCG(ctk.CTk):
 
         # Lines
         try:
-            lines = doc["lines"]
+            lines = self.config["lines"]
         except:
             lines_tab = tomlkit.table()
             lines_tab.add(
@@ -321,9 +298,9 @@ class GCG(ctk.CTk):
                 )
             )
             lines_tab.add(tomlkit.nl())
-            doc.add(tomlkit.nl())
-            doc.add("lines", lines_tab)
-            lines = doc["lines"]
+            self.config.add(tomlkit.nl())
+            self.config.add("lines", lines_tab)
+            lines = self.config["lines"]
 
         try:
             emission = lines["emission"]
@@ -332,88 +309,15 @@ class GCG(ctk.CTk):
             emission = lines["emission"]
             emission.add(tomlkit.comment("These are the emission lines."))
             emission.add(tomlkit.nl())
-            # appearance["appearance_mode"].comment("System (default), light, or dark.")
 
         em_lines = {
             "Lyman_alpha": {
                 "latex_name": r"Ly$\alpha$",
                 "centre": 1215.24,
             },
-            "CIV_1549": {
-                "latex_name": r"C IV",
-                "centre": 1549.48,
-            },
-            "H_delta": {
-                "latex_name": r"H$\delta$",
-                "centre": 4102.89,
-            },
-            "OIII_4364": {
-                "latex_name": r"OIII",
-                "centre": 4364.436,
-            },
-            "H_gamma": {
-                "latex_name": r"H$\gamma$",
-                "centre": 4341.68,
-            },
-            "H_beta": {
-                "latex_name": r"H$\beta$",
-                "centre": 4862.68,
-            },
-            "NII_6550": {
-                "latex_name": r"NII",
-                "centre": 6549.86,
-            },
             "H_alpha": {
                 "latex_name": r"H$\alpha$",
                 "centre": 6564.61,
-            },
-            "NII_6585": {
-                "latex_name": r"NII",
-                "centre": 6585.27,
-            },
-            "PaE": {
-                "latex_name": r"Pa-$\eta$",
-                "centre": 9548.6,
-            },
-            "PaD": {
-                "latex_name": r"Pa-$\delta$",
-                "centre": 10052.1,
-            },
-            "PaG": {
-                "latex_name": r"Pa-$\gamma$",
-                "centre": 10941.1,
-            },
-            "PaB": {
-                "latex_name": r"Pa-$\beta$",
-                "centre": 12821.6,
-            },
-            "PaA": {
-                "latex_name": r"Pa-$\alpha$",
-                "centre": 18756.1,
-            },
-            "SII_6718": {
-                "latex_name": r"SII",
-                "centre": 6718.29,
-            },
-            "SII_6733": {
-                "latex_name": r"SII",
-                "centre": 6732.67,
-            },
-            "SIII_9069": {
-                "latex_name": r"SIII",
-                "centre": 9068.6,
-            },
-            "HeI_10830": {
-                "latex_name": r"HeI",
-                "centre": 10830.3398,
-            },
-            "OIII_4960": {
-                "latex_name": r"OIII",
-                "centre": 4960.295,
-            },
-            "OIII_5008": {
-                "latex_name": r"OIII",
-                "centre": 5008.240,
             },
         }
 
@@ -423,7 +327,7 @@ class GCG(ctk.CTk):
                 for key in line_data.keys():
                     emission[line_name][key]
             except:
-                emission.add(line_name, tomlkit.table().indent(8))
+                emission.add(line_name, tomlkit.table().indent(4))
                 for key, value in line_data.items():
                     emission[line_name].add(key, value)
                 emission.add(tomlkit.nl())
@@ -435,73 +339,15 @@ class GCG(ctk.CTk):
             absorption = lines["absorption"]
             absorption.add(tomlkit.comment("These are the absorption lines."))
             absorption.add(tomlkit.nl())
-            # appearance["appearance_mode"].comment("System (default), light, or dark.")
-
-        ab_lines = {
-            "K_3935": {
-                "latex_name": r"K",
-                "centre": 3934.777,
-            },
-            "H_3970": {
-                "latex_name": r"H",
-                "centre": 3969.588,
-            },
-            "G_4306": {
-                "latex_name": r"G",
-                "centre": 4305.61,
-            },
-            "Mg_5177": {
-                "latex_name": r"Mg",
-                "centre": 5176.7,
-            },
-            "Na_5896": {
-                "latex_name": r"Na",
-                "centre": 5895.6,
-            },
-            "Ca_8500": {
-                "latex_name": r"CaII",
-                "centre": 8500.36,
-            },
-            "Ca_8544": {
-                "latex_name": r"CaII",
-                "centre": 8544.44,
-            },
-            "Ca_8564": {
-                "latex_name": r"CaII",
-                "centre": 8564.52,
-            },
-        }
-
-        for line_name, line_data in ab_lines.items():
-            try:
-                absorption[line_name]
-                for key in line_data.keys():
-                    absorption[line_name][key]
-            except:
-                absorption.add(line_name, tomlkit.table().indent(8))
-                for key, value in line_data.items():
-                    absorption[line_name].add(key, value)
-                absorption.add(tomlkit.nl())
-        # try:
-        #     emission["Halpha"]
-        # except:
-        #     emission.add("Halpha", "test")
-        #     # appearance["theme"].comment(
-        #     #     "Blue (default), dark-blue, or green. The CustomTKinter color theme. "
-        #     #     + "Can also point to the location of a custom .json file describing the desired theme."
-        #     # )
-
-        # print (doc)
-        # print (self.base_config["files"]["full_config_path"])
 
         with open(
-            Path(self.base_config["files"]["full_config_path"]).expanduser().resolve(),
+            fpe(self.config_file_path),
             mode="wt",
             encoding="utf-8",
         ) as fp:
-            tomlkit.dump(doc, fp)
+            tomlkit.dump(self.config, fp)
 
-        return doc
+        return self.config
 
     def open_settings_callback(self):
         if self.settings_window is None or not self.settings_window.winfo_exists():
@@ -586,7 +432,7 @@ class GCG(ctk.CTk):
 
     def quit_gracefully(self, event=None):
         # Put some lines here to save current output
-        self.write_full_config(self.full_config)
+        self.write_config()
         # quit()
         self.quit()
 
@@ -602,6 +448,9 @@ class MyTabView(ctk.CTkTabview):
             # print ("success")
             except:
                 pass
+
+def fpe(filepath):
+    return Path(filepath).expanduser().resolve()
 
 def run_app(**kwargs):
     app = GCG(**kwargs)
@@ -626,6 +475,7 @@ def run_app(**kwargs):
 # COmpare redshift - scan wide range with grizli vs photoz
 # Talk to Xin/GUido about modelling
 # Magnitude limits
+# Change colour for MUSE spectrum
 # Save individual beams from grizli?
 # Add PaE vs [SIII]
 # Look at low redshift cluster members - flag up emission/absorption

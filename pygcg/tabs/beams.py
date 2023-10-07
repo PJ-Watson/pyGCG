@@ -102,7 +102,7 @@ class BeamFrame(ctk.CTkFrame):
         try:
             self.file_path = [
                 *(
-                    Path(self._root().full_config["files"]["extractions_dir"])
+                    Path(self._root().config["files"]["extractions_dir"])
                     .expanduser()
                     .resolve()
                 ).glob(f"*{int(gal_id):0>5}.stack.fits")
@@ -151,7 +151,7 @@ class BeamFrame(ctk.CTkFrame):
             self.gal_id = int(self._root().current_gal_id.get())
             self.file_path = [
                 *(
-                    Path(self._root().full_config["files"]["extractions_dir"])
+                    Path(self._root().config["files"]["extractions_dir"])
                     .expanduser()
                     .resolve()
                 ).glob(f"*{self.gal_id:0>5}.stack.fits")
@@ -276,7 +276,7 @@ class BeamFrame(ctk.CTkFrame):
 
 #         self.file_path = [
 #             *(
-#                 Path(self._root().full_config["files"]["extractions_dir"])
+#                 Path(self._root().config["files"]["extractions_dir"])
 #                 .expanduser()
 #                 .resolve()
 #             ).glob(f"*{gal_id:0>5}.stack.fits")
@@ -379,7 +379,7 @@ class BeamFrame(ctk.CTkFrame):
 
 #             self.file_path = [
 #                 *(
-#                     Path(self._root().full_config["files"]["extractions_dir"])
+#                     Path(self._root().config["files"]["extractions_dir"])
 #                     .expanduser()
 #                     .resolve()
 #                 ).glob(f"*{self.gal_id:0>5}.stack.fits")

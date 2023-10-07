@@ -1,0 +1,137 @@
+# This is an example configuration file, which stores the settings used previously.
+
+title = "pyGCG Configuration"
+
+[files]
+out_dir = "" # The location of the primary configuration file.
+extractions_dir = "" # The directory in which NIRISS extractions are stored.
+cat_path = "" # The file path of the NIRISS catalogue. Must contain id, ra, dec columns.
+prep_dir = "" # [optional] The directory containing the segmentation map and direct images.
+temp_dir = "" # [optional] The directory in which temporary files are stored. Defaults to $OUT_DIR/.temp/
+cube_path = "" # [optional] The file path of the corresponding MUSE datacube.
+
+[appearance]
+appearance_mode = "system" # System (default), light, or dark.
+theme = "blue" # Blue (default), dark-blue, or green. The CustomTKinter color theme. Can also point to the location of a custom .json file describing the desired theme.
+
+[lines]
+# [optional] These tables define the lines shown in the redshift tab.
+
+    [lines.emission]
+    # These are the emission lines.
+
+        [lines.emission.Lyman_alpha]
+        latex_name = "Ly$\\alpha$"
+        centre = 1215.24
+
+        [lines.emission.CIV_1549]
+        latex_name = "C IV"
+        centre = 1549.48
+
+        [lines.emission.H_delta]
+        latex_name = "H$\\delta$"
+        centre = 4102.89
+
+        [lines.emission.OIII_4364]
+        latex_name = "OIII"
+        centre = 4364.436
+
+        [lines.emission.H_gamma]
+        latex_name = "H$\\gamma$"
+        centre = 4341.68
+
+        [lines.emission.H_beta]
+        latex_name = "H$\\beta$"
+        centre = 4862.68
+
+        [lines.emission.NII_6550]
+        latex_name = "NII"
+        centre = 6549.86
+
+        [lines.emission.H_alpha]
+        latex_name = "H$\\alpha$"
+        centre = 6564.61
+
+        [lines.emission.NII_6585]
+        latex_name = "NII"
+        centre = 6585.27
+
+        [lines.emission.PaE]
+        latex_name = "Pa-$\\eta$"
+        centre = 9548.6
+
+        [lines.emission.PaD]
+        latex_name = "Pa-$\\delta$"
+        centre = 10052.1
+
+        [lines.emission.PaG]
+        latex_name = "Pa-$\\gamma$"
+        centre = 10941.1
+
+        [lines.emission.PaB]
+        latex_name = "Pa-$\\beta$"
+        centre = 12821.6
+
+        [lines.emission.PaA]
+        latex_name = "Pa-$\\alpha$"
+        centre = 18756.1
+
+        [lines.emission.SII_6718]
+        latex_name = "SII"
+        centre = 6718.29
+
+        [lines.emission.SII_6733]
+        latex_name = "SII"
+        centre = 6732.67
+
+        [lines.emission.SIII_9069]
+        latex_name = "SIII"
+        centre = 9068.6
+
+        [lines.emission.HeI_10830]
+        latex_name = "HeI"
+        centre = 10830.3398
+
+        [lines.emission.OIII_4960]
+        latex_name = "OIII"
+        centre = 4960.295
+
+        [lines.emission.OIII_5008]
+        latex_name = "OIII"
+        centre = 5008.24
+
+    [lines.absorption]
+    # These are the absorption lines.
+
+        [lines.absorption.K_3935]
+        latex_name = "K"
+        centre = 3934.777
+
+        [lines.absorption.H_3970]
+        latex_name = "H"
+        centre = 3969.588
+
+        [lines.absorption.G_4306]
+        latex_name = "G"
+        centre = 4305.61
+
+        [lines.absorption.Mg_5177]
+        latex_name = "Mg"
+        centre = 5176.7
+
+        [lines.absorption.Na_5896]
+        latex_name = "Na"
+        centre = 5895.6
+
+        [lines.absorption.Ca_8500]
+        latex_name = "CaII"
+        centre = 8500.36
+
+        [lines.absorption.Ca_8544]
+        latex_name = "CaII"
+        centre = 8544.44
+
+        [lines.absorption.Ca_8564]
+        latex_name = "CaII"
+        centre = 8564.52
+

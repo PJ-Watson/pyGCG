@@ -21,7 +21,7 @@ class SettingsSelection(ctk.CTkFrame):
             pady=(10, 0),
         )
         self.settings_value = ctk.StringVar(
-            self, self._root().full_config["files"][self.value_key]
+            self, self._root().config["files"][self.value_key]
         )
         self.settings_entry = ctk.CTkEntry(
             master,
@@ -53,10 +53,10 @@ class SettingsSelection(ctk.CTkFrame):
         )
 
     def change_settings_callback(self, event=None):
-        self._root().full_config["files"][self.value_key] = str(
+        self._root().config["files"][self.value_key] = str(
             Path(self.settings_value.get()).expanduser().resolve()
         )
-        self._root().write_full_config(self._root().full_config)
+        self._root().write_config(self._root().config)
 
     def browse_dir(self):
         dir_output = ctk.filedialog.askdirectory(
@@ -112,7 +112,7 @@ class SettingsWindow(ctk.CTkToplevel):
         )
         self.change_appearance_menu.grid(row=0, column=1, padx=20, pady=20, sticky="w")
         self.change_appearance_menu.set(
-            self._root().full_config["appearance"]["appearance_mode"]
+            self._root().config["appearance"]["appearance_mode"]
         )
 
         self.config_path_label = ctk.CTkLabel(
@@ -126,7 +126,7 @@ class SettingsWindow(ctk.CTkToplevel):
         )
 
         self.config_path_value = ctk.StringVar(
-            self, self._root().full_config["files"]["full_config_path"]
+            self, self._root().config["files"]["config_path"]
         )
         self.config_path_entry = ctk.CTkEntry(
             self.scrollable_frame,
@@ -189,11 +189,11 @@ class SettingsWindow(ctk.CTkToplevel):
 
     def change_appearance_menu_callback(self, choice):
         ctk.set_appearance_mode(choice.lower())
-        self._root().full_config["appearance"]["appearance_mode"] = choice.lower()
-        self._root().write_full_config(self._root().full_config)
+        self._root().config["appearance"]["appearance_mode"] = choice.lower()
+        self._root().write_config(self._root().config)
 
     def change_config_path_callback(self, event=None):
-        self._root().base_config["files"]["full_config_path"] = str(
+        self._root().base_config["files"]["config_path"] = str(
             Path(self.config_path_value.get()).expanduser().resolve()
         )
         with open(
@@ -201,10 +201,10 @@ class SettingsWindow(ctk.CTkToplevel):
         ) as fp:
             tomlkit.dump(self._root().base_config, fp)
 
-        self._root().full_config["files"]["full_config_path"] = str(
+        self._root().config["files"]["config_path"] = str(
             Path(self.config_path_value.get()).expanduser().resolve()
         )
-        self._root().write_full_config(self._root().full_config)
+        self._root().write_config(self._root().config)
 
     def browse_config_path(self):
         path_output = str(
@@ -222,5 +222,5 @@ class SettingsWindow(ctk.CTkToplevel):
 
     def quit_settings_gracefully(self, event=None):
         # Put some lines here to save current output
-        self._root().write_full_config(self._root().full_config)
+        self._root().write_config(self._root().config)
         self.destroy()

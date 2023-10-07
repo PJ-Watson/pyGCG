@@ -64,11 +64,11 @@ class CommentsWindow(ctk.CTkToplevel):
 
     def change_appearance_menu_callback(self, choice):
         ctk.set_appearance_mode(choice.lower())
-        self._root().full_config["appearance"]["appearance_mode"] = choice.lower()
-        self._root().write_full_config(self._root().full_config)
+        self._root().config["appearance"]["appearance_mode"] = choice.lower()
+        self._root().write_config(self._root().config)
 
     def change_config_path_callback(self, event=None):
-        self._root().base_config["files"]["full_config_path"] = str(
+        self._root().base_config["files"]["config_path"] = str(
             Path(self.config_path_value.get()).expanduser().resolve()
         )
         with open(
@@ -76,10 +76,10 @@ class CommentsWindow(ctk.CTkToplevel):
         ) as fp:
             tomlkit.dump(self._root().base_config, fp)
 
-        self._root().full_config["files"]["full_config_path"] = str(
+        self._root().config["files"]["config_path"] = str(
             Path(self.config_path_value.get()).expanduser().resolve()
         )
-        self._root().write_full_config(self._root().full_config)
+        self._root().write_config(self._root().config)
 
     def browse_config_path(self):
         path_output = str(
