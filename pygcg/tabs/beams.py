@@ -575,7 +575,6 @@ class SinglePABeamFrame(ctk.CTkFrame):
     #     print("optionmenu dropdown clicked:", choice)
 
     def update_plots(self, extvers=None):
-        
         # self.quality_frame.get()
 
         if extvers != None and extvers != self.extvers:
@@ -592,7 +591,7 @@ class SinglePABeamFrame(ctk.CTkFrame):
                 self.plotted_images = dict()
             except:
                 pass
-            
+
             self.extvers = extvers
             self.quality_frame.reload_values(new_values=self.extvers)
         # print (self.extvers)
@@ -609,7 +608,7 @@ class SinglePABeamFrame(ctk.CTkFrame):
             self.PA_plot_label.configure(
                 text="Stack of all grism pointings (Contamination map not available)"
             )
-            self.pa_var="Stack"
+            self.pa_var = "Stack"
         else:
             self.PA_plot_label.configure(text=f"Current PA = {self.pa_var}deg")
 
@@ -744,7 +743,6 @@ class SinglePABeamFrame(ctk.CTkFrame):
 
 class MultiQualityFrame(ctk.CTkFrame):
     def __init__(self, master, values, **kwargs):
-
         super().__init__(master, **kwargs)
         self.columnconfigure((0, 1, 2, 3, 4, 5), weight=1)
         self.values = values
@@ -771,24 +769,22 @@ class MultiQualityFrame(ctk.CTkFrame):
             cov_menu.grid(row=1, column=2 * i + 1, padx=10, pady=(10, 10), sticky="w")
             self.coverage_menus.append(cov_menu)
 
-
     def reload_values(self, new_values):
-
-        print (new_values, self.values)
-
+        print(new_values, self.values)
 
     def get(self):
-        
         # self._root().current_gal_data[master.master.master.pa_var] = "test"
-        print (self._root().current_gal_data)
-        for v, cont, cov in zip(self.values, self.contamination_menus, self.coverage_menus):
+        print(self._root().current_gal_data)
+        for v, cont, cov in zip(
+            self.values, self.contamination_menus, self.coverage_menus
+        ):
             # print (v, cont.get(), cov.get())
             if v not in self._root().current_gal_data.keys():
                 self._root().current_gal_data[v] = {}
             self._root().current_gal_data[v]["contamination"] = cont.get()
             self._root().current_gal_data[v]["coverage"] = cov.get()
         # print ([c.get() for c in self.coverage_menus])
-        print (self._root().current_gal_data)
+        print(self._root().current_gal_data)
         # checked_checkboxes = []
         # for checkbox in self.checkboxes:
         #     if checkbox.get() == 1:

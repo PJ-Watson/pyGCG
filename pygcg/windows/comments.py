@@ -1,6 +1,7 @@
 import customtkinter as ctk
 from pathlib import Path
 
+
 class CommentsWindow(ctk.CTkToplevel):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -55,12 +56,11 @@ class CommentsWindow(ctk.CTkToplevel):
             # sticky="",
         )
 
-
     def select_all(self, event=None):
         self.comments_box.tag_add("sel", "1.0", "end")
         self.comments_box.mark_set("insert", "1.0")
         self.comments_box.see("insert")
-        return 'break'
+        return "break"
 
     def change_appearance_menu_callback(self, choice):
         ctk.set_appearance_mode(choice.lower())

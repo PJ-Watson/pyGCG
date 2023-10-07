@@ -2,11 +2,12 @@ import customtkinter as ctk
 from pathlib import Path
 import tomlkit
 from astropy.table import QTable
-from .tabs.spectrum import SpecFrame
-from .tabs.beams import BeamFrame
-from .windows.settings import SettingsWindow
-from .windows.comments import CommentsWindow
+from pygcg.tabs.spectrum import SpecFrame
+from pygcg.tabs.beams import BeamFrame
+from pygcg.windows.settings import SettingsWindow
+from pygcg.windows.comments import CommentsWindow
 import numpy as np
+
 
 class GCG(ctk.CTk):
     def __init__(self, config_file=None):
@@ -46,7 +47,6 @@ class GCG(ctk.CTk):
             pady=20,
             sticky="ew",
         )
-
         self.prev_gal_button = ctk.CTkButton(
             self,
             text="Previous",
@@ -81,38 +81,22 @@ class GCG(ctk.CTk):
             pady=20,
             sticky="ew",
         )
-
         self.id_list = np.array(
             sorted(
                 [
                     f.stem[-8:-3]
-                    for f in (
-                        fpe(self.config["files"]["extractions_dir"])
-                    ).glob(f"*.1D.fits")
+                    for f in (fpe(self.config["files"]["extractions_dir"])).glob(
+                        f"*.1D.fits"
+                    )
                 ]
             )
         )
 
         self.current_gal_data = {}
 
-        # self.current_gal_entry = ctk.CTkEntry(
-        #     self,
-        #     text="Save Galaxy",
-        #     command=self.save_gal_button_callback,
-        # )
-        # self.save_gal_button.grid(
-        #     row=1,
-        #     column=3,
-        #     padx=20,
-        #     pady=20,
-        #     # sticky="news",
-        # )
         self.current_gal_id = ctk.StringVar(
             master=self,
-            # value=self.id_list,
         )
-        if len(self.id_list)!=0:
-            self.current_gal_id.set(self.id_list[0])
         self.current_gal_label = ctk.CTkLabel(
             self,
             text="Current ID:",
@@ -139,7 +123,32 @@ class GCG(ctk.CTk):
             "<Return>",
             self.change_gal_id,
         )
+        if len(self.id_list) == 0:
+            self.generate_splash()
+        else:
+            self.current_gal_id.set(self.id_list[0])
+            self.generate_tabs()
 
+    def generate_splash(self):
+        # try:
+        self.splash_frame = ctk.CTkFrame(self)
+        self.splash_frame.grid(row=0, column=0, columnspan=6, sticky="news")
+        self.splash_frame.columnconfigure(0, weight=1)
+        self.splash_frame.rowconfigure(0, weight=1)
+        # except Exception as e:
+        #     print (e)
+        main_label = ctk.CTkLabel(
+            self.splash_frame,
+            text=(
+                "No objects found. Check the supplied directories, \n"
+                "or rescan the current directory in the settings menu."
+            ),
+            font=ctk.CTkFont(family="", size=20),
+        )
+        main_label.grid(row=0, column=0, sticky="news")
+        # main_label.grid(row=0)
+
+    def generate_tabs(self):
         self.main_tabs = MyTabView(
             master=self,
             # tab_names=["Beam view", "Spec view"],
@@ -179,8 +188,10 @@ class GCG(ctk.CTk):
                 self.config = tomlkit.load(fp)
             self.write_config()
         except Exception as e:
-            print (e)
-            print ("No valid config file supplied. Creating config.toml in the current working directory.")
+            print(e)
+            print(
+                "No valid config file supplied. Creating config.toml in the current working directory."
+            )
             example_path = Path(__file__).parent / "example_config.toml"
             with open(example_path, "rt") as fp:
                 self.config = tomlkit.load(fp)
@@ -216,13 +227,10 @@ class GCG(ctk.CTk):
         #     )
         #     self.full_config = self.write_full_config(self.base_config)
 
-        ctk.set_appearance_mode(
-            self.config["appearance"]["appearance_mode"].lower()
-        )
+        ctk.set_appearance_mode(self.config["appearance"]["appearance_mode"].lower())
         ctk.set_default_color_theme(self.config["appearance"]["theme"].lower())
 
     def write_config(self):
-
         try:
             files = self.config["files"]
         except:
@@ -247,7 +255,7 @@ class GCG(ctk.CTk):
                     self.temp_dir = self.out_dir / ".temp"
                     self.temp_dir.mkdir(exist_ok=True)
             except:
-                print ("Could not find or create output directory.")
+                print("Could not find or create output directory.")
 
         self.quit()
         # try:
@@ -369,51 +377,57 @@ class GCG(ctk.CTk):
 
     def prev_gal_button_callback(self, event=None):
         if self.main_tabs.get() == "Beam view":
-            current_PA_idx = self.full_beam_frame.PA_menu.cget("values").index(self.full_beam_frame.PA_menu.get())
-            if current_PA_idx==0:
-                current_gal_idx = (self.id_list == f"{self.current_gal_id.get():0>5}").nonzero()[0]
+            current_PA_idx = self.full_beam_frame.PA_menu.cget("values").index(
+                self.full_beam_frame.PA_menu.get()
+            )
+            if current_PA_idx == 0:
+                current_gal_idx = (
+                    self.id_list == f"{self.current_gal_id.get():0>5}"
+                ).nonzero()[0]
                 self.current_gal_id.set(self.id_list[current_gal_idx - 1][0])
                 self.main_tabs.set("Spec view")
                 self.change_gal_id()
                 # self.muse_spec_frame.update_plot()
-            elif current_PA_idx==1:
+            elif current_PA_idx == 1:
                 self.full_beam_frame.PA = self.full_beam_frame.PA_menu.cget("values")[0]
                 self.full_beam_frame.PA_menu.set(self.full_beam_frame.PA)
                 self.full_beam_frame.update_grid()
-            elif current_PA_idx==2:
+            elif current_PA_idx == 2:
                 self.full_beam_frame.PA = self.full_beam_frame.PA_menu.cget("values")[1]
                 self.full_beam_frame.PA_menu.set(self.full_beam_frame.PA)
                 self.full_beam_frame.update_grid()
         elif self.main_tabs.get() == "Spec view":
-                self.main_tabs.set("Beam view")
-                self.full_beam_frame.PA = self.full_beam_frame.PA_menu.cget("values")[1]
-                self.full_beam_frame.PA_menu.set(self.full_beam_frame.PA)
-                self.change_gal_id()
-                # self.full_beam_frame.update_grid()
+            self.main_tabs.set("Beam view")
+            self.full_beam_frame.PA = self.full_beam_frame.PA_menu.cget("values")[1]
+            self.full_beam_frame.PA_menu.set(self.full_beam_frame.PA)
+            self.change_gal_id()
+            # self.full_beam_frame.update_grid()
 
     def next_gal_button_callback(self, event=None):
-
         if self.main_tabs.get() == "Beam view":
-            current_PA_idx = self.full_beam_frame.PA_menu.cget("values").index(self.full_beam_frame.PA_menu.get())
-            if current_PA_idx==0:
+            current_PA_idx = self.full_beam_frame.PA_menu.cget("values").index(
+                self.full_beam_frame.PA_menu.get()
+            )
+            if current_PA_idx == 0:
                 self.full_beam_frame.PA = self.full_beam_frame.PA_menu.cget("values")[1]
                 self.full_beam_frame.PA_menu.set(self.full_beam_frame.PA)
                 self.full_beam_frame.update_grid(force_update=True)
-            elif current_PA_idx==1 or current_PA_idx==2:
+            elif current_PA_idx == 1 or current_PA_idx == 2:
                 self.main_tabs.set("Spec view")
                 self.muse_spec_frame.update_plot()
         elif self.main_tabs.get() == "Spec view":
-            current_gal_idx = (self.id_list == f"{self.current_gal_id.get():0>5}").nonzero()[0]
+            current_gal_idx = (
+                self.id_list == f"{self.current_gal_id.get():0>5}"
+            ).nonzero()[0]
             self.current_gal_id.set(self.id_list[current_gal_idx + 1][0])
             self.main_tabs.set("Beam view")
             self.full_beam_frame.PA = self.full_beam_frame.PA_menu.cget("values")[0]
             self.full_beam_frame.PA_menu.set(self.full_beam_frame.PA)
             self.change_gal_id()
             # self.full_beam_frame.update_grid()
-                # self.full_beam_frame.PA = self.full_beam_frame.PA_menu.cget("values")[1]
-                # self.full_beam_frame.PA_menu.set(self.full_beam_frame.PA)
-                # self.full_beam_frame.update_grid(force_update=True)
-
+            # self.full_beam_frame.PA = self.full_beam_frame.PA_menu.cget("values")[1]
+            # self.full_beam_frame.PA_menu.set(self.full_beam_frame.PA)
+            # self.full_beam_frame.update_grid(force_update=True)
 
     def change_gal_id(self, event=None):
         # print (event)
@@ -436,6 +450,7 @@ class GCG(ctk.CTk):
         # quit()
         self.quit()
 
+
 class MyTabView(ctk.CTkTabview):
     def __init__(self, master, tab_names, expose_bind_fns=None, **kwargs):
         super().__init__(master, **kwargs)
@@ -449,8 +464,10 @@ class MyTabView(ctk.CTkTabview):
             except:
                 pass
 
+
 def fpe(filepath):
     return Path(filepath).expanduser().resolve()
+
 
 def run_app(**kwargs):
     app = GCG(**kwargs)
@@ -458,6 +475,7 @@ def run_app(**kwargs):
     app.withdraw()
     # app.destroy()
     # del app
+
 
 # if __name__ == "__main__":
 #     run_app()

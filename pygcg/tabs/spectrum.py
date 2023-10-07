@@ -133,7 +133,7 @@ class SpecFrame(ctk.CTkFrame):
         )
         self.grizli_temp_checkbox.select()
 
-        self.images_frame = ctk.CTkFrame(self)#, bg_color="red")
+        self.images_frame = ctk.CTkFrame(self)  # , bg_color="red")
         self.images_frame.grid(row=2, column=0, columnspan=2, sticky="news")
         self.seg_frame = SegMapFrame(self.images_frame, gal_id=self.gal_id)
         self.seg_frame.grid(row=0, column=0, sticky="news")
@@ -275,14 +275,10 @@ class SpecFrame(ctk.CTkFrame):
                         )
                     except:
                         y_vals = (
-                            data_table["flux"][clip]
-                            / data_table["flat"][clip]
-                            / 1e-19
+                            data_table["flux"][clip] / data_table["flat"][clip] / 1e-19
                         )
                         y_err = (
-                            data_table["err"][clip]
-                            / data_table["flat"][clip]
-                            / 1e-19
+                            data_table["err"][clip] / data_table["flat"][clip] / 1e-19
                         )
                     self.plotted_components[dict_key][
                         hdu.name
@@ -504,9 +500,7 @@ class SpecFrame(ctk.CTkFrame):
             for line in self.fig_axes.get_lines():
                 if line in self.plotted_components["emission"].values():
                     line.remove()
-            for line_key, line_data in (
-                self._root().config["lines"]["emission"].items()
-            ):
+            for line_key, line_data in self._root().config["lines"]["emission"].items():
                 del self.plotted_components["emission"][line_key]
 
         if (
@@ -699,9 +693,7 @@ class SegMapFrame(ctk.CTkFrame):
     def update_seg_path(self, pattern="*seg.fits"):
         self.seg_path = [
             *(
-                Path(self._root().config["files"]["prep_dir"])
-                .expanduser()
-                .resolve()
+                Path(self._root().config["files"]["prep_dir"]).expanduser().resolve()
             ).glob(pattern)
         ]
         if len(self.seg_path) == 0:
@@ -814,7 +806,9 @@ class SegMapFrame(ctk.CTkFrame):
 
 
 class RGBImageFrame(ctk.CTkFrame):
-    def __init__(self, master, gal_id, filter_names=["F200W", "F150W", "F115W"], **kwargs):
+    def __init__(
+        self, master, gal_id, filter_names=["F200W", "F150W", "F115W"], **kwargs
+    ):
         super().__init__(master, **kwargs)
 
         self.gal_id = gal_id
@@ -932,16 +926,16 @@ class RGBImageFrame(ctk.CTkFrame):
                 # print(v)
                 with pf.open(v) as hdul:
                     # hdul.info()
-                    self.rgb_data[i] = (
-                        hdul[0].data[
-                            cutout_coords[0] : cutout_coords[1],
-                            cutout_coords[2] : cutout_coords[3],
-                        ]
-                        *10**((hdul[0].header["ZP"]-25)/2.5)
-                    )
+                    self.rgb_data[i] = hdul[0].data[
+                        cutout_coords[0] : cutout_coords[1],
+                        cutout_coords[2] : cutout_coords[3],
+                    ] * 10 ** ((hdul[0].header["ZP"] - 25) / 2.5)
 
             self.rgb_stretched = make_lupton_rgb(
-                self.rgb_data[0], self.rgb_data[1], self.rgb_data[2], stretch=0.1, #Q=10
+                self.rgb_data[0],
+                self.rgb_data[1],
+                self.rgb_data[2],
+                stretch=0.1,  # Q=10
             )
             self.plotted_components["rgb"] = self.fig_axes[-1].imshow(
                 self.rgb_stretched,
@@ -953,10 +947,14 @@ class RGBImageFrame(ctk.CTkFrame):
             self.fig_axes[-1].set_xlim(xmax=self.rgb_stretched.shape[0])
             self.fig_axes[-1].set_ylim(ymax=self.rgb_stretched.shape[1])
 
-            vmax = np.nanmax([1.1 * np.percentile(self.rgb_data, 98), 5 * np.std(self.rgb_data)])
+            vmax = np.nanmax(
+                [1.1 * np.percentile(self.rgb_data, 98), 5 * np.std(self.rgb_data)]
+            )
             vmin = -0.1 * vmax
             interval = ManualInterval(vmin=vmin, vmax=vmax)
-            for a, d, f in zip(self.fig_axes[:-1][::-1], self.rgb_data, self.filter_names):
+            for a, d, f in zip(
+                self.fig_axes[:-1][::-1], self.rgb_data, self.filter_names
+            ):
                 norm = ImageNormalize(
                     d,
                     interval=interval,
@@ -971,12 +969,7 @@ class RGBImageFrame(ctk.CTkFrame):
                     norm=norm,
                 )
                 self.plotted_components[f"{f}_text"] = a.text(
-                    0.05,0.95,
-                    f,
-                    transform = a.transAxes,
-                    ha="left",
-                    va="top",
-                    c="red"
+                    0.05, 0.95, f, transform=a.transAxes, ha="left", va="top", c="red"
                 )
                 # self.
                 # print (np.std(self.rgb_data))
@@ -986,7 +979,6 @@ class RGBImageFrame(ctk.CTkFrame):
                 #     vmin = -0.1 * vmax
                 #     interval = ManualInterval(vmin=vmin, vmax=vmax)
                 # print (self.fig_axes)
-
 
                 # self.plotted_components[f"{f}_marker"] = a.scatter(
                 #     y_c

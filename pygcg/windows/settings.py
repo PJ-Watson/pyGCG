@@ -1,6 +1,7 @@
 import customtkinter as ctk
 from pathlib import Path
 
+
 class SettingsSelection(ctk.CTkFrame):
     def __init__(
         self, master, row, label, value, setting_is_dir=False, *args, **kwargs
@@ -190,7 +191,7 @@ class SettingsWindow(ctk.CTkToplevel):
     def change_appearance_menu_callback(self, choice):
         ctk.set_appearance_mode(choice.lower())
         self._root().config["appearance"]["appearance_mode"] = choice.lower()
-        self._root().write_config(self._root().config)
+        self._root().write_config()
 
     def change_config_path_callback(self, event=None):
         self._root().base_config["files"]["config_path"] = str(
