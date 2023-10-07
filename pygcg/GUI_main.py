@@ -257,7 +257,6 @@ class GCG(ctk.CTk):
             except:
                 print("Could not find or create output directory.")
 
-        self.quit()
         # try:
         #     files["cat_path"]
         # except Exception as e:

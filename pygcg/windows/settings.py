@@ -57,7 +57,7 @@ class SettingsSelection(ctk.CTkFrame):
         self._root().config["files"][self.value_key] = str(
             Path(self.settings_value.get()).expanduser().resolve()
         )
-        self._root().write_config(self._root().config)
+        self._root().write_config()
 
     def browse_dir(self):
         dir_output = ctk.filedialog.askdirectory(
@@ -116,112 +116,44 @@ class SettingsWindow(ctk.CTkToplevel):
             self._root().config["appearance"]["appearance_mode"]
         )
 
-        self.config_path_label = ctk.CTkLabel(
-            self.scrollable_frame, text="Full config path"
-        )
-        self.config_path_label.grid(
-            row=1,
-            column=0,
-            padx=20,
-            pady=(10, 0),
-        )
-
-        self.config_path_value = ctk.StringVar(
-            self, self._root().config["files"]["config_path"]
-        )
-        self.config_path_entry = ctk.CTkEntry(
-            self.scrollable_frame,
-            textvariable=self.config_path_value,
-        )
-        self.config_path_entry.grid(row=1, column=1, padx=20, pady=(10, 0), sticky="we")
-        self.config_path_entry.bind("<Return>", self.change_config_path_callback)
-        self.open_config_path_button = ctk.CTkButton(
-            self.scrollable_frame,
-            text="Browse",
-            command=self.browse_config_path,
-        )
-        self.open_config_path_button.grid(
-            row=2,
-            column=1,
-            padx=20,
-            pady=(5, 10),
-            sticky="we",
-        )
-
-        temp_settings = SettingsSelection(
-            self.scrollable_frame,
-            3,
-            "Temporary directory",
-            "temp_dir",
-            setting_is_dir=True,
-        )
-
-        cube_settings = SettingsSelection(
-            self.scrollable_frame,
-            5,
-            "Cube filepath",
-            "cube_path",
-            setting_is_dir=False,
-        )
-
-        extractions_settings = SettingsSelection(
-            self.scrollable_frame,
-            7,
-            "Extractions directory",
-            "extractions_dir",
-            setting_is_dir=True,
-        )
-
-        prep_settings = SettingsSelection(
-            self.scrollable_frame,
-            9,
-            "Prep directory",
-            "prep_dir",
-            setting_is_dir=True,
-        )
-
-        cat_settings = SettingsSelection(
-            self.scrollable_frame,
-            11,
+        proper_names = [
             "Catalogue filepath",
+            "Output directory",
+            "Extractions directory",
+            "Prep directory",
+            "Cube filepath",
+            "Temporary directory",
+        ]
+        backend_names = [
             "cat_path",
-            setting_is_dir=False,
-        )
+            "out_dir",
+            "extractions_dir",
+            "prep_dir",
+            "cube_path",
+            "temp_dir"
+        ]
+        is_dir = [0,1,1,1,0,1]
+
+        additional_settings = []
+
+        for i, (p, b, d) in enumerate(zip(proper_names, backend_names, is_dir)):
+            additional_settings.append(
+                SettingsSelection(
+                    self.scrollable_frame,
+                    2*i+1,
+                    p,
+                    b,
+                    setting_is_dir = d,
+                )
+            )
+
 
     def change_appearance_menu_callback(self, choice):
         ctk.set_appearance_mode(choice.lower())
         self._root().config["appearance"]["appearance_mode"] = choice.lower()
         self._root().write_config()
 
-    def change_config_path_callback(self, event=None):
-        self._root().base_config["files"]["config_path"] = str(
-            Path(self.config_path_value.get()).expanduser().resolve()
-        )
-        with open(
-            Path(__file__).parent / "base_config.toml", mode="wt", encoding="utf-8"
-        ) as fp:
-            tomlkit.dump(self._root().base_config, fp)
-
-        self._root().config["files"]["config_path"] = str(
-            Path(self.config_path_value.get()).expanduser().resolve()
-        )
-        self._root().write_config(self._root().config)
-
-    def browse_config_path(self):
-        path_output = str(
-            ctk.filedialog.askopenfilename(
-                parent=self,
-                initialdir=Path(self.config_path_value.get())
-                .expanduser()
-                .resolve()
-                .parent,
-            )
-        )
-        if Path(path_output) is not None and Path(path_output).is_file():
-            self.config_path_value.set(path_output)
-            self.change_config_path_callback()
-
     def quit_settings_gracefully(self, event=None):
         # Put some lines here to save current output
-        self._root().write_config(self._root().config)
+        self._root().write_config()
         self.destroy()
