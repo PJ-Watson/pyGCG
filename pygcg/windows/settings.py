@@ -91,17 +91,32 @@ class SettingsWindow(ctk.CTkToplevel):
         # Key bindings
         self.protocol("WM_DELETE_WINDOW", self.quit_settings_gracefully)
         self.bind("<Control-q>", self.quit_settings_gracefully)
+        self.bind("<Control-w>", self.quit_settings_gracefully)
 
         self.scrollable_frame = ctk.CTkScrollableFrame(self)
         self.scrollable_frame.grid_columnconfigure(0, weight=0)
         self.scrollable_frame.grid_columnconfigure(1, weight=1)
         self.scrollable_frame.pack(side="top", fill="both", expand=True)
 
+        self.rescan_button = ctk.CTkButton(
+            self.scrollable_frame,
+            text="Rescan directories",
+            command=self._root().rescan_and_reload,
+        )
+        self.rescan_button.grid(
+            row=0,
+            column=0,
+            padx=20,
+            pady=20,
+            sticky="we",
+            columnspan=2,
+        )
+
         self.appearance_label = ctk.CTkLabel(
             self.scrollable_frame, text="Appearance mode"
         )
         self.appearance_label.grid(
-            row=0,
+            row=1,
             column=0,
             padx=20,
             pady=20,
@@ -111,7 +126,7 @@ class SettingsWindow(ctk.CTkToplevel):
             values=["System", "Light", "Dark"],
             command=self.change_appearance_menu_callback,
         )
-        self.change_appearance_menu.grid(row=0, column=1, padx=20, pady=20, sticky="w")
+        self.change_appearance_menu.grid(row=1, column=1, padx=20, pady=20, sticky="w")
         self.change_appearance_menu.set(
             self._root().config["appearance"]["appearance_mode"]
         )
@@ -130,9 +145,9 @@ class SettingsWindow(ctk.CTkToplevel):
             "extractions_dir",
             "prep_dir",
             "cube_path",
-            "temp_dir"
+            "temp_dir",
         ]
-        is_dir = [0,1,1,1,0,1]
+        is_dir = [0, 1, 1, 1, 0, 1]
 
         additional_settings = []
 
@@ -140,13 +155,12 @@ class SettingsWindow(ctk.CTkToplevel):
             additional_settings.append(
                 SettingsSelection(
                     self.scrollable_frame,
-                    2*i+1,
+                    2 * (i + 1),
                     p,
                     b,
-                    setting_is_dir = d,
+                    setting_is_dir=d,
                 )
             )
-
 
     def change_appearance_menu_callback(self, choice):
         ctk.set_appearance_mode(choice.lower())

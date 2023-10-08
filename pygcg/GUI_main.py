@@ -14,7 +14,6 @@ class GCG(ctk.CTk):
         super().__init__()
 
         # Geometry
-        # self.geometry("1280x720")
         self.geometry("1366x768")
         self.minsize(1280, 720)
         # self.attributes("-zoomed", True)
@@ -81,16 +80,6 @@ class GCG(ctk.CTk):
             pady=20,
             sticky="ew",
         )
-        self.id_list = np.array(
-            sorted(
-                [
-                    f.stem[-8:-3]
-                    for f in (fpe(self.config["files"]["extractions_dir"])).glob(
-                        f"*.1D.fits"
-                    )
-                ]
-            )
-        )
 
         self.current_gal_data = {}
 
@@ -123,6 +112,20 @@ class GCG(ctk.CTk):
             "<Return>",
             self.change_gal_id,
         )
+
+        self.rescan_and_reload()
+
+    def rescan_and_reload(self):
+        self.id_list = np.array(
+            sorted(
+                [
+                    f.stem[-8:-3]
+                    for f in (fpe(self.config["files"]["extractions_dir"])).glob(
+                        f"*.1D.fits"
+                    )
+                ]
+            )
+        )
         if len(self.id_list) == 0:
             self.generate_splash()
         else:
@@ -130,13 +133,10 @@ class GCG(ctk.CTk):
             self.generate_tabs()
 
     def generate_splash(self):
-        # try:
         self.splash_frame = ctk.CTkFrame(self)
         self.splash_frame.grid(row=0, column=0, columnspan=6, sticky="news")
         self.splash_frame.columnconfigure(0, weight=1)
         self.splash_frame.rowconfigure(0, weight=1)
-        # except Exception as e:
-        #     print (e)
         main_label = ctk.CTkLabel(
             self.splash_frame,
             text=(
@@ -146,25 +146,20 @@ class GCG(ctk.CTk):
             font=ctk.CTkFont(family="", size=20),
         )
         main_label.grid(row=0, column=0, sticky="news")
-        # main_label.grid(row=0)
 
     def generate_tabs(self):
+        if hasattr(self, "splash_frame"):
+            self.splash_frame.destroy()
+            del self.splash_frame
         self.main_tabs = MyTabView(
             master=self,
-            # tab_names=["Beam view", "Spec view"],
-            tab_names=["Spec view", "Beam view"],
+            tab_names=["Beam view", "Spec view"],
+            # tab_names=["Spec view", "Beam view"],
             command=self.main_tabs_update,
-            # expose_bind_fns=[self._test_pr
-            # int_e, self._test_print_e]
         )
         self.main_tabs.grid(
             row=0, column=0, padx=20, pady=0, columnspan=6, sticky="news"
         )
-
-        # self.current_gal_id = 3927
-        # self.current_gal_id = 1864
-        # self.current_gal_id = 1494
-        # self.current_gal_id = 1338
 
         self.muse_spec_frame = SpecFrame(
             self.main_tabs.tab("Spec view"), self.current_gal_id.get()
@@ -177,8 +172,6 @@ class GCG(ctk.CTk):
         )
         # self.muse_spec_frame.grid(row=0, column=0, padx=20, pady=20, sticky="nsew")
         self.full_beam_frame.pack(fill="both", expand=1)
-
-        # print (dir(self.main_tabs.tab("Spec view")))
 
     def initialise_configuration(self, config_file=None):
         try:
@@ -202,30 +195,6 @@ class GCG(ctk.CTk):
                 encoding="utf-8",
             ) as fp:
                 tomlkit.dump(self.config, fp)
-
-        # fpe(files["temp_dir"]).mkdir(
-        #     exist_ok=True, parents=True
-        # )
-        # try:
-        #     with open(test_path, "rt") as fp:
-        #         self.base_config = tomlkit.load(fp)
-        #         assert self.base_config["files"]["full_config_path"]
-        # except:
-        #     self.base_config = self.write_base_config()
-
-        # try:
-        #     with open(
-        #         fpe(self.base_config["files"]["full_config_path"]),
-        #         "rt",
-        #     ) as fp:
-        #         self.full_config = tomlkit.load(fp)
-        #         self.write_full_config(self.full_config)
-
-        # except FileNotFoundError:
-        #     print(
-        #         "Configuration file not found at the specified location. Creating new config from defaults."
-        #     )
-        #     self.full_config = self.write_full_config(self.base_config)
 
         ctk.set_appearance_mode(self.config["appearance"]["appearance_mode"].lower())
         ctk.set_default_color_theme(self.config["appearance"]["theme"].lower())
@@ -257,15 +226,6 @@ class GCG(ctk.CTk):
             except:
                 print("Could not find or create output directory.")
 
-        # try:
-        #     files["cat_path"]
-        # except Exception as e:
-        #     print(e)
-        #     self.cat = None
-        #     files.add("cat_path", "")
-        #     files["cat_path"].comment(
-        #         "[optional] The file path of the NIRISS catalogue (FINISH DESCRIPTION LATER)."
-        #     )
         try:
             self.cat = QTable.read(fpe(files["cat_path"]))
         except:
@@ -358,19 +318,13 @@ class GCG(ctk.CTk):
 
     def open_settings_callback(self):
         if self.settings_window is None or not self.settings_window.winfo_exists():
-            self.settings_window = SettingsWindow(
-                self
-            )  # create window if its None or destroyed
+            self.settings_window = SettingsWindow(self)
         else:
             self.settings_window.focus()
 
     def gal_comments_button_callback(self):
-        # print("Comments button clicked!")
-
         if self.comments_window is None or not self.comments_window.winfo_exists():
-            self.comments_window = CommentsWindow(
-                self
-            )  # create window if its None or destroyed
+            self.comments_window = CommentsWindow(self)
         else:
             self.comments_window.focus()
 
@@ -386,7 +340,6 @@ class GCG(ctk.CTk):
                 self.current_gal_id.set(self.id_list[current_gal_idx - 1][0])
                 self.main_tabs.set("Spec view")
                 self.change_gal_id()
-                # self.muse_spec_frame.update_plot()
             elif current_PA_idx == 1:
                 self.full_beam_frame.PA = self.full_beam_frame.PA_menu.cget("values")[0]
                 self.full_beam_frame.PA_menu.set(self.full_beam_frame.PA)
@@ -400,7 +353,6 @@ class GCG(ctk.CTk):
             self.full_beam_frame.PA = self.full_beam_frame.PA_menu.cget("values")[1]
             self.full_beam_frame.PA_menu.set(self.full_beam_frame.PA)
             self.change_gal_id()
-            # self.full_beam_frame.update_grid()
 
     def next_gal_button_callback(self, event=None):
         if self.main_tabs.get() == "Beam view":
@@ -423,16 +375,8 @@ class GCG(ctk.CTk):
             self.full_beam_frame.PA = self.full_beam_frame.PA_menu.cget("values")[0]
             self.full_beam_frame.PA_menu.set(self.full_beam_frame.PA)
             self.change_gal_id()
-            # self.full_beam_frame.update_grid()
-            # self.full_beam_frame.PA = self.full_beam_frame.PA_menu.cget("values")[1]
-            # self.full_beam_frame.PA_menu.set(self.full_beam_frame.PA)
-            # self.full_beam_frame.update_grid(force_update=True)
 
     def change_gal_id(self, event=None):
-        # print (event)
-        # self.current_gal_id.set(str(int(self.current_gal_id.get())+1))
-        # self.current_gal_id += relative_change
-        # print(self.current_gal_id)
         ### This is where the logic for loading/updating the tables will go
         self.current_gal_data = {}
         self.main_tabs_update()
@@ -446,7 +390,6 @@ class GCG(ctk.CTk):
     def quit_gracefully(self, event=None):
         # Put some lines here to save current output
         self.write_config()
-        # quit()
         self.quit()
 
 
@@ -459,7 +402,6 @@ class MyTabView(ctk.CTkTabview):
             self.add(name)
             try:
                 self.tab(name).bind("<<TabChanged>>", expose_bind_fns[i])
-            # print ("success")
             except:
                 pass
 
@@ -472,30 +414,3 @@ def run_app(**kwargs):
     app = GCG(**kwargs)
     app.mainloop()
     app.withdraw()
-    # app.destroy()
-    # del app
-
-
-# if __name__ == "__main__":
-#     run_app()
-
-# PyCube (redshift visualisation)
-# Marz (MUSE redshift fits)
-# Goel Noiret (noinet)
-# Bergamini (multiple images)
-
-# Reset redshift to default
-# Rearrange layout to focus on single PA at a time
-# RGB image and segmentation map viewer
-
-# Add coordinate entry in addition to id
-# COmpare redshift - scan wide range with grizli vs photoz
-# Talk to Xin/GUido about modelling
-# Magnitude limits
-# Change colour for MUSE spectrum
-# Save individual beams from grizli?
-# Add PaE vs [SIII]
-# Look at low redshift cluster members - flag up emission/absorption
-# Attempt extraction of stripped/jellyfish galaxies
-
-# Figure out how to load/reload app without any galaxy IDs

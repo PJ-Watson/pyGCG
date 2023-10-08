@@ -869,32 +869,6 @@ class RGBImageFrame(ctk.CTkFrame):
                 self.rgb_paths.append(None)
             else:
                 self.rgb_paths.append(rgb_path[0])
-
-        # self.rgb_path.append([
-        #     *(
-        #         Path(self._root().config["files"]["prep_dir"])
-        #         .expanduser()
-        #         .resolve()
-        #     ).glob("*f150w_drz_sci.fits")
-        # ][0])
-        # self.rgb_path.append([
-        #     *(
-        #         Path(self._root().config["files"]["prep_dir"])
-        #         .expanduser()
-        #         .resolve()
-        #     ).glob("*f115w_drz_sci.fits")
-        # ][0])
-
-        # print (self.rgb_path)
-
-        # main_dir = [
-        #     *(
-        #         Path(self._root().config["files"]["prep_dir"])
-        #         .expanduser()
-        #         .resolve()
-        #     ).glob(pattern)
-        # ]
-        # print (main_dir)
         # # if len(self.seg_path) == 0:
         # #     print("Segmentation map not found.")
         # #     self.seg_path = None
@@ -910,8 +884,6 @@ class RGBImageFrame(ctk.CTkFrame):
                 v.remove()
             self.plotted_components = {}
 
-            # print(dir(self.master.children))
-            # print(self.master.master.seg_frame.cutout_dimensions)
             cutout_coords = self.master.master.seg_frame.cutout_dimensions
 
             self.rgb_data = np.empty(
