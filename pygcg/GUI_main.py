@@ -8,6 +8,8 @@ from pygcg.windows.settings import SettingsWindow
 from pygcg.windows.comments import CommentsWindow
 import numpy as np
 from tqdm import tqdm
+import collections
+import pickle
 
 
 class GCG(ctk.CTk):
@@ -124,6 +126,11 @@ class GCG(ctk.CTk):
             .astype(int)
         )
 
+        # Segmentation map ids must be a unique identifier!
+        # If you're reading this message, something has gone horribly wrong
+        self.seg_id_col, unique_idx = np.unique(self.seg_id_col, return_index=True)
+        self.id_col = self.id_col[unique_idx]
+        self.cat = self.cat[unique_idx]
         dir_to_chk = fpe(self.config["files"]["extractions_dir"])
 
         id_list_unsorted = [
@@ -147,6 +154,12 @@ class GCG(ctk.CTk):
             self.current_gal_id.set(self.id_list[0])
             self.tab_row = self.cat[self.id_col == self.id_list[0]]
             self.seg_id = self.seg_id_col[self.id_col == self.id_list[0]][0]
+
+            self.current_gal_data["id"] = self.current_gal_id.get()
+            self.current_gal_data["seg_id"] = self.seg_id
+            self.current_gal_data["ra"] = self.tab_row[self.config["cat"].get("ra", "ra")]
+            self.current_gal_data["dec"] = self.tab_row[self.config["cat"].get("dec", "dec")]
+
             self.generate_tabs()
 
     def generate_splash(self):
@@ -215,6 +228,34 @@ class GCG(ctk.CTk):
 
         ctk.set_appearance_mode(self.config["appearance"]["appearance_mode"].lower())
         ctk.set_default_color_theme(self.config["appearance"]["theme"].lower())
+
+        self.out_cat_path = fpe(self.config["files"]["out_dir"]) / "pyGCG_output.fits"
+
+        try:
+            self.out_cat = QTable.read(self.out_cat_path)
+        except:
+            self.out_cat = QTable(
+                names=[
+                    "ID",
+                    "SEG_ID",
+                    "RA",
+                    "DEC",
+                    "GRISM1PA1_QUALITY",
+                    "GRISM1PA1_COVERAGE",
+                    "GRISM2PA1_QUALITY",
+                    "GRISM2PA1_COVERAGE",
+                    "GRISM3PA1_QUALITY",
+                    "GRISM3PA1_COVERAGE",
+                    "GRISM1PA2_QUALITY",
+                    "GRISM1PA2_COVERAGE",
+                    "GRISM2PA2_QUALITY",
+                    "GRISM2PA2_COVERAGE",
+                    "GRISM3PA2_QUALITY",
+                    "GRISM3PA2_COVERAGE",
+                    "GRIZLI_REDSHIFT",
+                    "ESTIMATED_REDSHIST",
+                ]
+            )
 
     def write_config(self):
         try:
@@ -376,7 +417,8 @@ class GCG(ctk.CTk):
             self.main_tabs.set("Beam view")
             self.full_beam_frame.PA = self.full_beam_frame.PA_menu.cget("values")[1]
             self.full_beam_frame.PA_menu.set(self.full_beam_frame.PA)
-            self.change_gal_id()
+            self.full_beam_frame.update_grid()
+            # self.change_gal_id()
 
     def next_gal_button_callback(self, event=None):
         if self.main_tabs.get() == "Beam view":
@@ -392,7 +434,9 @@ class GCG(ctk.CTk):
                 self.muse_spec_frame.update_plot()
         elif self.main_tabs.get() == "Spec view":
             current_gal_idx = (self.id_list == self.current_gal_id.get()).nonzero()[0]
-            self.current_gal_id.set(self.id_list[current_gal_idx + 1][0])
+            self.current_gal_id.set(
+                self.id_list[(current_gal_idx + 1) % len(self.id_list)][0]
+            )
             self.main_tabs.set("Beam view")
             self.full_beam_frame.PA = self.full_beam_frame.PA_menu.cget("values")[0]
             self.full_beam_frame.PA_menu.set(self.full_beam_frame.PA)
@@ -400,12 +444,25 @@ class GCG(ctk.CTk):
 
     def change_gal_id(self, event=None):
         ### This is where the logic for loading/updating the tables will go
-        self.current_gal_data = {}
+        flattened_data = flatten_dict(self.current_gal_data)
+
+        print (repr(flattened_data))
+        if len(flattened_data) == 18:
+            with open(fpe(self.config["files"]["out_dir"]) / f"{flattened_data['id']}_output.pkl", "wb") as fp:
+                pickle.dump(flattened_data, fp)
+
+        print("Changing galaxy id!")
 
         self.tab_row = self.cat[self.id_col == self.current_gal_id.get()]
         if len(self.tab_row) > 1:
             self.tab_row = self.tab_row[0]
         self.seg_id = self.seg_id_col[self.id_col == self.current_gal_id.get()][0]
+
+        self.current_gal_data = {}
+        self.current_gal_data["id"] = self.current_gal_id.get()
+        self.current_gal_data["seg_id"] = self.seg_id
+        self.current_gal_data["ra"] = self.tab_row[self.config["cat"].get("ra", "ra")]
+        self.current_gal_data["dec"] = self.tab_row[self.config["cat"].get("dec", "dec")]
 
         self.main_tabs_update()
 
@@ -436,6 +493,19 @@ class MyTabView(ctk.CTkTabview):
 
 def fpe(filepath):
     return Path(filepath).expanduser().resolve()
+
+def flatten_dict(input_dict, parent_key=False, separator='_'):
+    items = []
+    for key, value in input_dict.items():
+        new_key = str(parent_key) + separator + key if parent_key else key
+        if isinstance(value, collections.abc.MutableMapping):
+            items.extend(flatten_dict(value, new_key, separator).items())
+        elif isinstance(value, list):
+            for k, v in enumerate(value):
+                items.extend(flatten_dict({str(k): v}, new_key).items())
+        else:
+            items.append((new_key, value))
+    return dict(items)
 
 
 def run_app(**kwargs):

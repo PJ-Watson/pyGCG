@@ -192,6 +192,8 @@ class SpecFrame(ctk.CTkFrame):
         ][0]
         with pf.open(_row_path) as hdul:
             self.grizli_redshift = Table(hdul[1].data)["redshift"].value[0]
+            self._root().current_gal_data["grizli_redshift"] = self.grizli_redshift
+            self._root().current_gal_data["estimated_redshift"] = self.grizli_redshift
             self.current_redshift.set(self.grizli_redshift)
             self.redshift_slider.set(self.grizli_redshift)
 
@@ -432,6 +434,10 @@ class SpecFrame(ctk.CTkFrame):
             self.current_redshift.set(np.round(event, decimals=8))
         else:
             self.redshift_slider.set(float(self.current_redshift.get()))
+
+        self._root().current_gal_data["estimated_redshift"] = float(
+            self.current_redshift.get()
+        )
         for line_type in ["emission", "absorption"]:
             try:
                 for line_key, line_data in (

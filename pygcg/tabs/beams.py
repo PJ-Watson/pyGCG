@@ -185,32 +185,6 @@ class BeamFrame(ctk.CTkFrame):
                 # self.beam_single_PA_frame = SinglePABeamFrame(self, extvers = extver_list)
                 self.beam_single_PA_frame.update_plots(extvers=extver_list)
 
-            # self.grid_rowconfigure(1, weight=1)
-            # self.grid_columnconfigure(0, weight=1)
-        #         header = hdul[0].header
-        #         n_grism = header["NGRISM"]
-        #         n_pa = np.nanmax(
-        #             [
-        #                 header[f"N{header[f'GRISM{n:0>3}']}"]
-        #                 for n in range(1, n_grism + 1)
-        #             ]
-        #         )
-
-        # # for n in range(1,header["NGRISM"]+1):
-        # #     print (n)
-        # #     print (header[f"GRISM{n:0>3}"])
-        # #     print (header[f"N{header[f'GRISM{n:0>3}']}"])
-        # for idx, beam_sub_frame in enumerate(self.beam_frame_list):
-        #     # print (beam_sub_frame.ext, beam_sub_frame.extver)
-        #     beam_sub_frame.ext = self.ext
-        #     beam_sub_frame.cmap = self.cmap
-        #     beam_sub_frame.stretch = self.stretch
-        #     beam_sub_frame.limits = self.limits
-        #     beam_sub_frame.update_plots()
-        # # for row, col in np.ndindex(n_pa+1, n_grism):
-        # #     flat_idx = np.ravel_multi_index((row, col), (n_pa+1, n_grism))
-        # #     print (flat_idx)
-        # # print ("sort this out")
 
     def generate_grid(self):
         with pf.open(self.file_path) as hdul:
@@ -220,11 +194,8 @@ class BeamFrame(ctk.CTkFrame):
                 [header[f"N{header[f'GRISM{n:0>3}']}"] for n in range(1, n_grism + 1)]
             )
             self.beam_frame_list = []
-            # for
-            # This is where I'll set which pa is being used
             row = 0
             extver_list = []
-            # for row, col in np.ndindex(n_pa, n_grism):
             for i in range(n_grism):
                 grism_name = header[f"GRISM{i+1:0>3}"]
                 pa = "," + str(header[f"{grism_name}{row+1:0>2}"])
@@ -236,255 +207,6 @@ class BeamFrame(ctk.CTkFrame):
             self.grid_rowconfigure(1, weight=1)
             self.grid_columnconfigure(0, weight=1)
 
-
-# class BeamSubFrame(ctk.CTkFrame):
-#     def __init__(
-#         self,
-#         master,
-#         gal_id,
-#         extver,
-#         ext="SCI",
-#         cmap="plasma",
-#         stretch="Logarithmic",
-#         limits="grizli_default",
-#         **kwargs,
-#     ):
-#         super().__init__(master, **kwargs)
-
-#         self.gal_id = gal_id
-#         self.extver = extver
-#         self.ext = ext
-#         self.cmap = cmap
-#         self.stretch = stretch
-#         self.limits = limits
-#         # print (self)
-#         self.rowconfigure(0, weight=1)
-#         self.rowconfigure(1, weight=0)
-#         self.columnconfigure(1, weight=1)
-
-#         self.label = ctk.CTkLabel(self, text="Contamination:")
-#         self.label.grid(row=1, column=0, padx=10, pady=(10, 10), sticky="e")
-
-#         self.cont_value = ctk.StringVar(value="None")  # set initial value
-#         self.cont_menu = ctk.CTkOptionMenu(
-#             self,
-#             values=["None", "Mild", "Strong", "Incomplete trace"],
-#             command=self.optionmenu_callback,
-#             variable=self.cont_value,
-#         )
-#         self.cont_menu.grid(row=1, column=1, sticky="w")
-
-#         self.file_path = [
-#             *(
-#                 Path(self._root().config["files"]["extractions_dir"])
-#                 .expanduser()
-#                 .resolve()
-#             ).glob(f"*{gal_id:0>5}.stack.fits")
-#         ][0]
-
-#         self.update_plots()
-
-#     def optionmenu_callback(choice):
-#         print("optionmenu dropdown clicked:", choice)
-
-#     def update_plots(self):
-#         if not hasattr(self, "fig_axes"):
-#             # self.pad_frame = tk.Frame(self, width=200, height=200, borderwidth=0, background="")
-#             # self.pad_frame.grid(row=0, column=0, columnspan=2, sticky="nsew")#, padx=10, pady=20)
-
-#             # self.plot_frame = tk.Frame(
-#             #     self,
-#             #     bg = "blue",
-#             #     width = 300,
-#             #     height = 300,
-#             #     borderwidth=0,
-#             # )
-#             # self.plot_frame.rowconfigure(0,weight=1)
-#             # self.plot_frame.columnconfigure(0,weight=1)
-#             # calls function to fix the aspect ratio
-#             # self.set_aspect(self.plot_frame, self.pad_frame, aspect_ratio=5)
-#             self.fig = Figure(
-#                 constrained_layout=True
-#                 # , figsize=(2,1))
-#                 ,
-#                 figsize=(3, 1),
-#             )
-#             # print (self.master.winfo_height()/2)
-#             # print (self.master.winfo_width()/3)
-#             # self.fig.set_figsize(5,1)
-#             # print (self.fig.get_size_inches())
-#             self.pyplot_canvas = FigureCanvasTkAgg(
-#                 figure=self.fig,
-#                 master=self,
-#             )
-
-#             if not hasattr(self, "plotted_images"):
-#                 self.plotted_images = dict()
-
-#             # with pf.open(self.file_path) as hdul:
-#             #     # print (hdul["SCI","F115W"])
-#             #     shape_sci = hdul.info(output=False)[
-#             #         hdul.index_of((self.ext, self.extver))
-#             #     ][5][0]
-#             #     shape_kernel = hdul.info(output=False)[
-#             #         hdul.index_of(("KERNEL", self.extver))
-#             #     ][5][0]
-#             #     # idx_kernel = hdul.index_of(("KERNEL",self.extver))
-#             #     # print (hdul.info(output=False))
-#             #     # print (hdul.info(output=False)[idx_sci])
-#             #     # print (shape_sci)
-#             #     # print (hdul["SCI",self.extver].data.shape)
-
-#             # self.fig.
-#             self.fig_axes = self.fig.subplots(
-#                 1,
-#                 2,
-#                 sharey=True,
-#                 # aspect="auto",
-#                 # width_ratios=[1,shape_sci/shape_kernel],
-#                 # width_ratios=[0.5,1]
-#                 width_ratios=[1 / 3, 1],
-#             )
-
-#             if self.stretch.lower() == "linear":
-#                 self.stretch_fn = LinearStretch
-#             elif self.stretch.lower() == "square root":
-#                 self.stretch_fn = SqrtStretch
-#             elif self.stretch.lower() == "logarithmic":
-#                 self.stretch_fn = LogStretch
-
-#             self.plot_kernel()
-#             self.plot_beam()
-#             self.fig.canvas.draw_idle()
-
-#             self.fig.canvas.get_tk_widget().grid(
-#                 row=0, column=0, columnspan=2, sticky="news"
-#             )
-#             # self.fig.canvas.get_tk_widget().pack()
-#             # print (self.fig.canvas.get_tk_widget())
-#             # print (self.fig.get_size_inches())
-#             # print (self.fig_axes[0].get_aspect())
-#         else:
-#             # if self.gal_id != self._root().current_gal_id.get() or not hasattr(
-#             #     self, "pyplot_canvas"
-#             # ):
-#             self.gal_id = self._root().current_gal_id.get()
-
-#             if self.stretch.lower() == "linear":
-#                 self.stretch_fn = LinearStretch
-#             elif self.stretch.lower() == "square root":
-#                 self.stretch_fn = SqrtStretch
-#             elif self.stretch.lower() == "logarithmic":
-#                 self.stretch_fn = LogStretch
-
-#             self.file_path = [
-#                 *(
-#                     Path(self._root().config["files"]["extractions_dir"])
-#                     .expanduser()
-#                     .resolve()
-#                 ).glob(f"*{self.gal_id:0>5}.stack.fits")
-#             ][0]
-
-#             self.plot_kernel()
-#             self.plot_beam()
-#             self.fig.canvas.draw_idle()
-
-#             self.fig.canvas.get_tk_widget().grid(
-#                 row=0, column=0, columnspan=2, sticky="news"
-#             )
-
-#             self.update()
-
-#     def plot_kernel(self):
-#         try:
-#             self.plotted_images["kernel"].remove()
-#             del self.plotted_images["kernel"]
-#         except:
-#             pass
-#         with pf.open(self.file_path) as hdul:
-#             try:
-#                 # print (hdul["SCI","F115W"])
-#                 # print (hdul.info())
-#                 data = hdul["KERNEL", self.extver].data
-#                 # if hasattr(self.plotted_images, "kernel"):
-#                 #     print (self.plotted_images["kernel"])
-#                 #     self.plotted_images["kernel"].remove()
-
-#                 if self.limits == "grizli default":
-#                     vmax_kern = 1.1 * np.percentile(data, 99.5)
-#                     interval = ManualInterval(vmin=-0.1 * vmax_kern, vmax=vmax_kern)
-
-#                 norm = ImageNormalize(
-#                     data,
-#                     #  interval=MinMaxInterval(),
-#                     stretch=self.stretch_fn(),
-#                 )
-#                 self.plotted_images["kernel"] = self.fig_axes[0].imshow(
-#                     data,
-#                     origin="lower",
-#                     cmap=self.cmap,
-#                     # aspect="auto"
-#                     norm=norm,
-#                 )
-#                 self.fig_axes[0].set_xticklabels("")
-#                 self.fig_axes[0].set_yticklabels("")
-#                 self.fig_axes[0].tick_params(direction="in")
-#             except Exception as e:
-#                 print(e)
-#                 pass
-
-#     def plot_beam(self):
-#         try:
-#             self.plotted_images["beam"].remove()
-#             del self.plotted_images["beam"]
-#         except:
-#             pass
-#         with pf.open(self.file_path) as hdul:
-#             try:
-#                 # print (hdul["SCI","F115W"])
-#                 # print (hdul.info())
-#                 if self.ext == "RESIDUALS":
-#                     data = hdul["SCI", self.extver].data
-#                     m = hdul["MODEL", self.extver].data
-#                 else:
-#                     data = hdul[self.ext, self.extver].data
-#                     m = 0
-
-#                 if self.limits == "grizli default":
-#                     # print ("oh boy")
-#                     wht_i = hdul["WHT", self.extver]
-#                     clip = wht_i.data > 0
-#                     if clip.sum() == 0:
-#                         clip = np.isfinite(wht_i.data)
-
-#                     avg_rms = 1 / np.median(np.sqrt(wht_i.data[clip]))
-#                     vmax = np.maximum(1.1 * np.percentile(data[clip], 98), 5 * avg_rms)
-#                     vmin = -0.1 * vmax
-#                     interval = ManualInterval(vmin=vmin, vmax=vmax)
-
-#                 norm = ImageNormalize(
-#                     data,
-#                     interval=interval,
-#                     stretch=self.stretch_fn(),
-#                 )
-#                 self.plotted_images["beam"] = self.fig_axes[1].imshow(
-#                     data - m,
-#                     origin="lower",
-#                     cmap=self.cmap,
-#                     aspect="auto",
-#                     norm=norm,
-#                 )
-#                 self.fig_axes[1].tick_params(direction="in")
-#                 # self.fig_axes[0].plot([1,2],[3,4])
-#                 # self.update()
-#                 # self.fig_axes.imshow(
-#                 #     data
-#                 # )
-#                 # self.fig_axes[0].plot([1,2],[3,4])
-#                 # self.update()
-#                 # print
-#             except:
-#                 pass
 
 
 class SinglePABeamFrame(ctk.CTkFrame):
@@ -755,7 +477,7 @@ class MultiQualityFrame(ctk.CTkFrame):
             cont_menu = ctk.CTkOptionMenu(
                 self,
                 values=["None", "Mild", "Strong"],
-                # command
+                command=self.save_current,
             )
             cont_menu.grid(row=0, column=2 * i + 1, padx=10, pady=(10, 0), sticky="w")
             self.contamination_menus.append(cont_menu)
@@ -765,12 +487,29 @@ class MultiQualityFrame(ctk.CTkFrame):
             cov_menu = ctk.CTkOptionMenu(
                 self,
                 values=["Full", "Incomplete", "No data"],
+                command=self.save_current,
             )
             cov_menu.grid(row=1, column=2 * i + 1, padx=10, pady=(10, 10), sticky="w")
             self.coverage_menus.append(cov_menu)
 
+        self.get()
+
     def reload_values(self, new_values):
-        print(new_values, self.values)
+        # print(new_values, self.values)
+
+        self.values = new_values
+
+        for c in self.coverage_menus:
+            c.set("Full")
+        for c in self.contamination_menus:
+            c.set("None")
+
+        self.get()
+
+    def save_current(self, event=None):
+        self.get()
+        # print ()
+        # print(self._root().current_gal_data)
 
     def get(self):
         # self._root().current_gal_data[master.master.master.pa_var] = "test"
