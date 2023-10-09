@@ -119,48 +119,112 @@ class GCG(ctk.CTk):
         self.rescan_and_reload()
 
     def rescan_and_reload(self):
-        self.id_col = self._root().cat[self.config["cat"].get("id", "id")].astype(str)
-        self.seg_id_col = (
-            self._root()
-            .cat[self.config["cat"].get("seg_id", self.config["cat"].get("id", "id"))]
-            .astype(int)
-        )
-
-        # Segmentation map ids must be a unique identifier!
-        # If you're reading this message, something has gone horribly wrong
-        self.seg_id_col, unique_idx = np.unique(self.seg_id_col, return_index=True)
-        self.id_col = self.id_col[unique_idx]
-        self.cat = self.cat[unique_idx]
-        dir_to_chk = fpe(self.config["files"]["extractions_dir"])
-
-        id_list_unsorted = [
-            i
-            for i, s in tqdm(
-                zip(self.id_col, self.seg_id_col),
-                desc="Scanning directory for objects in catalogue",
-                total=len(self.id_col),
-            )
-            if any(dir_to_chk.glob(f"*{s:0>5}.1D.fits"))
-            and any(dir_to_chk.glob(f"*{s:0>5}.stack.fits"))
-        ]
         try:
-            self.id_list = np.array(sorted(id_list_unsorted, key=float))
-        except:
-            self.id_list = np.array([id_list_unsorted])
+            assert len(self.config["files"]["out_dir"]) > 0
+            assert len(self.config["files"]["cat_path"]) > 0
+            assert len(self.config["files"]["extractions_dir"]) > 0
 
-        if len(self.id_list) == 0:
-            self.generate_splash()
-        else:
+            self.id_col = (
+                self._root().cat[self.config["cat"].get("id", "id")].astype(str)
+            )
+            self.seg_id_col = (
+                self._root()
+                .cat[
+                    self.config["cat"].get("seg_id", self.config["cat"].get("id", "id"))
+                ]
+                .astype(int)
+            )
+
+            # Segmentation map ids must be a unique identifier!
+            # If you're reading this message, something has gone horribly wrong
+            self.seg_id_col, unique_idx = np.unique(self.seg_id_col, return_index=True)
+            self.id_col = self.id_col[unique_idx]
+            self.cat = self.cat[unique_idx]
+            dir_to_chk = fpe(self.config["files"]["extractions_dir"])
+
+            id_list_unsorted = [
+                i
+                for i, s in tqdm(
+                    zip(self.id_col, self.seg_id_col),
+                    desc="Scanning directory for objects in catalogue",
+                    total=len(self.id_col),
+                )
+                if any(dir_to_chk.glob(f"*{s:0>5}.1D.fits"))
+                and any(dir_to_chk.glob(f"*{s:0>5}.stack.fits"))
+            ]
+            try:
+                self.id_list = np.array(sorted(id_list_unsorted, key=float))
+            except:
+                self.id_list = np.array([id_list_unsorted])
+
+            assert len(self.id_list) > 0
+
+            self.out_cat_path = (
+                fpe(self.config["files"]["out_dir"]) / "pyGCG_output.fits"
+            )
+
+            try:
+                self.out_cat = QTable.read(self.out_cat_path)
+            except:
+                self.out_cat = QTable(
+                    names=[
+                        "ID",
+                        "SEG_ID",
+                        "RA",
+                        "DEC",
+                        f"{self.filter_names[2]},{self.PAs[0]}_QUALITY",
+                        f"{self.filter_names[2]},{self.PAs[0]}_COVERAGE",
+                        f"{self.filter_names[1]},{self.PAs[0]}_QUALITY",
+                        f"{self.filter_names[1]},{self.PAs[0]}_COVERAGE",
+                        f"{self.filter_names[0]},{self.PAs[0]}_QUALITY",
+                        f"{self.filter_names[0]},{self.PAs[0]}_COVERAGE",
+                        f"{self.filter_names[2]},{self.PAs[1]}_QUALITY",
+                        f"{self.filter_names[2]},{self.PAs[1]}_COVERAGE",
+                        f"{self.filter_names[1]},{self.PAs[1]}_QUALITY",
+                        f"{self.filter_names[1]},{self.PAs[1]}_COVERAGE",
+                        f"{self.filter_names[0]},{self.PAs[1]}_QUALITY",
+                        f"{self.filter_names[0]},{self.PAs[1]}_COVERAGE",
+                        "GRIZLI_REDSHIFT",
+                        "ESTIMATED_REDSHIFT",
+                    ],
+                    dtype=[
+                        str,
+                        int,
+                        float,
+                        float,
+                        str,
+                        str,
+                        str,
+                        str,
+                        str,
+                        str,
+                        str,
+                        str,
+                        str,
+                        str,
+                        str,
+                        str,
+                        float,
+                        float,
+                    ],
+                )
             self.current_gal_id.set(self.id_list[0])
             self.tab_row = self.cat[self.id_col == self.id_list[0]]
             self.seg_id = self.seg_id_col[self.id_col == self.id_list[0]][0]
 
             self.current_gal_data["id"] = self.current_gal_id.get()
             self.current_gal_data["seg_id"] = self.seg_id
-            self.current_gal_data["ra"] = self.tab_row[self.config["cat"].get("ra", "ra")]
-            self.current_gal_data["dec"] = self.tab_row[self.config["cat"].get("dec", "dec")]
+            self.current_gal_data["ra"] = self.tab_row[
+                self.config["cat"].get("ra", "ra")
+            ]
+            self.current_gal_data["dec"] = self.tab_row[
+                self.config["cat"].get("dec", "dec")
+            ]
 
             self.generate_tabs()
+        except Exception as e:
+            print(e)
+            self.generate_splash()
 
     def generate_splash(self):
         self.splash_frame = ctk.CTkFrame(self)
@@ -229,34 +293,6 @@ class GCG(ctk.CTk):
         ctk.set_appearance_mode(self.config["appearance"]["appearance_mode"].lower())
         ctk.set_default_color_theme(self.config["appearance"]["theme"].lower())
 
-        self.out_cat_path = fpe(self.config["files"]["out_dir"]) / "pyGCG_output.fits"
-
-        try:
-            self.out_cat = QTable.read(self.out_cat_path)
-        except:
-            self.out_cat = QTable(
-                names=[
-                    "ID",
-                    "SEG_ID",
-                    "RA",
-                    "DEC",
-                    "GRISM1PA1_QUALITY",
-                    "GRISM1PA1_COVERAGE",
-                    "GRISM2PA1_QUALITY",
-                    "GRISM2PA1_COVERAGE",
-                    "GRISM3PA1_QUALITY",
-                    "GRISM3PA1_COVERAGE",
-                    "GRISM1PA2_QUALITY",
-                    "GRISM1PA2_COVERAGE",
-                    "GRISM2PA2_QUALITY",
-                    "GRISM2PA2_COVERAGE",
-                    "GRISM3PA2_QUALITY",
-                    "GRISM3PA2_COVERAGE",
-                    "GRIZLI_REDSHIFT",
-                    "ESTIMATED_REDSHIST",
-                ]
-            )
-
     def write_config(self):
         try:
             files = self.config["files"]
@@ -295,6 +331,23 @@ class GCG(ctk.CTk):
         except:
             cat_tab = tomlkit.table()
             self.config.add("cat", cat_tab)
+
+        # Grisms
+        try:
+            grisms = self.config["grisms"]
+        except:
+            grism_tab = tomlkit.table()
+            self.config.add("grisms", grism_tab)
+
+        self.filter_names = [
+            self.config["grisms"].get("R", "F200W"),
+            self.config["grisms"].get("G", "F150W"),
+            self.config["grisms"].get("B", "F115W"),
+        ]
+        self.PAs = [
+            str(self.config["grisms"].get("PA1", 72.0)),
+            str(self.config["grisms"].get("PA2", 341.0)),
+        ]
 
         # Appearance
         try:
@@ -446,12 +499,22 @@ class GCG(ctk.CTk):
         ### This is where the logic for loading/updating the tables will go
         flattened_data = flatten_dict(self.current_gal_data)
 
-        print (repr(flattened_data))
-        if len(flattened_data) == 18:
-            with open(fpe(self.config["files"]["out_dir"]) / f"{flattened_data['id']}_output.pkl", "wb") as fp:
-                pickle.dump(flattened_data, fp)
+        # for k, v in flattened_data.items():
+        #     print (k, v, type(v))
+        # print (repr(flattened_data))
+        # if len(flattened_data) == 18:
+        #     with open(fpe(self.config["files"]["out_dir"]) / f"{flattened_data['id']}_output.pkl", "wb") as fp:
+        #         pickle.dump(flattened_data, fp)
 
-        print("Changing galaxy id!")
+        # This still needs work! Need to check columns match, and make sure I'm not overwriting existing data
+        if len(flattened_data) == 18:
+            # print (flattened_data.keys())
+            # print (self.out_cat.colnames)
+            # print ([n for n in flattened_data.keys() if n not in self.out_cat.colnames])
+            self.out_cat.add_row(flattened_data)
+            self.out_cat.write(self.out_cat_path, overwrite=True)
+
+        # print("Changing galaxy id!")
 
         self.tab_row = self.cat[self.id_col == self.current_gal_id.get()]
         if len(self.tab_row) > 1:
@@ -462,7 +525,9 @@ class GCG(ctk.CTk):
         self.current_gal_data["id"] = self.current_gal_id.get()
         self.current_gal_data["seg_id"] = self.seg_id
         self.current_gal_data["ra"] = self.tab_row[self.config["cat"].get("ra", "ra")]
-        self.current_gal_data["dec"] = self.tab_row[self.config["cat"].get("dec", "dec")]
+        self.current_gal_data["dec"] = self.tab_row[
+            self.config["cat"].get("dec", "dec")
+        ]
 
         self.main_tabs_update()
 
@@ -494,7 +559,8 @@ class MyTabView(ctk.CTkTabview):
 def fpe(filepath):
     return Path(filepath).expanduser().resolve()
 
-def flatten_dict(input_dict, parent_key=False, separator='_'):
+
+def flatten_dict(input_dict, parent_key=False, separator="_"):
     items = []
     for key, value in input_dict.items():
         new_key = str(parent_key) + separator + key if parent_key else key
@@ -504,7 +570,7 @@ def flatten_dict(input_dict, parent_key=False, separator='_'):
             for k, v in enumerate(value):
                 items.extend(flatten_dict({str(k): v}, new_key).items())
         else:
-            items.append((new_key, value))
+            items.append((new_key.upper(), value))
     return dict(items)
 
 

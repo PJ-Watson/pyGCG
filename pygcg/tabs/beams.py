@@ -29,7 +29,7 @@ class BeamFrame(ctk.CTkFrame):
         super().__init__(master, **kwargs)
 
         self.cmap = "plasma"
-        self.PA = "PA 1"
+        self.PA = self._root().PAs[0]
         self.stretch = "Square root"
         self.limits = "grizli default"
 
@@ -45,7 +45,7 @@ class BeamFrame(ctk.CTkFrame):
         PA_label.grid(row=0, column=0, padx=(20, 5), pady=20, sticky="e")
         self.PA_menu = ctk.CTkOptionMenu(
             self.settings_frame,
-            values=["PA 1", "PA 2", "Stack"],
+            values=self._root().PAs,
             command=self.change_PA,
         )
         self.PA_menu.grid(row=0, column=1, padx=(5, 20), pady=20, sticky="w")
@@ -105,7 +105,7 @@ class BeamFrame(ctk.CTkFrame):
                     Path(self._root().config["files"]["extractions_dir"])
                     .expanduser()
                     .resolve()
-                ).glob(f"*{gal_id}.stack.fits")
+                ).glob(f"*{self._root().seg_id:0>5}.stack.fits")
             ][0]
             self.generate_grid()
         except:
@@ -154,37 +154,34 @@ class BeamFrame(ctk.CTkFrame):
                     Path(self._root().config["files"]["extractions_dir"])
                     .expanduser()
                     .resolve()
-                ).glob(f"*{self.gal_id}.stack.fits")
+                ).glob(f"*{self._root().seg_id:0>5}.stack.fits")
             ][0]
             with pf.open(self.file_path) as hdul:
                 header = hdul[0].header
-                n_grism = header["NGRISM"]
-                n_pa = np.nanmax(
-                    [
-                        header[f"N{header[f'GRISM{n:0>3}']}"]
-                        for n in range(1, n_grism + 1)
-                    ]
-                )
+                n_grism = len(self._root().filter_names)
+                n_pa = len(self._root().PAs)
                 self.beam_frame_list = []
                 # row = 0
                 extver_list = []
                 # for row, col in np.ndindex(n_pa, n_grism):
                 for i in range(n_grism):
                     try:
-                        grism_name = header[f"GRISM{i+1:0>3}"]
-                        if self.PA == "PA 1":
-                            pa = "," + str(header[f"{grism_name}01"])
-                        elif self.PA == "PA 2":
-                            pa = "," + str(header[f"{grism_name}02"])
-                        elif self.PA == "Stack":
-                            pa = ""
-                        extver = grism_name + pa
+                        # grism_name = header[f"GRISM{i+1:0>3}"]
+                        grism_name = self._root().filter_names[::-1][i]
+                        extver = grism_name + f",{self.PA_menu.get()}"
+                        # # print (grism_name)
+                        # if self.PA == "PA 1":
+                        #     pa = "," + str(header[f"{grism_name}01"])
+                        # elif self.PA == "PA 2":
+                        #     pa = "," + str(header[f"{grism_name}02"])
+                        # elif self.PA == "Stack":
+                        #     pa = ""
+                        # extver = grism_name + pa
                     except:
                         extver = "none"
                     extver_list.append(extver)
                 # self.beam_single_PA_frame = SinglePABeamFrame(self, extvers = extver_list)
                 self.beam_single_PA_frame.update_plots(extvers=extver_list)
-
 
     def generate_grid(self):
         with pf.open(self.file_path) as hdul:
@@ -206,7 +203,6 @@ class BeamFrame(ctk.CTkFrame):
 
             self.grid_rowconfigure(1, weight=1)
             self.grid_columnconfigure(0, weight=1)
-
 
 
 class SinglePABeamFrame(ctk.CTkFrame):
@@ -395,7 +391,7 @@ class SinglePABeamFrame(ctk.CTkFrame):
                 if ax in self.fig_axes[:, 0]:
                     ax.set_ylabel(ext)
             except Exception as e:
-                print(e)
+                print("kernel?", e)
                 pass
 
     def plot_beam(self, ax, ext, extver):
@@ -459,7 +455,7 @@ class SinglePABeamFrame(ctk.CTkFrame):
                 else:
                     ax.set_xlabel(r"$\lambda$ ($\mu$m) - " + extver.split(",")[0])
             except Exception as e:
-                print(e)
+                print("beam?", e)
                 pass
 
 
@@ -468,19 +464,19 @@ class MultiQualityFrame(ctk.CTkFrame):
         super().__init__(master, **kwargs)
         self.columnconfigure((0, 1, 2, 3, 4, 5), weight=1)
         self.values = values
-        self.contamination_menus = []
+        self.quality_menus = []
         self.coverage_menus = []
 
         for i, value in enumerate(self.values):
-            label = ctk.CTkLabel(self, text="Beam Contamination")
+            label = ctk.CTkLabel(self, text="Beam Quality")
             label.grid(row=0, column=2 * i, padx=10, pady=(10, 0), sticky="e")
-            cont_menu = ctk.CTkOptionMenu(
+            q_menu = ctk.CTkOptionMenu(
                 self,
                 values=["None", "Mild", "Strong"],
                 command=self.save_current,
             )
-            cont_menu.grid(row=0, column=2 * i + 1, padx=10, pady=(10, 0), sticky="w")
-            self.contamination_menus.append(cont_menu)
+            q_menu.grid(row=0, column=2 * i + 1, padx=10, pady=(10, 0), sticky="w")
+            self.quality_menus.append(q_menu)
 
             label = ctk.CTkLabel(self, text="Beam Coverage")
             label.grid(row=1, column=2 * i, padx=10, pady=(10, 10), sticky="e")
@@ -501,7 +497,7 @@ class MultiQualityFrame(ctk.CTkFrame):
 
         for c in self.coverage_menus:
             c.set("Full")
-        for c in self.contamination_menus:
+        for c in self.quality_menus:
             c.set("None")
 
         self.get()
@@ -514,13 +510,11 @@ class MultiQualityFrame(ctk.CTkFrame):
     def get(self):
         # self._root().current_gal_data[master.master.master.pa_var] = "test"
         # print(self._root().current_gal_data)
-        for v, cont, cov in zip(
-            self.values, self.contamination_menus, self.coverage_menus
-        ):
+        for v, q, cov in zip(self.values, self.quality_menus, self.coverage_menus):
             # print (v, cont.get(), cov.get())
             if v not in self._root().current_gal_data.keys():
                 self._root().current_gal_data[v] = {}
-            self._root().current_gal_data[v]["contamination"] = cont.get()
+            self._root().current_gal_data[v]["quality"] = q.get()
             self._root().current_gal_data[v]["coverage"] = cov.get()
         # print ([c.get() for c in self.coverage_menus])
         # print(self._root().current_gal_data)

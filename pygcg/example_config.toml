@@ -21,6 +21,15 @@ ra = "X_WORLD"
 dec = "Y_WORLD"
 seg_id = "NUMBER" # [optional] If the galaxy id is different to the id in the segmentation map, and by extension, the grizli output files
 
+[grisms]
+# [optional] Change these if using different grisms. R, G, B refer to the red, green and blue channels in the image viewer.
+R = "F200W"
+G = "F150W"
+B = "F115W"
+# [optional] Change these if using different orientations
+PA1 = 72.0
+PA2 = 341.0
+
 [lines]
 # [optional] These tables define the lines shown in the redshift tab.
 

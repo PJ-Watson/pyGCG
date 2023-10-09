@@ -228,7 +228,7 @@ class SpecFrame(ctk.CTkFrame):
                 Path(self._root().config["files"]["extractions_dir"])
                 .expanduser()
                 .resolve()
-            ).glob(f"*{self._root().seg_id}.1D.fits")
+            ).glob(f"*{self._root().seg_id:0>5}.1D.fits")
         ][0]
 
         if templates:
@@ -648,13 +648,10 @@ class ValidateFloatVar(ctk.StringVar):
 
 
 class ImagesFrame(ctk.CTkFrame):
-    def __init__(
-        self, master, gal_id, filter_names=["F200W", "F150W", "F115W"], **kwargs
-    ):
+    def __init__(self, master, gal_id, **kwargs):
         super().__init__(master, **kwargs)
 
         self.gal_id = gal_id
-        self.filter_names = filter_names
 
         self.rowconfigure(0, weight=1)
         self.columnconfigure(0, weight=1)
@@ -710,7 +707,7 @@ class ImagesFrame(ctk.CTkFrame):
 
     def update_rgb_path(self):
         self.rgb_paths = []
-        for p in self.filter_names:
+        for p in self._root().filter_names:
             rgb_path = [
                 *(
                     Path(self._root().config["files"]["prep_dir"])
@@ -727,7 +724,7 @@ class ImagesFrame(ctk.CTkFrame):
     def plot_images(self, border=5):
         if self.seg_path is None and all(x is None for x in self.rgb_paths):
             print("No images to plot.")
-            for a, f in zip(self.fig_axes[:-2][::-1], self.filter_names):
+            for a, f in zip(self.fig_axes[:-2][::-1], self._root().filter_names):
                 self.plotted_components[f"{f}_text"] = a.text(
                     0.5,
                     0.5,
@@ -879,7 +876,7 @@ class ImagesFrame(ctk.CTkFrame):
             vmin = -0.1 * vmax
             interval = ManualInterval(vmin=vmin, vmax=vmax)
             for a, d, f in zip(
-                self.fig_axes[:-2][::-1], self.rgb_data, self.filter_names
+                self.fig_axes[:-2][::-1], self.rgb_data, self._root().filter_names
             ):
                 norm = ImageNormalize(
                     d,
