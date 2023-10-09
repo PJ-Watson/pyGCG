@@ -133,12 +133,12 @@ class SpecFrame(ctk.CTkFrame):
         )
         self.grizli_temp_checkbox.select()
 
-        self.images_frame = ctk.CTkFrame(self)  # , bg_color="red")
-        self.images_frame.grid(row=2, column=0, columnspan=2, sticky="news")
-        self.seg_frame = SegMapFrame(self.images_frame, gal_id=self.gal_id)
-        self.seg_frame.grid(row=0, column=0, sticky="news")
-        self.rgb_frame = RGBImageFrame(self.images_frame, gal_id=self.gal_id)
-        self.rgb_frame.grid(row=0, column=1, sticky="news")
+        self.images_frame = ImagesFrame(self, gal_id=self.gal_id)
+        self.images_frame.grid(row=2, column=0, columnspan=1, sticky="news")
+        # self.seg_frame = SegMapFrame(self.images_frame, gal_id=self.gal_id)
+        # self.seg_frame.grid(row=0, column=0, sticky="news")
+        # self.rgb_frame = RGBImageFrame(self.images_frame, gal_id=self.gal_id)
+        # self.rgb_frame.grid(row=0, column=1, sticky="news")
         # self.scrollable_frame.grid_rowconfigure(7, weight=1)
 
         if self._root().main_tabs.get() == "Spec view":
@@ -200,6 +200,14 @@ class SpecFrame(ctk.CTkFrame):
             self.current_redshift.set(self.grizli_redshift)
             self.redshift_slider.set(self.grizli_redshift)
 
+        self.cube_path = (
+            Path(self._root().config["files"]["cube_path"]).expanduser().resolve()
+        )
+        if not self.cube_path.is_file():
+            self.muse_checkbox.configure(state="disabled")
+        else:
+            self.muse_checkbox.configure(state="normal")
+
         if self.grizli_checkbox.get():
             self.plot_grizli()
         if self.grizli_temp_checkbox.get():
@@ -214,8 +222,7 @@ class SpecFrame(ctk.CTkFrame):
         except Exception as e:
             print(e)
             pass
-        self.seg_frame.update_seg_map()
-        self.rgb_frame.update_rgb_img()
+        self.images_frame.update_images()
 
     def plot_grizli(self, templates=False):
         file_path = [
@@ -299,11 +306,7 @@ class SpecFrame(ctk.CTkFrame):
     def plot_MUSE_spec(
         self,
     ):
-        cube_path = (
-            Path(self._root().config["files"]["cube_path"]).expanduser().resolve()
-        )
-        if not cube_path.is_file():
-            print("no cube file")
+        if not self.cube_path.is_file():
             return
         if "MUSE_spec" in self.plotted_components.keys():
             for line in self.fig_axes.get_lines():
@@ -645,40 +648,44 @@ class ValidateFloatVar(ctk.StringVar):
             ctk.StringVar.set(self, self._old_value)
 
 
-class SegMapFrame(ctk.CTkFrame):
-    def __init__(self, master, gal_id, **kwargs):
+class ImagesFrame(ctk.CTkFrame):
+    def __init__(
+        self, master, gal_id, filter_names=["F200W", "F150W", "F115W"], **kwargs
+    ):
         super().__init__(master, **kwargs)
 
         self.gal_id = gal_id
+        self.filter_names = filter_names
 
         self.rowconfigure(0, weight=1)
         self.columnconfigure(0, weight=1)
 
         self.update_seg_path()
+        self.update_rgb_path()
 
         self.fig = Figure(
             constrained_layout=True,
-            figsize=(2.2, 2.2),
+            figsize=(10, 2),
         )
         self.pyplot_canvas = FigureCanvasTkAgg(
             figure=self.fig,
             master=self,
         )
-        # print (dir(self))
-        # print (self.cget("fg_color"))
-        # print (self.winfo_rgb(self.cget("fg_color")[-1]))
         self.fig.set_facecolor("none")
         self.pyplot_canvas.get_tk_widget().config(bg=self.cget("bg_color")[-1])
-
-        self.fig_axes = self.fig.add_subplot(111)
-        self.fig_axes.set_xticklabels("")
-        self.fig_axes.set_yticklabels("")
-        self.fig_axes.tick_params(axis="both", direction="in", top=True, right=True)
-
-        prop_cycle = plt.rcParams["axes.prop_cycle"]
-        self.default_cmap = colors.LinearSegmentedColormap.from_list(
-            "default", prop_cycle.by_key()["color"][1:7]
+        self.fig_axes = self.fig.subplots(
+            1,
+            5,
+            sharey=True,
+            # aspect="auto",
+            # width_ratios=[1,shape_sci/shape_kernel],
+            # width_ratios=[0.5,1]
         )
+        for a in self.fig_axes:
+            a.set_xticklabels("")
+            a.set_yticklabels("")
+            a.tick_params(axis="both", direction="in", top=True, right=True)
+
         self.default_cmap = colors.ListedColormap(["C1", "C0", "C2", "C3", "C4", "C5"])
 
         self.plotted_components = {}
@@ -696,16 +703,70 @@ class SegMapFrame(ctk.CTkFrame):
                 Path(self._root().config["files"]["prep_dir"]).expanduser().resolve()
             ).glob(pattern)
         ]
+        print(self.seg_path)
         if len(self.seg_path) == 0:
             print("Segmentation map not found.")
             self.seg_path = None
         else:
             self.seg_path = self.seg_path[0]
 
-    def plot_seg_map(self, border=5):
-        if self.seg_path is None:
-            print("Currently nothing to do here.")
-        else:
+    def update_rgb_path(self):
+        self.rgb_paths = []
+        for p in self.filter_names:
+            rgb_path = [
+                *(
+                    Path(self._root().config["files"]["prep_dir"])
+                    .expanduser()
+                    .resolve()
+                ).glob(f"*{p.lower()}_drz_sci.fits")
+            ]
+            if len(rgb_path) == 0:
+                print(f"{p} image not found.")
+                self.rgb_paths.append(None)
+            else:
+                self.rgb_paths.append(rgb_path[0])
+
+    def plot_images(self, border=5):
+        if self.seg_path is None and all(x is None for x in self.rgb_paths):
+            print("No images to plot.")
+            for a, f in zip(self.fig_axes[:-2][::-1], self.filter_names):
+                self.plotted_components[f"{f}_text"] = a.text(
+                    0.5,
+                    0.5,
+                    f,
+                    transform=a.transAxes,
+                    ha="center",
+                    va="center",
+                    c="red",
+                )
+            self.plotted_components[f"rgb_text"] = self.fig_axes[-2].text(
+                0.5,
+                0.5,
+                "No images found.",
+                transform=self.fig_axes[-2].transAxes,
+                ha="center",
+                va="center",
+                c="red",
+            )
+            self.plotted_components[f"seg_text"] = self.fig_axes[-1].text(
+                0.5,
+                0.5,
+                "Segmentation map\nnot found.",
+                transform=self.fig_axes[-1].transAxes,
+                ha="center",
+                va="center",
+                c="red",
+            )
+
+            return
+        if self.seg_path is not None:
+            # try:
+            #     self.plotted_components["seg"].remove()
+            #     self.plotted_components["seg_marker"].remove()
+            #     del self.plotted_components["seg"]
+            #     del self.plotted_components["seg_marker"]
+            # except:
+            #     pass
             for k, v in self.plotted_components.items():
                 v.remove()
             self.plotted_components = {}
@@ -763,17 +824,17 @@ class SegMapFrame(ctk.CTkFrame):
                 cutout_copy = cutout % 5 + 1
                 cutout_copy[cutout == self.gal_id] = 0
 
-                self.plotted_components["img"] = self.fig_axes.imshow(
+                self.plotted_components["seg"] = self.fig_axes[-1].imshow(
                     cutout_copy,
                     origin="lower",
                     cmap=self.default_cmap,
                     aspect="equal",
                     extent=[0, cutout_copy.shape[0], 0, cutout_copy.shape[1]],
                 )
-                self.fig_axes.set_xlim(xmax=cutout_copy.shape[0])
-                self.fig_axes.set_ylim(ymax=cutout_copy.shape[1])
+                self.fig_axes[-1].set_xlim(xmax=cutout_copy.shape[0])
+                self.fig_axes[-1].set_ylim(ymax=cutout_copy.shape[1])
 
-                self.plotted_components["marker"] = self.fig_axes.scatter(
+                self.plotted_components["seg_marker"] = self.fig_axes[-1].scatter(
                     y_c
                     - int(
                         np.clip(
@@ -789,20 +850,75 @@ class SegMapFrame(ctk.CTkFrame):
                     marker="P",
                     c="k",
                 )
+        if not all(x is None for x in self.rgb_paths):
+            self.rgb_data = np.empty(
+                (
+                    3,
+                    self.cutout_dimensions[1] - self.cutout_dimensions[0],
+                    self.cutout_dimensions[3] - self.cutout_dimensions[2],
+                )
+            )
+
+            for i, v in enumerate(self.rgb_paths):
+                with pf.open(v) as hdul:
+                    self.rgb_data[i] = hdul[0].data[
+                        self.cutout_dimensions[0] : self.cutout_dimensions[1],
+                        self.cutout_dimensions[2] : self.cutout_dimensions[3],
+                    ] * 10 ** ((hdul[0].header["ZP"] - 25) / 2.5)
+
+            self.rgb_stretched = make_lupton_rgb(
+                self.rgb_data[0],
+                self.rgb_data[1],
+                self.rgb_data[2],
+                stretch=0.1,  # Q=10
+            )
+            self.plotted_components["rgb"] = self.fig_axes[-2].imshow(
+                self.rgb_stretched,
+                origin="lower",
+                aspect="equal",
+                extent=[0, self.rgb_stretched.shape[0], 0, self.rgb_stretched.shape[1]],
+            )
+            self.fig_axes[-2].set_xlim(xmax=self.rgb_stretched.shape[0])
+            self.fig_axes[-2].set_ylim(ymax=self.rgb_stretched.shape[1])
+
+            vmax = np.nanmax(
+                [1.1 * np.percentile(self.rgb_data, 98), 5 * np.std(self.rgb_data)]
+            )
+            vmin = -0.1 * vmax
+            interval = ManualInterval(vmin=vmin, vmax=vmax)
+            for a, d, f in zip(
+                self.fig_axes[:-2][::-1], self.rgb_data, self.filter_names
+            ):
+                norm = ImageNormalize(
+                    d,
+                    interval=interval,
+                    stretch=SqrtStretch(),
+                )
+                self.plotted_components[f] = a.imshow(
+                    d,
+                    origin="lower",
+                    cmap="binary",
+                    aspect="equal",
+                    extent=[0, d.shape[0], 0, d.shape[1]],
+                    norm=norm,
+                )
+                self.plotted_components[f"{f}_text"] = a.text(
+                    0.05, 0.95, f, transform=a.transAxes, ha="left", va="top", c="red"
+                )
 
         # self.fig_axes.set_facecolor("0.7")
 
         self.pyplot_canvas.draw_idle()
         self.update()
 
-    def update_seg_map(self, force=False):
+    def update_images(self, force=False):
         if (
             self.gal_id != int(self._root().current_gal_id.get())
             or force
             or len(self.plotted_components) == 0
         ):
             self.gal_id = int(self._root().current_gal_id.get())
-            self.plot_seg_map()
+            self.plot_images()
 
 
 class RGBImageFrame(ctk.CTkFrame):
@@ -821,7 +937,7 @@ class RGBImageFrame(ctk.CTkFrame):
 
         self.fig = Figure(
             constrained_layout=True,
-            figsize=(8.8, 2.2),
+            figsize=(12, 3),
         )
         self.fig.patch.set_alpha(0.0)
         self.pyplot_canvas = FigureCanvasTkAgg(

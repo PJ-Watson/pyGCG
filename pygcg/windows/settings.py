@@ -155,9 +155,9 @@ class SettingsWindow(ctk.CTkToplevel):
             additional_settings.append(
                 SettingsSelection(
                     self.scrollable_frame,
-                    2 * (i + 1),
-                    p,
-                    b,
+                    row=2 * (i + 1),
+                    label=p,
+                    value=b,
                     setting_is_dir=d,
                 )
             )

@@ -126,6 +126,8 @@ class GCG(ctk.CTk):
                 ]
             )
         )
+        print(self.config["files"]["extractions_dir"])
+        print(self.id_list)
         if len(self.id_list) == 0:
             self.generate_splash()
         else:
