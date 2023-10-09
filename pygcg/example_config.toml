@@ -14,6 +14,13 @@ temp_dir = "" # [optional] The directory in which temporary files are stored. De
 appearance_mode = "system" # System (default), light, or dark.
 theme = "blue" # Blue (default), dark-blue, or green. The CustomTKinter color theme. Can also point to the location of a custom .json file describing the desired theme.
 
+[cat]
+# [optional] If the catalogue does not contain id, ra, and dec column names, specify the equivalent labels here.
+id = "NUMBER"
+ra = "X_WORLD"
+dec = "Y_WORLD"
+seg_id = "NUMBER" # [optional] If the galaxy id is different to the id in the segmentation map
+
 [lines]
 # [optional] These tables define the lines shown in the redshift tab.
 

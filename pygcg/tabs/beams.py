@@ -98,14 +98,14 @@ class BeamFrame(ctk.CTkFrame):
         )
         self.limits_menu.grid(row=0, column=7, padx=(5, 20), pady=20, sticky="w")
 
-        self.gal_id = int(gal_id)
+        self.gal_id = gal_id
         try:
             self.file_path = [
                 *(
                     Path(self._root().config["files"]["extractions_dir"])
                     .expanduser()
                     .resolve()
-                ).glob(f"*{int(gal_id):0>5}.stack.fits")
+                ).glob(f"*{gal_id}.stack.fits")
             ][0]
             self.generate_grid()
         except:
@@ -143,18 +143,18 @@ class BeamFrame(ctk.CTkFrame):
         self.update_grid(force_update=True)
 
     def update_grid(self, force_update=False):
-        if self.gal_id == int(self._root().current_gal_id.get()) and not force_update:
+        if self.gal_id == self._root().current_gal_id.get() and not force_update:
             pass
         else:
             #     print("No need to panic.")
             # else:
-            self.gal_id = int(self._root().current_gal_id.get())
+            self.gal_id = self._root().current_gal_id.get()
             self.file_path = [
                 *(
                     Path(self._root().config["files"]["extractions_dir"])
                     .expanduser()
                     .resolve()
-                ).glob(f"*{self.gal_id:0>5}.stack.fits")
+                ).glob(f"*{self.gal_id}.stack.fits")
             ][0]
             with pf.open(self.file_path) as hdul:
                 header = hdul[0].header

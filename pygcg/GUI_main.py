@@ -7,6 +7,7 @@ from pygcg.tabs.beams import BeamFrame
 from pygcg.windows.settings import SettingsWindow
 from pygcg.windows.comments import CommentsWindow
 import numpy as np
+from tqdm import tqdm
 
 
 class GCG(ctk.CTk):
@@ -116,18 +117,27 @@ class GCG(ctk.CTk):
         self.rescan_and_reload()
 
     def rescan_and_reload(self):
-        self.id_list = np.array(
-            sorted(
-                [
-                    f.stem[-8:-3]
-                    for f in (fpe(self.config["files"]["extractions_dir"])).glob(
-                        f"*.1D.fits"
-                    )
-                ]
-            )
+        self.id_col = (
+            self._root().cat[self._root().config["cat"].get("id", "id")].astype(str)
         )
-        print(self.config["files"]["extractions_dir"])
-        print(self.id_list)
+
+        dir_to_chk = fpe(self.config["files"]["extractions_dir"])
+
+        id_list_unsorted = [
+            i
+            for i in tqdm(
+                self.id_col, desc="Scanning directory for objects in catalogue"
+            )
+            if any(dir_to_chk.glob(f"*{i}.1D.fits"))
+            and any(dir_to_chk.glob(f"*{i}.stack.fits"))
+        ]
+        try:
+            self.id_list = np.array(sorted(id_list_unsorted, key=float))
+        except:
+            self.id_list = np.array([id_list_unsorted])
+
+        print (self.id_list)
+
         if len(self.id_list) == 0:
             self.generate_splash()
         else:
@@ -232,6 +242,13 @@ class GCG(ctk.CTk):
             self.cat = QTable.read(fpe(files["cat_path"]))
         except:
             self.cat = None
+
+        # Catalogue
+        try:
+            cat = self.config["cat"]
+        except:
+            cat_tab = tomlkit.table()
+            self.config.add("cat", cat_tab)
 
         # Appearance
         try:
