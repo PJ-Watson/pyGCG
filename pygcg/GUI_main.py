@@ -117,31 +117,36 @@ class GCG(ctk.CTk):
         self.rescan_and_reload()
 
     def rescan_and_reload(self):
-        self.id_col = (
-            self._root().cat[self._root().config["cat"].get("id", "id")].astype(str)
+        self.id_col = self._root().cat[self.config["cat"].get("id", "id")].astype(str)
+        self.seg_id_col = (
+            self._root()
+            .cat[self.config["cat"].get("seg_id", self.config["cat"].get("id", "id"))]
+            .astype(int)
         )
 
         dir_to_chk = fpe(self.config["files"]["extractions_dir"])
 
         id_list_unsorted = [
             i
-            for i in tqdm(
-                self.id_col, desc="Scanning directory for objects in catalogue"
+            for i, s in tqdm(
+                zip(self.id_col, self.seg_id_col),
+                desc="Scanning directory for objects in catalogue",
+                total=len(self.id_col),
             )
-            if any(dir_to_chk.glob(f"*{i}.1D.fits"))
-            and any(dir_to_chk.glob(f"*{i}.stack.fits"))
+            if any(dir_to_chk.glob(f"*{s:0>5}.1D.fits"))
+            and any(dir_to_chk.glob(f"*{s:0>5}.stack.fits"))
         ]
         try:
             self.id_list = np.array(sorted(id_list_unsorted, key=float))
         except:
             self.id_list = np.array([id_list_unsorted])
 
-        print (self.id_list)
-
         if len(self.id_list) == 0:
             self.generate_splash()
         else:
             self.current_gal_id.set(self.id_list[0])
+            self.tab_row = self.cat[self.id_col == self.id_list[0]]
+            self.seg_id = self.seg_id_col[self.id_col == self.id_list[0]][0]
             self.generate_tabs()
 
     def generate_splash(self):
@@ -353,20 +358,20 @@ class GCG(ctk.CTk):
                 self.full_beam_frame.PA_menu.get()
             )
             if current_PA_idx == 0:
-                current_gal_idx = (
-                    self.id_list == f"{self.current_gal_id.get():0>5}"
-                ).nonzero()[0]
+                current_gal_idx = (self.id_list == self.current_gal_id.get()).nonzero()[
+                    0
+                ]
                 self.current_gal_id.set(self.id_list[current_gal_idx - 1][0])
                 self.main_tabs.set("Spec view")
                 self.change_gal_id()
             elif current_PA_idx == 1:
                 self.full_beam_frame.PA = self.full_beam_frame.PA_menu.cget("values")[0]
                 self.full_beam_frame.PA_menu.set(self.full_beam_frame.PA)
-                self.full_beam_frame.update_grid()
+                self.full_beam_frame.update_grid(force_update=True)
             elif current_PA_idx == 2:
                 self.full_beam_frame.PA = self.full_beam_frame.PA_menu.cget("values")[1]
                 self.full_beam_frame.PA_menu.set(self.full_beam_frame.PA)
-                self.full_beam_frame.update_grid()
+                self.full_beam_frame.update_grid(force_update=True)
         elif self.main_tabs.get() == "Spec view":
             self.main_tabs.set("Beam view")
             self.full_beam_frame.PA = self.full_beam_frame.PA_menu.cget("values")[1]
@@ -386,9 +391,7 @@ class GCG(ctk.CTk):
                 self.main_tabs.set("Spec view")
                 self.muse_spec_frame.update_plot()
         elif self.main_tabs.get() == "Spec view":
-            current_gal_idx = (
-                self.id_list == f"{self.current_gal_id.get():0>5}"
-            ).nonzero()[0]
+            current_gal_idx = (self.id_list == self.current_gal_id.get()).nonzero()[0]
             self.current_gal_id.set(self.id_list[current_gal_idx + 1][0])
             self.main_tabs.set("Beam view")
             self.full_beam_frame.PA = self.full_beam_frame.PA_menu.cget("values")[0]
@@ -398,6 +401,12 @@ class GCG(ctk.CTk):
     def change_gal_id(self, event=None):
         ### This is where the logic for loading/updating the tables will go
         self.current_gal_data = {}
+
+        self.tab_row = self.cat[self.id_col == self.current_gal_id.get()]
+        if len(self.tab_row) > 1:
+            self.tab_row = self.tab_row[0]
+        self.seg_id = self.seg_id_col[self.id_col == self.current_gal_id.get()][0]
+
         self.main_tabs_update()
 
     def main_tabs_update(self):

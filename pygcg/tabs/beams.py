@@ -114,7 +114,7 @@ class BeamFrame(ctk.CTkFrame):
         # if not hasattr(self, "gal_id"):
 
     def change_PA(self, event=None):
-        print(self.PA_menu.cget("values"))
+        # print(self.PA_menu.cget("values"))
         self.PA = event
         self.update_grid(force_update=True)
 
@@ -774,7 +774,7 @@ class MultiQualityFrame(ctk.CTkFrame):
 
     def get(self):
         # self._root().current_gal_data[master.master.master.pa_var] = "test"
-        print(self._root().current_gal_data)
+        # print(self._root().current_gal_data)
         for v, cont, cov in zip(
             self.values, self.contamination_menus, self.coverage_menus
         ):
@@ -784,7 +784,7 @@ class MultiQualityFrame(ctk.CTkFrame):
             self._root().current_gal_data[v]["contamination"] = cont.get()
             self._root().current_gal_data[v]["coverage"] = cov.get()
         # print ([c.get() for c in self.coverage_menus])
-        print(self._root().current_gal_data)
+        # print(self._root().current_gal_data)
         # checked_checkboxes = []
         # for checkbox in self.checkboxes:
         #     if checkbox.get() == 1:

@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "pyGCG"
-version = "0.1.1dev"
+version = "0.1.2dev"
 authors = [
   { name="Peter Watson", email="peter.watson+pygcg@inaf.it" },
 ]

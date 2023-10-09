@@ -19,7 +19,7 @@ theme = "blue" # Blue (default), dark-blue, or green. The CustomTKinter color th
 id = "NUMBER"
 ra = "X_WORLD"
 dec = "Y_WORLD"
-seg_id = "NUMBER" # [optional] If the galaxy id is different to the id in the segmentation map
+seg_id = "NUMBER" # [optional] If the galaxy id is different to the id in the segmentation map, and by extension, the grizli output files
 
 [lines]
 # [optional] These tables define the lines shown in the redshift tab.

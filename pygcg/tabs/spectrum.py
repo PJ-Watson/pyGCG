@@ -183,14 +183,14 @@ class SpecFrame(ctk.CTkFrame):
             self.update()
 
     def _update_all(self):
-        _path = [
+        _row_path = [
             *(
                 Path(self._root().config["files"]["extractions_dir"])
                 .expanduser()
                 .resolve()
-            ).glob(f"*{self.gal_id}.row.fits")
+            ).glob(f"*{self._root().seg_id:0>5}.row.fits")
         ][0]
-        with pf.open(_path) as hdul:
+        with pf.open(_row_path) as hdul:
             self.grizli_redshift = Table(hdul[1].data)["redshift"].value[0]
             self.current_redshift.set(self.grizli_redshift)
             self.redshift_slider.set(self.grizli_redshift)
@@ -210,10 +210,10 @@ class SpecFrame(ctk.CTkFrame):
         if self.muse_checkbox.get():
             self.plot_MUSE_spec()
         try:
-            tab_row = self._root().cat[self._root().id_col == self.gal_id]
-            # self.fig_axes.set_title(
-            #     f"IDs: v3={tab_row['v3_id'].value}, Xin={tab_row['Xin_id'].value}, NIRCAM={tab_row['NIRCAM_id'].value}"
-            # )
+            # tab_row = self._root().cat[self._root().id_col == self.gal_id]
+            # # self.fig_axes.set_title(
+            # #     f"IDs: v3={tab_row['v3_id'].value}, Xin={tab_row['Xin_id'].value}, NIRCAM={tab_row['NIRCAM_id'].value}"
+            # # )
             self.fig_axes.set_title(f"ID={self.gal_id}")
         except Exception as e:
             # print(e)
@@ -226,7 +226,7 @@ class SpecFrame(ctk.CTkFrame):
                 Path(self._root().config["files"]["extractions_dir"])
                 .expanduser()
                 .resolve()
-            ).glob(f"*{self.gal_id}.1D.fits")
+            ).glob(f"*{self._root().seg_id}.1D.fits")
         ][0]
 
         if templates:
@@ -310,8 +310,6 @@ class SpecFrame(ctk.CTkFrame):
                     line.remove()
 
         with pf.open(cube_path) as cube_hdul:
-            tab_row = self._root().cat[self._root().cat["v3_id"] == self.gal_id]
-
             cube_wcs = WCS(cube_hdul[1].header)
 
             wavelengths = (
@@ -321,8 +319,8 @@ class SpecFrame(ctk.CTkFrame):
             MUSE_spec = self.cube_extract_spectra(
                 cube_hdul[1].data,
                 cube_wcs,
-                tab_row["v3_ra"],
-                tab_row["v3_dec"],
+                self._root().tab_row[self._root().config["cat"].get("ra", "ra")],
+                self._root().tab_row[self._root().config["cat"].get("dec", "dec")],
                 # radius=tab_row["r50_SE"][0],
             )
 
@@ -397,7 +395,6 @@ class SpecFrame(ctk.CTkFrame):
 
             kernel = Gaussian1DKernel(kernel_sig)
             spectrum = convolve(spectrum, kernel)
-            print(spectrum)
 
             new_hdul = pf.HDUList()
             new_hdul.append(
@@ -699,7 +696,6 @@ class ImagesFrame(ctk.CTkFrame):
                 Path(self._root().config["files"]["prep_dir"]).expanduser().resolve()
             ).glob(pattern)
         ]
-        print(self.seg_path)
         if len(self.seg_path) == 0:
             print("Segmentation map not found.")
             self.seg_path = None
@@ -733,7 +729,7 @@ class ImagesFrame(ctk.CTkFrame):
                     transform=a.transAxes,
                     ha="center",
                     va="center",
-                    c="red",
+                    c="k",
                 )
             self.plotted_components[f"rgb_text"] = self.fig_axes[-2].text(
                 0.5,
@@ -742,7 +738,7 @@ class ImagesFrame(ctk.CTkFrame):
                 transform=self.fig_axes[-2].transAxes,
                 ha="center",
                 va="center",
-                c="red",
+                c="k",
             )
             self.plotted_components[f"seg_text"] = self.fig_axes[-1].text(
                 0.5,
@@ -751,7 +747,7 @@ class ImagesFrame(ctk.CTkFrame):
                 transform=self.fig_axes[-1].transAxes,
                 ha="center",
                 va="center",
-                c="red",
+                c="k",
             )
 
             return
@@ -762,12 +758,15 @@ class ImagesFrame(ctk.CTkFrame):
             with pf.open(self.seg_path) as hdul:
                 seg_wcs = WCS(hdul[0].header)
                 seg_data = hdul[0].data
-                tab_row = self._root().cat[self._root().id_col == self.gal_id][0]
-                y_c, x_c = extract_pixel_ra_dec(tab_row, seg_wcs).value
 
-                seg_id = tab_row[self._root().config["cat"].get("seg_id", self._root().config["cat"].get("id", "id"))]
+                y_c, x_c = extract_pixel_ra_dec(
+                    self._root().tab_row,
+                    seg_wcs,
+                    key_ra=self._root().config["cat"].get("ra", "ra"),
+                    key_dec=self._root().config["cat"].get("dec", "dec"),
+                ).value
 
-                location = np.where(seg_data == seg_id)
+                location = np.where(seg_data == self._root().seg_id)
                 width = np.nanmax(location[0]) - np.nanmin(location[0])
                 height = np.nanmax(location[1]) - np.nanmin(location[1])
 
@@ -809,7 +808,7 @@ class ImagesFrame(ctk.CTkFrame):
                 cutout[cutout == 0] = np.nan
 
                 cutout_copy = cutout % 5 + 1
-                cutout_copy[cutout == float(seg_id)] = 0
+                cutout_copy[cutout == float(self._root().seg_id)] = 0
 
                 self.plotted_components["seg"] = self.fig_axes[-1].imshow(
                     cutout_copy,
@@ -951,14 +950,9 @@ def extract_pixel_ra_dec(q_table, celestial_wcs, key_ra="ra", key_dec="dec"):
                 if d.lower() in n:
                     possible_names.append(n)
             possible_names = sorted(possible_names, key=lambda x: (len(x), x))
-            # print (possible_names)
-            # print (possible_names.sort())
             for n in possible_names:
                 r_poss = n.replace(d.lower(), r.lower())
                 if r_poss in lower_colnames:
-                    # idx = (lower_colnames == d_poss).nonzero()[0]
-                    # print (idx.dtype)
-                    # # print (q_table.colnames[idx])
                     orig_ra = q_table[
                         q_table.colnames[int((lower_colnames == r_poss).nonzero()[0])]
                     ]
@@ -969,8 +963,6 @@ def extract_pixel_ra_dec(q_table, celestial_wcs, key_ra="ra", key_dec="dec"):
             else:
                 continue
             break
-
-    # new_ra, new_dec = 0,0
 
     def check_deg(orig):
         if hasattr(orig, "unit") and orig.unit != None:
@@ -991,6 +983,7 @@ def extract_pixel_ra_dec(q_table, celestial_wcs, key_ra="ra", key_dec="dec"):
 
     new_ra, new_dec = check_deg(orig_ra), check_deg(orig_dec)
     if new_ra.unit == u.pix:
+        print(new_ra, new_dec)
         return new_ra, new_dec
 
     sc = SkyCoord(new_ra, new_dec)
