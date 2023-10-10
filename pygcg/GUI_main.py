@@ -10,6 +10,7 @@ import numpy as np
 from tqdm import tqdm
 import collections
 import pickle
+from astropy.coordinates import SkyCoord
 
 
 class GCG(ctk.CTk):
@@ -34,11 +35,36 @@ class GCG(ctk.CTk):
 
         # configure grid system
         self.grid_rowconfigure(0, weight=1)
-        self.grid_columnconfigure((0, 1, 2, 3, 4), weight=1)
+        self.grid_columnconfigure(0, weight=1)
 
         # Setup bottom navigation buttons
+        nav_frame = ctk.CTkFrame(self)
+        nav_frame.grid(
+            column=0,
+            row=1,
+            # columnspan=5,
+            sticky="ew",
+        )
+        nav_frame.grid_columnconfigure((0, 1, 3, 4, 5, 6), weight=1, uniform="blah")
+        nav_frame.grid_columnconfigure((2), weight=0, uniform="other")
+
+        self.read_write_button = ctk.CTkSegmentedButton(
+            nav_frame,
+            values=["Read-only", "Write output"],
+            # command=self.open_settings_callback,
+            state="disabled",
+        )
+        self.read_write_button.grid(
+            row=0,
+            column=1,
+            padx=20,
+            pady=10,
+            sticky="ew",
+        )
+        self.read_write_button.set("Read-only")
+
         self.open_settings_button = ctk.CTkButton(
-            self,
+            nav_frame,
             text="Settings",
             command=self.open_settings_callback,
         )
@@ -46,75 +72,95 @@ class GCG(ctk.CTk):
             row=1,
             column=1,
             padx=20,
-            pady=20,
+            pady=10,
             sticky="ew",
         )
         self.prev_gal_button = ctk.CTkButton(
-            self,
+            nav_frame,
             text="Previous",
             command=self.prev_gal_button_callback,
         )
         self.prev_gal_button.grid(
-            row=1,
-            column=0,
-            padx=20,
-            pady=20,
+            row=0, column=0, padx=20, pady=10, rowspan=2, sticky="news"
         )
         self.next_gal_button = ctk.CTkButton(
-            self,
+            nav_frame,
             text="Next",
             command=self.next_gal_button_callback,
         )
         self.next_gal_button.grid(
-            row=1,
-            column=5,
-            padx=20,
-            pady=20,
+            row=0, column=6, padx=20, pady=10, rowspan=2, sticky="news"
         )
         self.comments_button = ctk.CTkButton(
-            self,
+            nav_frame,
             text="Comments",
             command=self.gal_comments_button_callback,
         )
         self.comments_button.grid(
-            row=1,
-            column=4,
+            row=0,
+            column=5,
             padx=20,
-            pady=20,
+            pady=10,
             sticky="ew",
         )
 
         self.current_gal_data = {}
 
-        self.current_gal_id = ctk.StringVar(
-            master=self,
-        )
-        self.current_gal_label = ctk.CTkLabel(
-            self,
+        self.current_gal_id = ctk.StringVar(master=self)
+        self.current_gal_coords = ctk.StringVar(master=self)
+        gal_id_label = ctk.CTkLabel(
+            nav_frame,
             text="Current ID:",
         )
-        self.current_gal_label.grid(
+        gal_id_label.grid(
+            row=0,
+            column=2,
+            padx=(20, 5),
+            pady=10,
+            sticky="e",
+        )
+        gal_coord_label = ctk.CTkLabel(
+            nav_frame,
+            text="Location:",
+        )
+        gal_coord_label.grid(
             row=1,
             column=2,
             padx=(20, 5),
-            pady=20,
+            pady=10,
             sticky="e",
         )
         self.current_gal_entry = ctk.CTkEntry(
-            self,
+            nav_frame,
             textvariable=self.current_gal_id,
         )
         self.current_gal_entry.grid(
-            row=1,
+            row=0,
             column=3,
             padx=(5, 20),
-            pady=20,
+            pady=10,
             sticky="w",
         )
         self.current_gal_entry.bind(
             "<Return>",
             self.change_gal_id,
         )
+
+        self.coord_entry = ctk.CTkEntry(
+            nav_frame,
+            textvariable=self.current_gal_coords,
+        )
+        self.coord_entry.grid(
+            row=1,
+            column=3,
+            padx=(5, 20),
+            pady=10,
+            sticky="w",
+        )
+        # self.current_gal_entry.bind(
+        #     "<Return>",
+        #     self.change_gal_id,
+        # )
 
         self.rescan_and_reload()
 
@@ -220,6 +266,17 @@ class GCG(ctk.CTk):
             self.current_gal_data["dec"] = self.tab_row[
                 self.config["cat"].get("dec", "dec")
             ]
+            # print (self.current_gal_data["ra"])
+            # try:
+            # self.current_gal_coords.set(
+            #     f"{self.current_gal_data['ra'][0]:0.5f}, {self.current_gal_data['dec'][0]:0.5f}"
+            # )
+            # print (SkyCoord(self.current_gal_coords.get()))
+            self.current_gal_coords.set(
+                SkyCoord(
+                    self.current_gal_data["ra"], self.current_gal_data["dec"]
+                ).to_string("decimal", precision=6)[0]
+            )
 
             self.generate_tabs()
         except Exception as e:
@@ -228,7 +285,7 @@ class GCG(ctk.CTk):
 
     def generate_splash(self):
         self.splash_frame = ctk.CTkFrame(self)
-        self.splash_frame.grid(row=0, column=0, columnspan=6, sticky="news")
+        self.splash_frame.grid(row=0, column=0, sticky="news")
         self.splash_frame.columnconfigure(0, weight=1)
         self.splash_frame.rowconfigure(0, weight=1)
         main_label = ctk.CTkLabel(
@@ -251,9 +308,7 @@ class GCG(ctk.CTk):
             # tab_names=["Spec view", "Beam view"],
             command=self.main_tabs_update,
         )
-        self.main_tabs.grid(
-            row=0, column=0, padx=20, pady=0, columnspan=6, sticky="news"
-        )
+        self.main_tabs.grid(row=0, column=0, padx=20, pady=0, sticky="news")
 
         self.muse_spec_frame = SpecFrame(
             self.main_tabs.tab("Spec view"), self.current_gal_id.get()
@@ -507,7 +562,7 @@ class GCG(ctk.CTk):
         #         pickle.dump(flattened_data, fp)
 
         # This still needs work! Need to check columns match, and make sure I'm not overwriting existing data
-        if len(flattened_data) == 18:
+        if len(flattened_data) == 18 and self.read_write_button.get() == "Write output":
             # print (flattened_data.keys())
             # print (self.out_cat.colnames)
             # print ([n for n in flattened_data.keys() if n not in self.out_cat.colnames])
@@ -528,6 +583,12 @@ class GCG(ctk.CTk):
         self.current_gal_data["dec"] = self.tab_row[
             self.config["cat"].get("dec", "dec")
         ]
+
+        self.current_gal_coords.set(
+            SkyCoord(
+                self.current_gal_data["ra"], self.current_gal_data["dec"]
+            ).to_string("decimal", precision=6)[0]
+        )
 
         self.main_tabs_update()
 
