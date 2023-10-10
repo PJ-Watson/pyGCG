@@ -267,10 +267,6 @@ class SinglePABeamFrame(ctk.CTkFrame):
             desired_width = event.width
             desired_height = int(event.width / aspect_ratio) + other_heights
 
-            # other_heights = 0
-            # print (event.height)
-            # print ("orig_desired", desired_height)
-            # print ("other", other_heights)
             # if the window is too tall to fit, use the height as
             # the controlling dimension
             if desired_height > event.height:
@@ -413,8 +409,6 @@ class SinglePABeamFrame(ctk.CTkFrame):
                     m = 0
 
                 header = hdul["SCI", extver].header
-                # wavelengths = ((np.arange(data.shape[1]) + 1.0) - header["CRPIX1"]) * header["CD1_1"] + header["CRVAL1"]
-                # print (wavelengths)
                 extent = [header["WMIN"], header["WMAX"], 0, data.shape[0]]
 
                 if self.master.limits == "grizli default":
@@ -488,7 +482,7 @@ class MultiQualityFrame(ctk.CTkFrame):
             cov_menu.grid(row=1, column=2 * i + 1, padx=10, pady=(10, 10), sticky="w")
             self.coverage_menus.append(cov_menu)
 
-        self.get()
+        self.save_current()
 
     def reload_values(self, new_values):
         # print(new_values, self.values)
@@ -500,26 +494,11 @@ class MultiQualityFrame(ctk.CTkFrame):
         for c in self.quality_menus:
             c.set("None")
 
-        self.get()
+        self.save_current()
 
     def save_current(self, event=None):
-        self.get()
-        # print ()
-        # print(self._root().current_gal_data)
-
-    def get(self):
-        # self._root().current_gal_data[master.master.master.pa_var] = "test"
-        # print(self._root().current_gal_data)
         for v, q, cov in zip(self.values, self.quality_menus, self.coverage_menus):
-            # print (v, cont.get(), cov.get())
             if v not in self._root().current_gal_data.keys():
                 self._root().current_gal_data[v] = {}
             self._root().current_gal_data[v]["quality"] = q.get()
             self._root().current_gal_data[v]["coverage"] = cov.get()
-        # print ([c.get() for c in self.coverage_menus])
-        # print(self._root().current_gal_data)
-        # checked_checkboxes = []
-        # for checkbox in self.checkboxes:
-        #     if checkbox.get() == 1:
-        #         checked_checkboxes.append(checkbox.cget("text"))
-        # return checked_checkboxes
