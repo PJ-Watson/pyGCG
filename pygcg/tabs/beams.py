@@ -241,7 +241,7 @@ class SinglePABeamFrame(ctk.CTkFrame):
             width_ratios=widths,
         )
 
-        self.quality_frame = MultiQualityFrame(self.canvas_frame, values=self.extvers)
+        self.quality_frame = MultiQualityFrame(self.canvas_frame, extvers=self.extvers)
         self.quality_frame.grid(row=1, column=0, sticky="ew")
 
         self.PA_plot_label = ctk.CTkLabel(self, text="Placeholder")
@@ -307,7 +307,7 @@ class SinglePABeamFrame(ctk.CTkFrame):
                 pass
 
             self.extvers = extvers
-            self.quality_frame.reload_values(new_values=self.extvers)
+            self.quality_frame.reload_extvers(new_extvers=self.extvers)
         # print (self.extvers)
 
         # print(self.extvers)
@@ -383,7 +383,7 @@ class SinglePABeamFrame(ctk.CTkFrame):
                 )
                 ax.set_xticklabels("")
                 ax.set_yticklabels("")
-                ax.tick_params(direction="in")
+                ax.tick_params(axis="both", direction="in", top=True, right=True)
                 if ax in self.fig_axes[:, 0]:
                     ax.set_ylabel(ext)
             except Exception as e:
@@ -407,6 +407,19 @@ class SinglePABeamFrame(ctk.CTkFrame):
                 else:
                     data = hdul[ext, extver].data
                     m = 0
+
+                if ext == "SCI":
+                    # print (data.shape)
+                    # print (np.nansum(data, axis=0))
+                    # print (np.nansum(data, axis=0).shape)
+                    # print (1-np.sum(np.all(
+                    #     (~np.isfinite(data)) | (data==0), axis=0))/data.shape[1])
+                    # print (self.quality_frame.coverage_menus)
+                    self._root().current_gal_data[extver]["coverage"] = (
+                        1
+                        - np.sum(np.all((~np.isfinite(data)) | (data == 0), axis=0))
+                        / data.shape[1]
+                    )
 
                 header = hdul["SCI", extver].header
                 extent = [header["WMIN"], header["WMAX"], 0, data.shape[0]]
@@ -441,64 +454,85 @@ class SinglePABeamFrame(ctk.CTkFrame):
                     norm=norm,
                     extent=extent,
                 )
-                ax.tick_params(direction="in")
+                ax.tick_params(axis="both", direction="in", top=True, right=True)
 
                 if ax not in self.fig_axes[-1]:
                     ax.set_xticklabels("")
                     ax.set_yticklabels("")
                 else:
                     ax.set_xlabel(r"$\lambda$ ($\mu$m) - " + extver.split(",")[0])
+            except KeyError:
+                self.plotted_images[ext + extver]["beam"] = ax.text(
+                    0.5,
+                    0.5,
+                    "No data",
+                    transform=ax.transAxes,
+                    ha="center",
+                    va="center",
+                    c="k",
+                )
+                self._root().current_gal_data[extver]["coverage"] = 0.0
+                # print (extver)
+                self.quality_frame.quality_menus[extver.split(",")[0]].set("Unusable")
+                self.quality_frame.quality_menus[extver.split(",")[0]].configure(
+                    state="disabled"
+                )
             except Exception as e:
-                print("beam?", e)
+                print("beam:", e)
                 pass
 
 
 class MultiQualityFrame(ctk.CTkFrame):
-    def __init__(self, master, values, **kwargs):
+    def __init__(self, master, extvers, **kwargs):
         super().__init__(master, **kwargs)
         self.columnconfigure((0, 1, 2, 3, 4, 5), weight=1)
-        self.values = values
-        self.quality_menus = []
-        self.coverage_menus = []
+        self.extvers = extvers
+        self.quality_menus = {}
+        # self.coverage_menus = []
+        # print (self._root.filter_names[::-1])
 
-        for i, value in enumerate(self.values):
+        for i, f in enumerate(self._root().filter_names[::-1]):
             label = ctk.CTkLabel(self, text="Beam Quality")
             label.grid(row=0, column=2 * i, padx=10, pady=(10, 0), sticky="e")
             q_menu = ctk.CTkOptionMenu(
                 self,
-                values=["None", "Mild", "Strong"],
+                values=["Excellent", "Good", "Poor", "Unusable"],
                 command=self.save_current,
             )
+            q_menu.set("Good")
             q_menu.grid(row=0, column=2 * i + 1, padx=10, pady=(10, 0), sticky="w")
-            self.quality_menus.append(q_menu)
+            self.quality_menus[f] = q_menu
 
-            label = ctk.CTkLabel(self, text="Beam Coverage")
-            label.grid(row=1, column=2 * i, padx=10, pady=(10, 10), sticky="e")
-            cov_menu = ctk.CTkOptionMenu(
-                self,
-                values=["Full", "Incomplete", "No data"],
-                command=self.save_current,
-            )
-            cov_menu.grid(row=1, column=2 * i + 1, padx=10, pady=(10, 10), sticky="w")
-            self.coverage_menus.append(cov_menu)
+            # label = ctk.CTkLabel(self, text="Beam Coverage")
+            # label.grid(row=1, column=2 * i, padx=10, pady=(10, 10), sticky="e")
+            # cov_menu = ctk.CTkOptionMenu(
+            #     self,
+            #     values=["Full", "Incomplete", "No data"],
+            #     command=self.save_current,
+            # )
+            # cov_menu.grid(row=1, column=2 * i + 1, padx=10, pady=(10, 10), sticky="w")
+            # self.coverage_menus.append(cov_menu)
 
         self.save_current()
 
-    def reload_values(self, new_values):
+    def reload_extvers(self, new_extvers):
         # print(new_values, self.values)
 
-        self.values = new_values
+        self.save_current()
 
-        for c in self.coverage_menus:
-            c.set("Full")
-        for c in self.quality_menus:
-            c.set("None")
+        self.extvers = new_extvers
+
+        # for c in self.coverage_menus:
+        #     c.set("Full")
+        for c in self.quality_menus.values():
+            c.set("Good")
+            c.configure(state="normal")
 
         self.save_current()
 
     def save_current(self, event=None):
-        for v, q, cov in zip(self.values, self.quality_menus, self.coverage_menus):
+        for v, q in zip(self.extvers, self.quality_menus.values()):
             if v not in self._root().current_gal_data.keys():
                 self._root().current_gal_data[v] = {}
             self._root().current_gal_data[v]["quality"] = q.get()
-            self._root().current_gal_data[v]["coverage"] = cov.get()
+            # self._root().current_gal_data[v]["coverage"] = cov.get()
