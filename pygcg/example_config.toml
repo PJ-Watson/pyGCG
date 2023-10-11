@@ -9,6 +9,7 @@ extractions_dir = "" # The directory in which NIRISS extractions are stored.
 prep_dir = "" # [optional] The directory containing the segmentation map and direct images.
 cube_path = "" # [optional] The file path of the corresponding MUSE datacube.
 temp_dir = "" # [optional] The directory in which temporary files are stored. Defaults to $OUT_DIR/.temp/
+skip_existing = false # [optional] Skip loading objects which already exist in the output catalogue.
 
 [appearance]
 appearance_mode = "system" # System (default), light, or dark.

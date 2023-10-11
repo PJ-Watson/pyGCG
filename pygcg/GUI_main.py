@@ -184,51 +184,6 @@ class GCG(ctk.CTk):
             assert len(self.config["files"]["cat_path"]) > 0
             assert len(self.config["files"]["extractions_dir"]) > 0
 
-            self.id_col = (
-                self._root().cat[self.config["cat"].get("id", "id")].astype(str)
-            )
-            self.seg_id_col = (
-                self._root()
-                .cat[
-                    self.config["cat"].get("seg_id", self.config["cat"].get("id", "id"))
-                ]
-                .astype(int)
-            )
-
-            # Segmentation map ids must be a unique identifier!
-            # If you're reading this message, something has gone horribly wrong
-            self.seg_id_col, unique_idx = np.unique(self.seg_id_col, return_index=True)
-            self.id_col = self.id_col[unique_idx]
-            self.cat = self.cat[unique_idx]
-            dir_to_chk = fpe(self.config["files"]["extractions_dir"])
-
-            id_idx_list = [
-                i
-                for i, (n, s) in tqdm(
-                    enumerate(zip(self.id_col, self.seg_id_col)),
-                    desc="Scanning directory for objects in catalogue",
-                    total=len(self.id_col),
-                )
-                if any(dir_to_chk.glob(f"*{s:0>5}.1D.fits"))
-                and any(dir_to_chk.glob(f"*{s:0>5}.stack.fits"))
-            ]
-            try:
-                sorted_idx = np.asarray(id_idx_list)[
-                    np.argsort(self.id_col[id_idx_list].astype(float))
-                ]
-
-            except Exception as e:
-                sorted_idx = id_idx_list
-
-            self.id_col = self.id_col[sorted_idx]
-            self.seg_id_col = self.seg_id_col[sorted_idx]
-            self.cat = self.cat[sorted_idx]
-            self.sky_coords = SkyCoord(
-                self.cat[self.config["cat"].get("ra", "ra")],
-                self.cat[self.config["cat"].get("dec", "dec")],
-            )
-            assert len(self.id_col) > 0
-
             self.out_cat_path = (
                 fpe(self.config["files"]["out_dir"]) / "pyGCG_output.fits"
             )
@@ -278,10 +233,60 @@ class GCG(ctk.CTk):
                         float,
                     ],
                 )
+
+            self.id_col = (
+                self._root().cat[self.config["cat"].get("id", "id")].astype(str)
+            )
+            self.seg_id_col = (
+                self._root()
+                .cat[
+                    self.config["cat"].get("seg_id", self.config["cat"].get("id", "id"))
+                ]
+                .astype(int)
+            )
+
+            print (self.config["files"].get("skip_existing", True))
+            # print (self.config)
+
+            # Segmentation map ids must be a unique identifier!
+            # If you're reading this message, something has gone horribly wrong
+            self.seg_id_col, unique_idx = np.unique(self.seg_id_col, return_index=True)
+            self.id_col = self.id_col[unique_idx]
+            self.cat = self.cat[unique_idx]
+            dir_to_chk = fpe(self.config["files"]["extractions_dir"])
+
+            id_idx_list = []
+            for i, (n, s) in tqdm(
+                enumerate(zip(self.id_col, self.seg_id_col)),
+                desc="Scanning directory for objects in catalogue",
+                total=len(self.id_col),
+            ):
+                if self.config["files"].get("skip_existing", True):
+                    if s in self.out_cat["SEG_ID"]:
+                        continue
+                if (any(dir_to_chk.glob(f"*{s:0>5}.1D.fits"))
+                and any(dir_to_chk.glob(f"*{s:0>5}.stack.fits")) ):
+                    id_idx_list.append(i)
+            try:
+                sorted_idx = np.asarray(id_idx_list)[
+                    np.argsort(self.id_col[id_idx_list].astype(float))
+                ]
+
+            except Exception as e:
+                sorted_idx = id_idx_list
+
+            self.id_col = self.id_col[sorted_idx]
+            self.seg_id_col = self.seg_id_col[sorted_idx]
+            self.cat = self.cat[sorted_idx]
+            self.sky_coords = SkyCoord(
+                self.cat[self.config["cat"].get("ra", "ra")],
+                self.cat[self.config["cat"].get("dec", "dec")],
+            )
+            assert len(self.id_col) > 0
+
             self.current_gal_id.set(self.id_col[0])
             self.tab_row = self.cat[0]
             self.seg_id = self.seg_id_col[0]
-            print(self.seg_id)
 
             self.current_gal_data["id"] = self.current_gal_id.get()
             self.current_gal_data["seg_id"] = self.seg_id
@@ -669,11 +674,7 @@ class GCG(ctk.CTk):
             print("Could not parse input as on-sky coordinates.")
             return
 
-        # print(new_coord)
-
         sky_match_idx, dist, _ = new_coord.match_to_catalog_sky(self.sky_coords)
-
-        # print(self.id_col[sky_match_idx])
 
         self.current_gal_id.set(self.id_col[sky_match_idx])
 
