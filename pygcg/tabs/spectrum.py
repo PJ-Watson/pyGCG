@@ -1,32 +1,33 @@
-import customtkinter as ctk
-import matplotlib.pyplot as plt
-from matplotlib.figure import Figure
-import matplotlib.colors as colors
-from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2Tk
 from pathlib import Path
+
 import astropy.io.fits as pf
-from astropy.wcs import WCS
-from astropy.coordinates import SkyCoord
 import astropy.units as u
-from tqdm import tqdm
+import customtkinter as ctk
+import matplotlib.colors as colors
+import matplotlib.pyplot as plt
 import numpy as np
-from photutils.aperture import (
-    aperture_photometry,
-    SkyCircularAperture,
-    CircularAperture,
-)
+from astropy.convolution import Gaussian1DKernel, convolve
+from astropy.coordinates import SkyCoord
+from astropy.table import Table
 from astropy.visualization import (
-    make_lupton_rgb,
-    MinMaxInterval,
-    SqrtStretch,
     ImageNormalize,
     LinearStretch,
     LogStretch,
     ManualInterval,
+    MinMaxInterval,
     PercentileInterval,
+    SqrtStretch,
+    make_lupton_rgb,
 )
-from astropy.table import Table
-from astropy.convolution import convolve, Gaussian1DKernel
+from astropy.wcs import WCS
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2Tk
+from matplotlib.figure import Figure
+from photutils.aperture import (
+    CircularAperture,
+    SkyCircularAperture,
+    aperture_photometry,
+)
+from tqdm import tqdm
 
 
 class SpecFrame(ctk.CTkFrame):

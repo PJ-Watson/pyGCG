@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "pyGCG"
-version = "0.2.3dev"
+version = "0.2.4dev"
 authors = [
   { name="Peter Watson", email="peter.watson+pygcg@inaf.it" },
 ]
@@ -32,3 +32,11 @@ dependencies = [
 
 [tool.setuptools.package-data]
 "*" = ["*.*"]
+
+[tool.black]
+line-length = 88
+target-version = ['py311']
+extend-exclude = '(.*.txt|.*.md|.*.toml|.*.odg)'
+
+[tools.isort]
+profile = "black"

@@ -1,16 +1,20 @@
-import customtkinter as ctk
-from pathlib import Path
-import tomlkit
-from astropy.table import QTable
-from pygcg.tabs.spectrum import SpecFrame
-from pygcg.tabs.beams import BeamFrame
-from pygcg.windows.settings import SettingsWindow
-from pygcg.windows.comments import CommentsWindow
-import numpy as np
-from tqdm import tqdm
 import collections
 import pickle
+import re
+from pathlib import Path
+
+import astropy.units as u
+import customtkinter as ctk
+import numpy as np
+import tomlkit
 from astropy.coordinates import SkyCoord
+from astropy.table import QTable
+from tqdm import tqdm
+
+from pygcg.tabs.beams import BeamFrame
+from pygcg.tabs.spectrum import SpecFrame
+from pygcg.windows.comments import CommentsWindow
+from pygcg.windows.settings import SettingsWindow
 
 
 class GCG(ctk.CTk):
@@ -28,7 +32,10 @@ class GCG(ctk.CTk):
         self.comments_window = None
 
         # Key bindings
-        self.protocol("WM_DELETE_WINDOW", self.quit_gracefully)
+        self.protocol(
+            "WM_DELETE_WINDOW",
+            self.quit_gracefully,
+        )
         self.bind("<Control-q>", self.quit_gracefully)
         self.bind("<Left>", self.prev_gal_button_callback)
         self.bind("<Right>", self.next_gal_button_callback)
@@ -45,8 +52,8 @@ class GCG(ctk.CTk):
             # columnspan=5,
             sticky="ew",
         )
-        nav_frame.grid_columnconfigure((0, 1, 3, 4, 5, 6), weight=1, uniform="blah")
-        nav_frame.grid_columnconfigure((2), weight=0, uniform="other")
+        nav_frame.grid_columnconfigure((0, 1, 3, 5, 6, 7), weight=1, uniform="blah")
+        nav_frame.grid_columnconfigure((2, 4), weight=0, uniform="other")
 
         self.read_write_button = ctk.CTkSegmentedButton(
             nav_frame,
@@ -89,7 +96,7 @@ class GCG(ctk.CTk):
             command=self.next_gal_button_callback,
         )
         self.next_gal_button.grid(
-            row=0, column=6, padx=20, pady=10, rowspan=2, sticky="news"
+            row=0, column=7, padx=20, pady=10, rowspan=2, sticky="news"
         )
         self.comments_button = ctk.CTkButton(
             nav_frame,
@@ -98,7 +105,7 @@ class GCG(ctk.CTk):
         )
         self.comments_button.grid(
             row=0,
-            column=5,
+            column=6,
             padx=20,
             pady=10,
             sticky="ew",
@@ -124,8 +131,8 @@ class GCG(ctk.CTk):
             text="Location:",
         )
         gal_coord_label.grid(
-            row=1,
-            column=2,
+            row=0,
+            column=4,
             padx=(20, 5),
             pady=10,
             sticky="e",
@@ -134,6 +141,10 @@ class GCG(ctk.CTk):
             nav_frame,
             textvariable=self.current_gal_id,
         )
+        self.current_gal_entry.bind(
+            "<Return>",
+            self.change_gal_id,
+        )
         self.current_gal_entry.grid(
             row=0,
             column=3,
@@ -141,26 +152,28 @@ class GCG(ctk.CTk):
             pady=10,
             sticky="w",
         )
-        self.current_gal_entry.bind(
-            "<Return>",
-            self.change_gal_id,
-        )
 
         self.coord_entry = ctk.CTkEntry(
             nav_frame,
             textvariable=self.current_gal_coords,
         )
+        self.coord_entry.bind(
+            "<Return>",
+            self.change_sky_coord,
+        )
         self.coord_entry.grid(
-            row=1,
-            column=3,
+            row=0,
+            column=5,
             padx=(5, 20),
             pady=10,
             sticky="w",
         )
-        # self.current_gal_entry.bind(
-        #     "<Return>",
-        #     self.change_gal_id,
-        # )
+        self.find_coord_button = ctk.CTkButton(
+            nav_frame,
+            text="Sky search",
+            command=self.change_sky_coord,
+        )
+        self.find_coord_button.grid(row=1, column=5, padx=(5, 20), pady=10, sticky="w")
 
         self.rescan_and_reload()
 
@@ -188,10 +201,10 @@ class GCG(ctk.CTk):
             self.cat = self.cat[unique_idx]
             dir_to_chk = fpe(self.config["files"]["extractions_dir"])
 
-            id_list_unsorted = [
+            id_idx_list = [
                 i
-                for i, s in tqdm(
-                    zip(self.id_col, self.seg_id_col),
+                for i, (n, s) in tqdm(
+                    enumerate(zip(self.id_col, self.seg_id_col)),
                     desc="Scanning directory for objects in catalogue",
                     total=len(self.id_col),
                 )
@@ -199,11 +212,24 @@ class GCG(ctk.CTk):
                 and any(dir_to_chk.glob(f"*{s:0>5}.stack.fits"))
             ]
             try:
-                self.id_list = np.array(sorted(id_list_unsorted, key=float))
-            except:
-                self.id_list = np.array([id_list_unsorted])
+                sorted_idx = np.asarray(id_idx_list)[
+                    np.argsort(self.id_col[id_idx_list].astype(float))
+                ]
 
-            assert len(self.id_list) > 0
+            except Exception as e:
+                sorted_idx = id_idx_list
+
+            self.id_col = self.id_col[sorted_idx]
+            # self.id_list = self.id_col
+            # self.id_list = self.id_col
+            self.seg_id_col = self.seg_id_col[sorted_idx]
+            self.cat = self.cat[sorted_idx]
+            self.sky_coords = SkyCoord(
+                self.cat[self.config["cat"].get("ra", "ra")],
+                self.cat[self.config["cat"].get("dec", "dec")],
+            )
+            # self.id_list = np.array([self.id_col[id_idx_list]])
+            assert len(self.id_col) > 0
 
             self.out_cat_path = (
                 fpe(self.config["files"]["out_dir"]) / "pyGCG_output.fits"
@@ -254,9 +280,10 @@ class GCG(ctk.CTk):
                         float,
                     ],
                 )
-            self.current_gal_id.set(self.id_list[0])
-            self.tab_row = self.cat[self.id_col == self.id_list[0]]
-            self.seg_id = self.seg_id_col[self.id_col == self.id_list[0]][0]
+            self.current_gal_id.set(self.id_col[0])
+            self.tab_row = self.cat[0]
+            self.seg_id = self.seg_id_col[0]
+            print(self.seg_id)
 
             self.current_gal_data["id"] = self.current_gal_id.get()
             self.current_gal_data["seg_id"] = self.seg_id
@@ -273,9 +300,12 @@ class GCG(ctk.CTk):
             # )
             # print (SkyCoord(self.current_gal_coords.get()))
             self.current_gal_coords.set(
-                SkyCoord(
-                    self.current_gal_data["ra"], self.current_gal_data["dec"]
-                ).to_string("decimal", precision=6)[0]
+                self.sky_coords[self.id_col == self.id_col[0]].to_string(
+                    "decimal", precision=6
+                )[0]
+                # SkyCoord(
+                #     self.current_gal_data["ra"], self.current_gal_data["dec"]
+                # ).to_string("decimal", precision=6)[0]
             )
 
             self.generate_tabs()
@@ -502,15 +532,17 @@ class GCG(ctk.CTk):
             self.comments_window.focus()
 
     def prev_gal_button_callback(self, event=None):
+        if event.widget.winfo_class() == "Entry":
+            return
         if self.main_tabs.get() == "Beam view":
             current_PA_idx = self.full_beam_frame.PA_menu.cget("values").index(
                 self.full_beam_frame.PA_menu.get()
             )
             if current_PA_idx == 0:
-                current_gal_idx = (self.id_list == self.current_gal_id.get()).nonzero()[
+                current_gal_idx = (self.id_col == self.current_gal_id.get()).nonzero()[
                     0
                 ]
-                self.current_gal_id.set(self.id_list[current_gal_idx - 1][0])
+                self.current_gal_id.set(self.id_col[current_gal_idx - 1][0])
                 self.main_tabs.set("Spec view")
                 self.change_gal_id()
             elif current_PA_idx == 1:
@@ -529,6 +561,8 @@ class GCG(ctk.CTk):
             # self.change_gal_id()
 
     def next_gal_button_callback(self, event=None):
+        if event.widget.winfo_class() == "Entry":
+            return
         if self.main_tabs.get() == "Beam view":
             current_PA_idx = self.full_beam_frame.PA_menu.cget("values").index(
                 self.full_beam_frame.PA_menu.get()
@@ -541,9 +575,9 @@ class GCG(ctk.CTk):
                 self.main_tabs.set("Spec view")
                 self.muse_spec_frame.update_plot()
         elif self.main_tabs.get() == "Spec view":
-            current_gal_idx = (self.id_list == self.current_gal_id.get()).nonzero()[0]
+            current_gal_idx = (self.id_col == self.current_gal_id.get()).nonzero()[0]
             self.current_gal_id.set(
-                self.id_list[(current_gal_idx + 1) % len(self.id_list)][0]
+                self.id_col[(current_gal_idx + 1) % len(self.id_col)][0]
             )
             self.main_tabs.set("Beam view")
             self.full_beam_frame.PA = self.full_beam_frame.PA_menu.cget("values")[0]
@@ -591,6 +625,50 @@ class GCG(ctk.CTk):
         )
 
         self.main_tabs_update()
+        self.focus()
+
+    def change_sky_coord(self, event=None):
+        print(event)
+        print(dir(event))
+        print(event.type)
+        print(event.widget)
+        print(dir(event.widget))
+        print(event.widget.winfo_class())
+        print(event.widget.winfo_name())
+        print(event.widget.winfo_class() == "Entry")
+        # print (self.current_gal_coords.get())
+        # print (SkyCoord(self.current_gal_coords.get()))
+        new_coord = None
+        try:
+            new_coord = SkyCoord(self.current_gal_coords.get())
+        except ValueError:
+            # print (self.current_gal_coords.get().split(" ,;"))
+            if len(self.current_gal_coords.get().split(" ")) == 2:
+                try:
+                    parts = self.current_gal_coords.get().split(" ")
+                    print(parts)
+                    new_coord = SkyCoord(
+                        float(parts[0]) * u.deg, float(parts[1]) * u.deg
+                    )
+                except:
+                    # print ("didn't work")
+                    pass
+        except:
+            pass
+
+        if new_coord is None:
+            print("Could not parse input as on-sky coordinates.")
+            return
+
+        print(new_coord)
+
+        sky_match_idx, dist, _ = new_coord.match_to_catalog_sky(self.sky_coords)
+
+        print(self.id_col[sky_match_idx])
+
+        print(self.id_col[sky_match_idx] in self.id_col)
+
+        self.focus()
 
     def main_tabs_update(self):
         if self.main_tabs.get() == "Spec view":

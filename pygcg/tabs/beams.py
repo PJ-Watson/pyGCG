@@ -1,27 +1,27 @@
-import customtkinter as ctk
 import tkinter as tk
-from matplotlib.figure import Figure
-import matplotlib.colors as colors
-from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2Tk
-import matplotlib.pyplot as plt
 from pathlib import Path
-import astropy.io.fits as pf
-from astropy.wcs import WCS
-from astropy.coordinates import SkyCoord
-import astropy.units as u
-from tqdm import tqdm
-import numpy as np
-from astropy.table import Table
 
+import astropy.io.fits as pf
+import astropy.units as u
+import customtkinter as ctk
+import matplotlib.colors as colors
+import matplotlib.pyplot as plt
+import numpy as np
+from astropy.coordinates import SkyCoord
+from astropy.table import Table
 from astropy.visualization import (
-    MinMaxInterval,
-    SqrtStretch,
     ImageNormalize,
     LinearStretch,
     LogStretch,
     ManualInterval,
+    MinMaxInterval,
     PercentileInterval,
+    SqrtStretch,
 )
+from astropy.wcs import WCS
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2Tk
+from matplotlib.figure import Figure
+from tqdm import tqdm
 
 
 class BeamFrame(ctk.CTkFrame):
@@ -291,7 +291,7 @@ class SinglePABeamFrame(ctk.CTkFrame):
     def update_plots(self, extvers=None):
         # self.quality_frame.get()
 
-        if extvers != None and extvers != self.extvers:
+        if extvers != None:
             # print ("Wrong!")
             # print (extvers)
             # print (self.extvers)
@@ -334,6 +334,8 @@ class SinglePABeamFrame(ctk.CTkFrame):
             self.stretch_fn = SqrtStretch
         elif self.master.stretch.lower() == "logarithmic":
             self.stretch_fn = LogStretch
+
+        print(self._root().current_gal_data)
         for j, name in enumerate(["SCI", "CONTAM", "MODEL", "RESIDUALS"]):
             for i, ver in enumerate(self.extvers):
                 if name + ver not in self.plotted_images.keys():
@@ -348,6 +350,8 @@ class SinglePABeamFrame(ctk.CTkFrame):
         self.fig.canvas.get_tk_widget().grid(row=0, column=0, sticky="news")
 
         self.update()
+
+        print("End", self._root().current_gal_data)
 
     def plot_kernel(self, ax, ext, extver):
         try:
@@ -518,7 +522,7 @@ class MultiQualityFrame(ctk.CTkFrame):
     def reload_extvers(self, new_extvers):
         # print(new_values, self.values)
 
-        self.save_current()
+        # self.save_current()
 
         self.extvers = new_extvers
 
