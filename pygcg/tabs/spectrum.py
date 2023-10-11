@@ -191,7 +191,6 @@ class SpecFrame(ctk.CTkFrame):
                 .resolve()
             ).glob(f"*{self._root().seg_id:0>5}.row.fits")
         ][0]
-        print("here")
         with pf.open(_row_path) as hdul:
             self.grizli_redshift = Table(hdul[1].data)["redshift"].value[0]
             self._root().current_gal_data["grizli_redshift"] = self.grizli_redshift

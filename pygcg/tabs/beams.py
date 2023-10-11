@@ -335,7 +335,6 @@ class SinglePABeamFrame(ctk.CTkFrame):
         elif self.master.stretch.lower() == "logarithmic":
             self.stretch_fn = LogStretch
 
-        print(self._root().current_gal_data)
         for j, name in enumerate(["SCI", "CONTAM", "MODEL", "RESIDUALS"]):
             for i, ver in enumerate(self.extvers):
                 if name + ver not in self.plotted_images.keys():
@@ -350,8 +349,6 @@ class SinglePABeamFrame(ctk.CTkFrame):
         self.fig.canvas.get_tk_widget().grid(row=0, column=0, sticky="news")
 
         self.update()
-
-        print("End", self._root().current_gal_data)
 
     def plot_kernel(self, ax, ext, extver):
         try:

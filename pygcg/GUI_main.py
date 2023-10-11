@@ -1,5 +1,4 @@
 import collections
-import pickle
 import re
 from pathlib import Path
 
@@ -179,7 +178,7 @@ class GCG(ctk.CTk):
         self.rescan_and_reload()
 
     def rescan_and_reload(self):
-        try:
+        try:            
             assert len(self.config["files"]["out_dir"]) > 0
             assert len(self.config["files"]["cat_path"]) > 0
             assert len(self.config["files"]["extractions_dir"]) > 0
@@ -211,6 +210,7 @@ class GCG(ctk.CTk):
                         f"{self.filter_names[0]},{self.PAs[1]}_COVERAGE",
                         "GRIZLI_REDSHIFT",
                         "ESTIMATED_REDSHIFT",
+                        "COMMENTS"
                     ],
                     dtype=[
                         str,
@@ -231,6 +231,7 @@ class GCG(ctk.CTk):
                         float,
                         float,
                         float,
+                        str,
                     ],
                 )
 
@@ -244,9 +245,6 @@ class GCG(ctk.CTk):
                 ]
                 .astype(int)
             )
-
-            print (self.config["files"].get("skip_existing", True))
-            # print (self.config)
 
             # Segmentation map ids must be a unique identifier!
             # If you're reading this message, something has gone horribly wrong
@@ -296,19 +294,11 @@ class GCG(ctk.CTk):
             self.current_gal_data["dec"] = self.tab_row[
                 self.config["cat"].get("dec", "dec")
             ]
-            # print (self.current_gal_data["ra"])
-            # try:
-            # self.current_gal_coords.set(
-            #     f"{self.current_gal_data['ra'][0]:0.5f}, {self.current_gal_data['dec'][0]:0.5f}"
-            # )
-            # print (SkyCoord(self.current_gal_coords.get()))
+
             self.current_gal_coords.set(
                 self.sky_coords[self.id_col == self.id_col[0]].to_string(
                     "decimal", precision=6
                 )[0]
-                # SkyCoord(
-                #     self.current_gal_data["ra"], self.current_gal_data["dec"]
-                # ).to_string("decimal", precision=6)[0]
             )
 
             self.generate_tabs()
@@ -594,19 +584,19 @@ class GCG(ctk.CTk):
         ### This is where the logic for loading/updating the tables will go
         flattened_data = flatten_dict(self.current_gal_data)
 
-        # for k, v in flattened_data.items():
-        #     print (k, v, type(v))
-        print(repr(flattened_data))
-        # if len(flattened_data) == 18:
-        #     with open(fpe(self.config["files"]["out_dir"]) / f"{flattened_data['id']}_output.pkl", "wb") as fp:
-        #         pickle.dump(flattened_data, fp)
+        # # for k, v in flattened_data.items():
+        # #     print (k, v, type(v))
+        # print(repr(flattened_data))
+        # # if len(flattened_data) == 18:
+        # #     with open(fpe(self.config["files"]["out_dir"]) / f"{flattened_data['id']}_output.pkl", "wb") as fp:
+        # #         pickle.dump(flattened_data, fp)
 
-        print(self.out_cat)
-        print(flattened_data["SEG_ID"] in self.out_cat["SEG_ID"])
+        # print(self.out_cat)
+        # print(flattened_data["SEG_ID"] in self.out_cat["SEG_ID"])
 
         # This still needs work! Need to check columns match, and make sure I'm not overwriting existing data
-        if len(flattened_data) == 18 and self.read_write_button.get() == "Write output":
-            print("Ready to write")
+        if len(flattened_data) == 19 and self.read_write_button.get() == "Write output":
+            # print("Ready to write")
             if flattened_data["SEG_ID"] in self.out_cat["SEG_ID"]:
                 warn_overwrite = CTkMessagebox(
                     title="Object already classified!",
@@ -618,16 +608,17 @@ class GCG(ctk.CTk):
                     icon="warning",
                     option_1="Cancel",
                     option_2="Overwrite",
+                    option_focus=2,
                 )
                 # print (flattened_data.keys())
                 # print (self.out_cat.colnames)
                 # print ([n for n in flattened_data.keys() if n not in self.out_cat.colnames])
                 if warn_overwrite.get() == "Cancel":
                     return
-            print("Here")
+            # print("Here")
             self.out_cat.add_row(flattened_data)
             self.out_cat.write(self.out_cat_path, overwrite=True)
-            print("Written")
+            # print("Written")
 
     def change_gal_id(self, event=None):
         # print("Changing galaxy id!")
@@ -644,11 +635,12 @@ class GCG(ctk.CTk):
         self.current_gal_data["dec"] = self.tab_row[
             self.config["cat"].get("dec", "dec")
         ]
+        self.current_gal_data["comments"] = ""
 
         self.current_gal_coords.set(
-            SkyCoord(
-                self.current_gal_data["ra"], self.current_gal_data["dec"]
-            ).to_string("decimal", precision=6)[0]
+            self.sky_coords[self.seg_id_col == self.seg_id].to_string(
+                "decimal", precision=6
+            )[0]
         )
 
         self.main_tabs_update()
@@ -659,20 +651,30 @@ class GCG(ctk.CTk):
         try:
             new_coord = SkyCoord(self.current_gal_coords.get())
         except ValueError:
-            if len(self.current_gal_coords.get().split(" ")) == 2:
-                try:
-                    parts = self.current_gal_coords.get().split(" ")
+            try:
+                parts = re.split('[,|;|\s]\s*', self.current_gal_coords.get()) 
+                if len(parts) == 2:
                     new_coord = SkyCoord(
                         float(parts[0]) * u.deg, float(parts[1]) * u.deg
                     )
-                except:
-                    pass
-        except:
+            except Exception as e:
+                print (e)
+                pass
+        except Exception as e:
+            print (e)
             pass
 
         if new_coord is None:
-            print("Could not parse input as on-sky coordinates.")
-            return
+
+            error = CTkMessagebox(
+                title="Error",
+                message="Could not parse input as on-sky coordinates.", 
+                icon="cancel",
+                option_focus=1,
+            )
+            if error.get()=="OK":
+                self.focus()
+                return
 
         sky_match_idx, dist, _ = new_coord.match_to_catalog_sky(self.sky_coords)
 
