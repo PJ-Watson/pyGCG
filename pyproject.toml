@@ -21,6 +21,7 @@ dependencies = [
     "numpy>=1.24",
     "tomlkit>=0.12",
     "customtkinter>=5.2",
+    "CTkMessageBox>=2.5",
     "matplotlib>=3.6",
     "tqdm>=4.66",
     "photutils>=1.9"

@@ -9,6 +9,7 @@ import numpy as np
 import tomlkit
 from astropy.coordinates import SkyCoord
 from astropy.table import QTable
+from CTkMessagebox import CTkMessagebox
 from tqdm import tqdm
 
 from pygcg.tabs.beams import BeamFrame
@@ -59,7 +60,7 @@ class GCG(ctk.CTk):
             nav_frame,
             values=["Read-only", "Write output"],
             # command=self.open_settings_callback,
-            state="disabled",
+            # state="disabled",
         )
         self.read_write_button.grid(
             row=0,
@@ -143,7 +144,7 @@ class GCG(ctk.CTk):
         )
         self.current_gal_entry.bind(
             "<Return>",
-            self.change_gal_id,
+            self.change_id_entry,
         )
         self.current_gal_entry.grid(
             row=0,
@@ -220,15 +221,12 @@ class GCG(ctk.CTk):
                 sorted_idx = id_idx_list
 
             self.id_col = self.id_col[sorted_idx]
-            # self.id_list = self.id_col
-            # self.id_list = self.id_col
             self.seg_id_col = self.seg_id_col[sorted_idx]
             self.cat = self.cat[sorted_idx]
             self.sky_coords = SkyCoord(
                 self.cat[self.config["cat"].get("ra", "ra")],
                 self.cat[self.config["cat"].get("dec", "dec")],
             )
-            # self.id_list = np.array([self.id_col[id_idx_list]])
             assert len(self.id_col) > 0
 
             self.out_cat_path = (
@@ -539,6 +537,7 @@ class GCG(ctk.CTk):
                 self.full_beam_frame.PA_menu.get()
             )
             if current_PA_idx == 0:
+                self.save_current_object()
                 current_gal_idx = (self.id_col == self.current_gal_id.get()).nonzero()[
                     0
                 ]
@@ -575,6 +574,7 @@ class GCG(ctk.CTk):
                 self.main_tabs.set("Spec view")
                 self.muse_spec_frame.update_plot()
         elif self.main_tabs.get() == "Spec view":
+            self.save_current_object()
             current_gal_idx = (self.id_col == self.current_gal_id.get()).nonzero()[0]
             self.current_gal_id.set(
                 self.id_col[(current_gal_idx + 1) % len(self.id_col)][0]
@@ -583,26 +583,48 @@ class GCG(ctk.CTk):
             self.full_beam_frame.PA = self.full_beam_frame.PA_menu.cget("values")[0]
             self.full_beam_frame.PA_menu.set(self.full_beam_frame.PA)
             self.change_gal_id()
+            # self.main_tabs_update()
 
-    def change_gal_id(self, event=None):
+    def save_current_object(self, event=None):
         ### This is where the logic for loading/updating the tables will go
         flattened_data = flatten_dict(self.current_gal_data)
 
         # for k, v in flattened_data.items():
         #     print (k, v, type(v))
-        # print (repr(flattened_data))
+        print(repr(flattened_data))
         # if len(flattened_data) == 18:
         #     with open(fpe(self.config["files"]["out_dir"]) / f"{flattened_data['id']}_output.pkl", "wb") as fp:
         #         pickle.dump(flattened_data, fp)
 
+        print(self.out_cat)
+        print(flattened_data["SEG_ID"] in self.out_cat["SEG_ID"])
+
         # This still needs work! Need to check columns match, and make sure I'm not overwriting existing data
         if len(flattened_data) == 18 and self.read_write_button.get() == "Write output":
-            # print (flattened_data.keys())
-            # print (self.out_cat.colnames)
-            # print ([n for n in flattened_data.keys() if n not in self.out_cat.colnames])
+            print("Ready to write")
+            if flattened_data["SEG_ID"] in self.out_cat["SEG_ID"]:
+                warn_overwrite = CTkMessagebox(
+                    title="Object already classified!",
+                    message=(
+                        "The data products for this object have already been classified. "
+                        "Overwrite existing classification?\n"
+                        "(This operation cannot be undone.)"
+                    ),
+                    icon="warning",
+                    option_1="Cancel",
+                    option_2="Overwrite",
+                )
+                # print (flattened_data.keys())
+                # print (self.out_cat.colnames)
+                # print ([n for n in flattened_data.keys() if n not in self.out_cat.colnames])
+                if warn_overwrite.get() == "Cancel":
+                    return
+            print("Here")
             self.out_cat.add_row(flattened_data)
             self.out_cat.write(self.out_cat_path, overwrite=True)
+            print("Written")
 
+    def change_gal_id(self, event=None):
         # print("Changing galaxy id!")
 
         self.tab_row = self.cat[self.id_col == self.current_gal_id.get()]
@@ -628,30 +650,17 @@ class GCG(ctk.CTk):
         self.focus()
 
     def change_sky_coord(self, event=None):
-        print(event)
-        print(dir(event))
-        print(event.type)
-        print(event.widget)
-        print(dir(event.widget))
-        print(event.widget.winfo_class())
-        print(event.widget.winfo_name())
-        print(event.widget.winfo_class() == "Entry")
-        # print (self.current_gal_coords.get())
-        # print (SkyCoord(self.current_gal_coords.get()))
         new_coord = None
         try:
             new_coord = SkyCoord(self.current_gal_coords.get())
         except ValueError:
-            # print (self.current_gal_coords.get().split(" ,;"))
             if len(self.current_gal_coords.get().split(" ")) == 2:
                 try:
                     parts = self.current_gal_coords.get().split(" ")
-                    print(parts)
                     new_coord = SkyCoord(
                         float(parts[0]) * u.deg, float(parts[1]) * u.deg
                     )
                 except:
-                    # print ("didn't work")
                     pass
         except:
             pass
@@ -660,15 +669,21 @@ class GCG(ctk.CTk):
             print("Could not parse input as on-sky coordinates.")
             return
 
-        print(new_coord)
+        # print(new_coord)
 
         sky_match_idx, dist, _ = new_coord.match_to_catalog_sky(self.sky_coords)
 
-        print(self.id_col[sky_match_idx])
+        # print(self.id_col[sky_match_idx])
 
-        print(self.id_col[sky_match_idx] in self.id_col)
+        self.current_gal_id.set(self.id_col[sky_match_idx])
 
         self.focus()
+        self.save_current_object()
+        self.change_gal_id()
+
+    def change_id_entry(self, event=None):
+        self.save_current_object()
+        self.change_gal_id()
 
     def main_tabs_update(self):
         if self.main_tabs.get() == "Spec view":
