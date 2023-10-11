@@ -58,8 +58,9 @@ class GCG(ctk.CTk):
         self.read_write_button = ctk.CTkSegmentedButton(
             nav_frame,
             values=["Read-only", "Write output"],
-            # command=self.open_settings_callback,
-            # state="disabled",
+            selected_color="red",
+            selected_hover_color="dark red",
+            command=self.read_write_colour,
         )
         self.read_write_button.grid(
             row=0,
@@ -178,7 +179,7 @@ class GCG(ctk.CTk):
         self.rescan_and_reload()
 
     def rescan_and_reload(self):
-        try:            
+        try:
             assert len(self.config["files"]["out_dir"]) > 0
             assert len(self.config["files"]["cat_path"]) > 0
             assert len(self.config["files"]["extractions_dir"]) > 0
@@ -210,7 +211,7 @@ class GCG(ctk.CTk):
                         f"{self.filter_names[0]},{self.PAs[1]}_COVERAGE",
                         "GRIZLI_REDSHIFT",
                         "ESTIMATED_REDSHIFT",
-                        "COMMENTS"
+                        "COMMENTS",
                     ],
                     dtype=[
                         str,
@@ -262,8 +263,9 @@ class GCG(ctk.CTk):
                 if self.config["files"].get("skip_existing", True):
                     if s in self.out_cat["SEG_ID"]:
                         continue
-                if (any(dir_to_chk.glob(f"*{s:0>5}.1D.fits"))
-                and any(dir_to_chk.glob(f"*{s:0>5}.stack.fits")) ):
+                if any(dir_to_chk.glob(f"*{s:0>5}.1D.fits")) and any(
+                    dir_to_chk.glob(f"*{s:0>5}.stack.fits")
+                ):
                     id_idx_list.append(i)
             try:
                 sorted_idx = np.asarray(id_idx_list)[
@@ -652,27 +654,26 @@ class GCG(ctk.CTk):
             new_coord = SkyCoord(self.current_gal_coords.get())
         except ValueError:
             try:
-                parts = re.split('[,|;|\s]\s*', self.current_gal_coords.get()) 
+                parts = re.split("[,|;|\s]\s*", self.current_gal_coords.get())
                 if len(parts) == 2:
                     new_coord = SkyCoord(
                         float(parts[0]) * u.deg, float(parts[1]) * u.deg
                     )
             except Exception as e:
-                print (e)
+                print(e)
                 pass
         except Exception as e:
-            print (e)
+            print(e)
             pass
 
         if new_coord is None:
-
             error = CTkMessagebox(
                 title="Error",
-                message="Could not parse input as on-sky coordinates.", 
+                message="Could not parse input as on-sky coordinates.",
                 icon="cancel",
                 option_focus=1,
             )
-            if error.get()=="OK":
+            if error.get() == "OK":
                 self.focus()
                 return
 
@@ -687,6 +688,16 @@ class GCG(ctk.CTk):
     def change_id_entry(self, event=None):
         self.save_current_object()
         self.change_gal_id()
+
+    def read_write_colour(self, event=None):
+        if self.read_write_button.get() == "Read-only":
+            self.read_write_button.configure(
+                selected_color="red", selected_hover_color="dark red"
+            )
+        if self.read_write_button.get() == "Write output":
+            self.read_write_button.configure(
+                selected_color="green", selected_hover_color="dark green"
+            )
 
     def main_tabs_update(self):
         if self.main_tabs.get() == "Spec view":

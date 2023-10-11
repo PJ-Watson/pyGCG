@@ -23,7 +23,8 @@ class CommentsWindow(ctk.CTkToplevel):
         #     self, ""
         # )
         self.comments_label = ctk.CTkLabel(
-            self.main_frame, text="Insert any additional comments here:"
+            self.main_frame,
+            text=f"Insert any additional comments for object {self._root().current_gal_id.get()} here:",
         )
         self.comments_label.grid(
             row=0,
