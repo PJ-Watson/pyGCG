@@ -3,9 +3,9 @@
 title = "pyGCG Configuration"
 
 [files]
-cat_path = "" # The file path of the NIRISS catalogue. Must contain id, ra, dec columns.
 out_dir = "" # The location of the primary configuration file.
 extractions_dir = "" # The directory in which NIRISS extractions are stored.
+cat_path = "" # [optional] The file path of the NIRISS catalogue. Must contain id, ra, dec columns. Defaults to "*ir.cat.fits" inside $EXTRACTIONS_DIR.
 prep_dir = "" # [optional] The directory containing the segmentation map and direct images.
 cube_path = "" # [optional] The file path of the corresponding MUSE datacube.
 temp_dir = "" # [optional] The directory in which temporary files are stored. Defaults to $OUT_DIR/.temp/

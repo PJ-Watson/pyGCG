@@ -181,7 +181,8 @@ class GCG(ctk.CTk):
     def rescan_and_reload(self):
         try:
             assert len(self.config["files"]["out_dir"]) > 0
-            assert len(self.config["files"]["cat_path"]) > 0
+            # assert len(self.config["files"]["cat_path"]) > 0
+            assert self.cat is not None
             assert len(self.config["files"]["extractions_dir"]) > 0
 
             self.out_cat_path = (
@@ -236,16 +237,10 @@ class GCG(ctk.CTk):
                     ],
                 )
 
-            self.id_col = (
-                self._root().cat[self.config["cat"].get("id", "id")].astype(str)
-            )
-            self.seg_id_col = (
-                self._root()
-                .cat[
-                    self.config["cat"].get("seg_id", self.config["cat"].get("id", "id"))
-                ]
-                .astype(int)
-            )
+            self.id_col = self.cat[self.config["cat"].get("id", "id")].astype(str)
+            self.seg_id_col = self.cat[
+                self.config["cat"].get("seg_id", self.config["cat"].get("id", "id"))
+            ].astype(int)
 
             # Segmentation map ids must be a unique identifier!
             # If you're reading this message, something has gone horribly wrong
@@ -381,7 +376,7 @@ class GCG(ctk.CTk):
             self.config.add("files", files_tab)
             files = self.config["files"]
 
-        for f in ["out_dir", "extractions_dir", "cat_path"]:
+        for f in ["out_dir", "extractions_dir"]:
             try:
                 files[f]
             except:
@@ -403,7 +398,14 @@ class GCG(ctk.CTk):
         try:
             self.cat = QTable.read(fpe(files["cat_path"]))
         except:
-            self.cat = None
+            try:
+                self.cat = QTable.read(
+                    [*fpe(files["extractions_dir"]).glob("*ir.cat.fits")][0]
+                )
+            except:
+                self.cat = None
+
+        # print (self.cat)
 
         # Catalogue
         try:
