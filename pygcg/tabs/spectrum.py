@@ -137,9 +137,6 @@ class SpecFrame(ctk.CTkFrame):
         self.images_frame = ImagesFrame(self, gal_id=self.gal_id)
         self.images_frame.grid(row=2, column=0, columnspan=1, sticky="news")
 
-        if self._root().main_tabs.get() == "Spec view":
-            self.update_plot()
-
     def update_plot(self):
         if not hasattr(self, "pyplot_canvas"):
             self.gal_id = self._root().current_gal_id.get()

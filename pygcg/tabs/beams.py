@@ -406,19 +406,36 @@ class MultiQualityFrame(ctk.CTkFrame):
         self.extvers = extvers
         self.quality_menus = {}
 
-        for i, f in enumerate(self._root().filter_names[::-1]):
+        self.possible_values = ["Excellent", "Good", "Poor", "Unusable"]
+
+        for i, e in enumerate(
+            self.extvers,
+        ):
             label = ctk.CTkLabel(self, text="Beam Quality")
             label.grid(row=0, column=2 * i, padx=10, pady=(10, 0), sticky="e")
             q_menu = ctk.CTkOptionMenu(
                 self,
-                values=["Excellent", "Good", "Poor", "Unusable"],
+                values=self.possible_values,
                 command=self.save_current,
             )
-            q_menu.set("Good")
+            try:
+                q_menu.set(self._root().current_gal_data[e]["quality"])
+            except:
+                q_menu.set("Good")
             q_menu.grid(row=0, column=2 * i + 1, padx=10, pady=(10, 0), sticky="w")
-            self.quality_menus[f] = q_menu
+            self.quality_menus[e] = q_menu
 
         self.save_current()
+
+    def keypress_select(self, event, key_maps):
+        if event.char in key_maps:
+            idx = (event.char == key_maps).nonzero()
+            self._root().current_gal_data[self.extvers[int(idx[0])]][
+                "quality"
+            ] = self.possible_values[int(idx[1])]
+            self.quality_menus[self.extvers[int(idx[0])]].set(
+                self.possible_values[int(idx[1])]
+            )
 
     def reload_extvers(self, new_extvers=None):
         if self.extvers != None:

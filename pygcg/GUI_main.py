@@ -37,7 +37,7 @@ class GCG(ctk.CTk):
             self.quit_gracefully,
         )
 
-        self.bind(f"<Control-q>", self.quit_gracefully)
+        self.bind("<Control-q>", self.quit_gracefully)
         self.bind("<Left>", self.prev_gal_button_callback)
         self.bind("<Right>", self.next_gal_button_callback)
         self.bind("<c>", self.gal_comments_button_callback)
@@ -375,6 +375,21 @@ class GCG(ctk.CTk):
             self.PAs[1],
         )
         self.beam_frame_2.pack(fill="both", expand=1)
+
+        self.quality_key_map = np.array(
+            [["q", "w", "e", "r"], ["u", "i", "o", "p"], ["a", "s", "d", "f"]]
+        )
+        for l in self.quality_key_map.flatten():
+            self.bind(f"{l}", self.select_quality_menu)
+
+    def select_quality_menu(self, event=None):
+        if self.beam_frame_1.winfo_viewable():
+            widg = self.beam_frame_1
+        else:
+            widg = self.beam_frame_2
+        widg.beam_single_PA_frame.quality_frame.keypress_select(
+            event, self.quality_key_map
+        )
 
     def initialise_configuration(self, config_file=None):
         try:
