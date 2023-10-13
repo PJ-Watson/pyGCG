@@ -1,9 +1,9 @@
+import tkinter as tk
 from pathlib import Path
 
 import astropy.io.fits as pf
 import astropy.units as u
 import customtkinter as ctk
-import tkinter as tk
 import matplotlib.colors as colors
 import matplotlib.pyplot as plt
 import numpy as np
@@ -39,27 +39,30 @@ class SpecFrame(ctk.CTkFrame):
             return
         self.gal_id = gal_id
         self.plotted_components = dict(emission={}, absorption={})
-        self.grid_rowconfigure(0, weight=1)
+        self.grid_rowconfigure(1, weight=1)
         self.grid_columnconfigure(0, weight=0)
         self.grid_columnconfigure(1, weight=1)
 
+        self.plot_options_frame = ctk.CTkFrame(self)
+        self.plot_options_frame.grid(row=0, column=0, columnspan=2, sticky="ew")
+
         self.scrollable_frame = ctk.CTkScrollableFrame(self)
-        self.scrollable_frame.grid(row=0, column=2, rowspan=1, sticky="news")
+        self.scrollable_frame.grid(row=0, column=2, rowspan=2, sticky="news")
         self.scrollable_frame.grid_columnconfigure(0, weight=1)
 
-        self.reference_lines_label = ctk.CTkLabel(
-            self.scrollable_frame, text="Show reference lines:"
-        )
-        self.reference_lines_label.grid(row=0, padx=10, pady=(10, 0), sticky="w")
+        # self.reference_lines_label = ctk.CTkLabel(
+        #     self.scrollable_frame, text="Show reference lines:"
+        # )
+        # self.reference_lines_label.grid(row=0, padx=10, pady=(10, 0), sticky="w")
         self.emission_checkbox = ctk.CTkCheckBox(
-            self.scrollable_frame, text="Emission", command=self.change_lines
+            self.plot_options_frame, text="Emission", command=self.change_lines
         )
-        self.emission_checkbox.grid(row=1, column=0, padx=20, pady=(10, 0), sticky="w")
+        self.emission_checkbox.grid(row=0, column=0, padx=20, pady=(10, 10), sticky="w")
         self.absorption_checkbox = ctk.CTkCheckBox(
-            self.scrollable_frame, text="Absorption", command=self.change_lines
+            self.plot_options_frame, text="Absorption", command=self.change_lines
         )
         self.absorption_checkbox.grid(
-            row=2, column=0, padx=20, pady=(10, 0), sticky="w"
+            row=0, column=1, padx=20, pady=(10, 10), sticky="w"
         )
 
         self.redshift_frame = ctk.CTkFrame(self.scrollable_frame)
@@ -67,7 +70,7 @@ class SpecFrame(ctk.CTkFrame):
         self.redshift_frame.columnconfigure([0, 1], weight=1)
         self.redshift_label = ctk.CTkLabel(self.redshift_frame, text="Redshift:")
         self.redshift_label.grid(
-            row=0, column=0, columnspan=2, padx=10, pady=(10, 0), sticky="w"
+            row=0, column=0, columnspan=2, padx=10, pady=(10,), sticky="w"
         )
         self.current_redshift = ValidateFloatVar(
             master=self,
@@ -115,28 +118,30 @@ class SpecFrame(ctk.CTkFrame):
         )
 
         self.muse_checkbox = ctk.CTkCheckBox(
-            self.scrollable_frame, text="MUSE spectrum", command=self.change_components
+            self.plot_options_frame,
+            text="MUSE spectrum",
+            command=self.change_components,
         )
-        self.muse_checkbox.grid(row=4, column=0, padx=20, pady=(10, 0), sticky="w")
+        self.muse_checkbox.grid(row=0, column=2, padx=20, pady=(10, 10), sticky="w")
         self.grizli_checkbox = ctk.CTkCheckBox(
-            self.scrollable_frame,
+            self.plot_options_frame,
             text="NIRISS spectrum",
             command=self.change_components,
         )
         self.grizli_checkbox.select()
-        self.grizli_checkbox.grid(row=5, column=0, padx=20, pady=(10, 0), sticky="w")
+        self.grizli_checkbox.grid(row=0, column=3, padx=20, pady=(10, 10), sticky="w")
         self.grizli_temp_checkbox = ctk.CTkCheckBox(
-            self.scrollable_frame,
+            self.plot_options_frame,
             text="Grizli templates",
             command=self.change_components,
         )
         self.grizli_temp_checkbox.grid(
-            row=6, column=0, padx=20, pady=(10, 0), sticky="w"
+            row=0, column=4, padx=20, pady=(10, 10), sticky="w"
         )
         self.grizli_temp_checkbox.select()
 
         self.images_frame = ImagesFrame(self, gal_id=self.gal_id)
-        self.images_frame.grid(row=1, column=0, columnspan=2, sticky="news")
+        self.images_frame.grid(row=2, column=0, columnspan=2, sticky="news")
 
     def update_plot(self):
         if not hasattr(self, "pyplot_canvas"):
@@ -173,8 +178,8 @@ class SpecFrame(ctk.CTkFrame):
 
             self.pyplot_canvas.draw_idle()
 
-            self.pyplot_canvas.get_tk_widget().grid(row=0, column=1, sticky="news")
-            toolbar.grid(row=0, column=0, sticky="news")
+            self.pyplot_canvas.get_tk_widget().grid(row=1, column=1, sticky="news")
+            toolbar.grid(row=1, column=0, sticky="news")
 
         if self.gal_id != self._root().current_gal_id.get():
             self.gal_id = self._root().current_gal_id.get()
