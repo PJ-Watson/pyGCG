@@ -390,10 +390,8 @@ class SinglePABeamFrame(ctk.CTkFrame):
                     c="k",
                 )
                 self._root().current_gal_data[extver]["coverage"] = 0.0
-                self.quality_frame.quality_menus[extver.split(",")[0]].set("Unusable")
-                self.quality_frame.quality_menus[extver.split(",")[0]].configure(
-                    state="disabled"
-                )
+                self.quality_frame.quality_menus[extver].set("Unusable")
+                self.quality_frame.quality_menus[extver].configure(state="disabled")
             except Exception as e:
                 print("beam:", e)
                 pass

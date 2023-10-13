@@ -647,6 +647,7 @@ class GCG(ctk.CTk):
                     option_focus=2,
                 )
                 if warn_overwrite.get() == "Cancel":
+                    self.focus()
                     return
                 else:
                     self.out_cat.remove_rows(
@@ -654,6 +655,7 @@ class GCG(ctk.CTk):
                             0
                         ]
                     )
+                    self.focus()
             self.out_cat.add_row(flattened_data)
             self.out_cat.write(self.out_cat_path, overwrite=True)
 
