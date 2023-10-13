@@ -11,7 +11,8 @@ class CommentsWindow(ctk.CTkToplevel):
 
         # Key bindings
         self.protocol("WM_DELETE_WINDOW", self.quit_comments_gracefully)
-        self.bind("<Control-q>", self.quit_comments_gracefully)
+        self.bind("<Control-w>", self.quit_comments_gracefully)
+        self.bind("<Control-s>", self.quit_comments_gracefully)
 
         self.main_frame = ctk.CTkFrame(self)
         self.main_frame.grid_columnconfigure(0, weight=1)
@@ -41,7 +42,6 @@ class CommentsWindow(ctk.CTkToplevel):
             self.comments_box.insert("1.0", self._root().current_gal_data["comments"])
 
         self.comments_box.grid(row=1, column=0, padx=20, pady=(10, 0), sticky="news")
-        self.comments_box.bind("<Control-s>", self.quit_comments_gracefully)
         self.comments_box.bind("<Control-Key-a>", self.select_all)
         self.comments_box.bind("<Control-Key-A>", self.select_all)
 

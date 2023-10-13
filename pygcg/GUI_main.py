@@ -39,6 +39,7 @@ class GCG(ctk.CTk):
         self.bind("<Control-q>", self.quit_gracefully)
         self.bind("<Left>", self.prev_gal_button_callback)
         self.bind("<Right>", self.next_gal_button_callback)
+        self.bind("<c>", self.gal_comments_button_callback)
 
         # configure grid system
         self.grid_rowconfigure(1, weight=1)
@@ -137,6 +138,28 @@ class GCG(ctk.CTk):
             padx=(20, 5),
             pady=10,
             sticky="e",
+        )
+        progress_label = ctk.CTkLabel(
+            nav_frame,
+            text="Progress:",
+        )
+        progress_label.grid(
+            row=1,
+            column=2,
+            padx=(20, 5),
+            pady=10,
+            sticky="e",
+        )
+        self.progress_status = ctk.CTkLabel(
+            nav_frame,
+            text="???:",
+        )
+        self.progress_status.grid(
+            row=1,
+            column=3,
+            padx=(5, 20),
+            pady=10,
+            sticky="w",
         )
         self.current_gal_entry = ctk.CTkEntry(
             nav_frame,
@@ -291,6 +314,7 @@ class GCG(ctk.CTk):
             self.current_gal_data["dec"] = self.tab_row[
                 self.config["cat"].get("dec", "dec")
             ]
+            self.current_gal_data["comments"] = ""
 
             self.current_gal_coords.set(
                 self.sky_coords[self.id_col == self.id_col[0]].to_string(
@@ -323,11 +347,10 @@ class GCG(ctk.CTk):
             self.splash_frame.destroy()
             del self.splash_frame
 
-
         self.plot_options = {
             "cmap": "plasma",
-            "stretch":"Square root",
-            "limits": "grizli default"
+            "stretch": "Square root",
+            "limits": "grizli default",
         }
 
         self.tab_names = [
@@ -335,6 +358,11 @@ class GCG(ctk.CTk):
             f"Orientation 2: {self.PAs[1]} deg",
             f"Spectrum",
         ]
+        self.object_progress = {}
+        for n in self.tab_names:
+            self.object_progress[n] = False
+        # print (np.sum([*self.object_progress.values()]))
+        self.update_progress()
 
         self.main_tabs = MyTabView(
             master=self,
@@ -367,11 +395,15 @@ class GCG(ctk.CTk):
         self.full_spec_frame.pack(fill="both", expand=1)
 
         self.beam_frame_1 = BeamFrame(
-            self.main_tabs.tab(self.tab_names[0]), self.current_gal_id.get(), self.PAs[0]
+            self.main_tabs.tab(self.tab_names[0]),
+            self.current_gal_id.get(),
+            self.PAs[0],
         )
         self.beam_frame_1.pack(fill="both", expand=1)
         self.beam_frame_2 = BeamFrame(
-            self.main_tabs.tab(self.tab_names[1]), self.current_gal_id.get(), self.PAs[1]
+            self.main_tabs.tab(self.tab_names[1]),
+            self.current_gal_id.get(),
+            self.PAs[1],
         )
         self.beam_frame_2.pack(fill="both", expand=1)
 
@@ -554,50 +586,33 @@ class GCG(ctk.CTk):
 
         return self.config
 
-    def open_settings_callback(self):
+    def update_progress(self):
+        # print (dir(self.progress_status))
+        # print (self.progress_status.winfo_width())
+        num = np.sum([*self.object_progress.values()])
+        blocks = num * 4 * "\u2588"
+        self.progress_status.configure(text=f"|{blocks:\u2581<12}| {num}/3")
+
+    def open_settings_callback(self, event=None):
         if self.settings_window is None or not self.settings_window.winfo_exists():
             self.settings_window = SettingsWindow(self)
         else:
             self.settings_window.focus()
 
-    def gal_comments_button_callback(self):
+    def gal_comments_button_callback(self, event=None):
+        if event != None and event.widget.winfo_class() == ("Entry" or "Textbox"):
+            return
         if self.comments_window is None or not self.comments_window.winfo_exists():
             self.comments_window = CommentsWindow(self)
         else:
             self.comments_window.focus()
 
     def prev_gal_button_callback(self, event=None):
-        if event.widget.winfo_class() == ("Entry" or "Textbox"):
+        if event != None and event.widget.winfo_class() == ("Entry" or "Textbox"):
             return
         current_tab = self.main_tabs.get()
-        # if self.main_tabs.get() == "Beam view":
-        #     current_PA_idx = self.full_beam_frame.PA_menu.cget("values").index(
-        #         self.full_beam_frame.PA_menu.get()
-        #     )
-        #     if current_PA_idx == 0:
-        #         self.save_current_object()
-        #         current_gal_idx = (self.id_col == self.current_gal_id.get()).nonzero()[
-        #             0
-        #         ]
-        #         self.current_gal_id.set(self.id_col[current_gal_idx - 1][0])
-        #         self.main_tabs.set("Spec view")
-        #         self.change_gal_id()
-        #     elif current_PA_idx == 1:
-        #         self.full_beam_frame.PA = self.full_beam_frame.PA_menu.cget("values")[0]
-        #         self.full_beam_frame.PA_menu.set(self.full_beam_frame.PA)
-        #         self.full_beam_frame.update_grid(force_update=True)
-        #     elif current_PA_idx == 2:
-        #         self.full_beam_frame.PA = self.full_beam_frame.PA_menu.cget("values")[1]
-        #         self.full_beam_frame.PA_menu.set(self.full_beam_frame.PA)
-        #         self.full_beam_frame.update_grid(force_update=True)
-        # elif self.main_tabs.get() == "Spec view":
-        #     self.main_tabs.set("Beam view")
-        #     self.full_beam_frame.PA = self.full_beam_frame.PA_menu.cget("values")[1]
-        #     self.full_beam_frame.PA_menu.set(self.full_beam_frame.PA)
-        #     self.full_beam_frame.update_grid()
-            # self.change_gal_id()
-
-        
+        self.object_progress[current_tab] = True
+        self.update_progress()
         if current_tab == self.tab_names[2]:
             self.main_tabs.set(self.tab_names[1])
             self.main_tabs_update()
@@ -613,12 +628,15 @@ class GCG(ctk.CTk):
             )
             self.main_tabs.set(self.tab_names[2])
             self.change_gal_id()
+        print("prev", [*self.current_gal_data.keys()])
 
     def next_gal_button_callback(self, event=None):
         if event.widget.winfo_class() == ("Entry" or "Textbox"):
             return
         # print ("next")
         current_tab = self.main_tabs.get()
+        self.object_progress[current_tab] = True
+        self.update_progress()
         if current_tab == self.tab_names[0]:
             self.main_tabs.set(self.tab_names[1])
             self.main_tabs_update()
@@ -634,28 +652,7 @@ class GCG(ctk.CTk):
             )
             self.main_tabs.set(self.tab_names[0])
             self.change_gal_id()
-        # if self.main_tabs.get() == "Beam view":
-        #     current_PA_idx = self.full_beam_frame.PA_menu.cget("values").index(
-        #         self.full_beam_frame.PA_menu.get()
-        #     )
-        #     if current_PA_idx == 0:
-        #         self.full_beam_frame.PA = self.full_beam_frame.PA_menu.cget("values")[1]
-        #         self.full_beam_frame.PA_menu.set(self.full_beam_frame.PA)
-        #         self.full_beam_frame.update_grid(force_update=True)
-        #     elif current_PA_idx == 1 or current_PA_idx == 2:
-        #         self.main_tabs.set("Spec view")
-        #         self.full_spec_frame.update_plot()
-        # elif self.main_tabs.get() == "Spec view":
-        #     self.save_current_object()
-        #     current_gal_idx = (self.id_col == self.current_gal_id.get()).nonzero()[0]
-        #     self.current_gal_id.set(
-        #         self.id_col[(current_gal_idx + 1) % len(self.id_col)][0]
-        #     )
-        #     self.main_tabs.set("Beam view")
-        #     self.full_beam_frame.PA = self.full_beam_frame.PA_menu.cget("values")[0]
-        #     self.full_beam_frame.PA_menu.set(self.full_beam_frame.PA)
-        #     self.change_gal_id()
-        #     # self.main_tabs_update()
+        print("next", [*self.current_gal_data.keys()])
 
     def save_current_object(self, event=None):
         ### This is where the logic for loading/updating the tables will go
@@ -672,8 +669,16 @@ class GCG(ctk.CTk):
         # print(flattened_data["SEG_ID"] in self.out_cat["SEG_ID"])
 
         # This still needs work! Need to check columns match, and make sure I'm not overwriting existing data
-        if len(flattened_data) == 19 and self.read_write_button.get() == "Write output":
-            # print("Ready to write")
+        print("saving?")
+        print(np.sum([*self.object_progress.values()]))
+        print(len(flattened_data))
+        print("Flattened", flattened_data)
+        if (
+            len(flattened_data) == 19
+            and self.read_write_button.get() == "Write output"
+            and np.sum([*self.object_progress.values()]) == 3
+        ):
+            print("Ready to write")
             if flattened_data["SEG_ID"] in self.out_cat["SEG_ID"]:
                 warn_overwrite = CTkMessagebox(
                     title="Object already classified!",
@@ -699,6 +704,10 @@ class GCG(ctk.CTk):
 
     def change_gal_id(self, event=None):
         # print("Changing galaxy id!")
+
+        for n in self.tab_names:
+            self.object_progress[n] = False
+        self.update_progress()
 
         self.tab_row = self.cat[self.id_col == self.current_gal_id.get()]
         if len(self.tab_row) > 1:

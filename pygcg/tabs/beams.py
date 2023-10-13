@@ -36,7 +36,7 @@ class BeamFrame(ctk.CTkFrame):
             sticky="ew",
         )
         self.PA = PA
-        print (self.PA)
+        print(self.PA)
 
         # PA_label = ctk.CTkLabel(self.settings_frame, text="Grism PA:")
         # PA_label.grid(row=0, column=0, padx=(20, 5), pady=10, sticky="e")
@@ -146,8 +146,11 @@ class BeamFrame(ctk.CTkFrame):
         self.update_grid(force_update=True)
 
     def update_grid(self, force_update=False):
-        print (self.gal_id)
+        print(self.gal_id)
         if self.gal_id == self._root().current_gal_id.get() and not force_update:
+            self.beam_single_PA_frame.quality_frame.save_current()
+            for k, v in self.beam_single_PA_frame.coverage.items():
+                self._root().current_gal_data[k]["coverage"] = v
             pass
         else:
             #     print("No need to panic.")
@@ -167,15 +170,15 @@ class BeamFrame(ctk.CTkFrame):
                 self.beam_frame_list = []
                 # row = 0
                 extver_list = []
-                print (n_pa, n_grism)
-                # print 
+                print(n_pa, n_grism)
+                # print
                 # for row, col in np.ndindex(n_pa, n_grism):
                 for i in range(n_grism):
                     try:
                         # grism_name = header[f"GRISM{i+1:0>3}"]
                         grism_name = self._root().filter_names[::-1][i]
                         extver = grism_name + f",{self.PA}"
-                        print (extver)
+                        print(extver)
                         # # print (grism_name)
                         # if self.PA == "PA 1":
                         #     pa = "," + str(header[f"{grism_name}01"])
@@ -206,7 +209,7 @@ class BeamFrame(ctk.CTkFrame):
                 extver = grism_name + pa
                 extver = grism_name + f",{self.PA}"
                 extver_list.append(extver)
-                print (extver)
+                print(extver)
             self.beam_single_PA_frame = SinglePABeamFrame(self, extvers=extver_list)
             self.beam_single_PA_frame.grid(row=1, column=0, sticky="news")
 
@@ -242,6 +245,7 @@ class SinglePABeamFrame(ctk.CTkFrame):
         )
 
         self.extvers = extvers
+        self.coverage = {}
         widths = [1 / 3, 1] * len(self.extvers)
         self.fig_axes = self.fig.subplots(
             4,
@@ -425,11 +429,14 @@ class SinglePABeamFrame(ctk.CTkFrame):
                     # print (1-np.sum(np.all(
                     #     (~np.isfinite(data)) | (data==0), axis=0))/data.shape[1])
                     # print (self.quality_frame.coverage_menus)
-                    self._root().current_gal_data[extver]["coverage"] = (
+                    self.coverage[extver] = (
                         1
                         - np.sum(np.all((~np.isfinite(data)) | (data == 0), axis=0))
                         / data.shape[1]
                     )
+                    self._root().current_gal_data[extver]["coverage"] = self.coverage[
+                        extver
+                    ]
 
                 header = hdul["SCI", extver].header
                 extent = [header["WMIN"], header["WMAX"], 0, data.shape[0]]
@@ -525,12 +532,12 @@ class MultiQualityFrame(ctk.CTkFrame):
 
         self.save_current()
 
-    def reload_extvers(self, new_extvers):
+    def reload_extvers(self, new_extvers=None):
         # print(new_values, self.values)
 
         # self.save_current()
-
-        self.extvers = new_extvers
+        if self.extvers != None:
+            self.extvers = new_extvers
 
         # for c in self.coverage_menus:
         #     c.set("Full")
@@ -541,6 +548,8 @@ class MultiQualityFrame(ctk.CTkFrame):
         self.save_current()
 
     def save_current(self, event=None):
+        # print ("progress", self._root().object_progress)
+        # print (self._root().current_gal_data)
         for v, q in zip(self.extvers, self.quality_menus.values()):
             if v not in self._root().current_gal_data.keys():
                 self._root().current_gal_data[v] = {}

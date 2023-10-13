@@ -176,14 +176,18 @@ class SpecFrame(ctk.CTkFrame):
             self.pyplot_canvas.get_tk_widget().grid(row=0, column=0, sticky="news")
             toolbar.grid(row=1, column=0, sticky="news")
 
+        print("tab_id", self.gal_id)
+        print("root_id", self._root().current_gal_id.get())
         if self.gal_id != self._root().current_gal_id.get():
             self.gal_id = self._root().current_gal_id.get()
             self._update_all()
             self.update_lines()
             self.pyplot_canvas.draw()
             self.update()
+        else:
+            self._update_data()
 
-    def _update_all(self):
+    def _update_data(self):
         _row_path = [
             *(
                 Path(self._root().config["files"]["extractions_dir"])
@@ -197,6 +201,9 @@ class SpecFrame(ctk.CTkFrame):
             self._root().current_gal_data["estimated_redshift"] = self.grizli_redshift
             self.current_redshift.set(self.grizli_redshift)
             self.redshift_slider.set(self.grizli_redshift)
+
+    def _update_all(self):
+        self._update_data()
 
         self.cube_path = (
             Path(self._root().config["files"]["cube_path"]).expanduser().resolve()
