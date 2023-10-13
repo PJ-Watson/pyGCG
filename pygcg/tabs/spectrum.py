@@ -3,6 +3,7 @@ from pathlib import Path
 import astropy.io.fits as pf
 import astropy.units as u
 import customtkinter as ctk
+import tkinter as tk
 import matplotlib.colors as colors
 import matplotlib.pyplot as plt
 import numpy as np
@@ -39,11 +40,11 @@ class SpecFrame(ctk.CTkFrame):
         self.gal_id = gal_id
         self.plotted_components = dict(emission={}, absorption={})
         self.grid_rowconfigure(0, weight=1)
-        self.grid_columnconfigure(0, weight=1)
-        self.grid_columnconfigure(1, weight=0)
+        self.grid_columnconfigure(0, weight=0)
+        self.grid_columnconfigure(1, weight=1)
 
         self.scrollable_frame = ctk.CTkScrollableFrame(self)
-        self.scrollable_frame.grid(row=0, column=1, rowspan=2, sticky="news")
+        self.scrollable_frame.grid(row=0, column=2, rowspan=1, sticky="news")
         self.scrollable_frame.grid_columnconfigure(0, weight=1)
 
         self.reference_lines_label = ctk.CTkLabel(
@@ -135,7 +136,7 @@ class SpecFrame(ctk.CTkFrame):
         self.grizli_temp_checkbox.select()
 
         self.images_frame = ImagesFrame(self, gal_id=self.gal_id)
-        self.images_frame.grid(row=2, column=0, columnspan=1, sticky="news")
+        self.images_frame.grid(row=1, column=0, columnspan=2, sticky="news")
 
     def update_plot(self):
         if not hasattr(self, "pyplot_canvas"):
@@ -151,7 +152,9 @@ class SpecFrame(ctk.CTkFrame):
 
             self.fig.canvas.mpl_connect("motion_notify_event", self.hover)
 
-            toolbar = NavigationToolbar2Tk(self.fig.canvas, self, pack_toolbar=False)
+            toolbar = VerticalNavigationToolbar2Tk(
+                self.fig.canvas, self, pack_toolbar=False
+            )
             toolbar.update()
 
             self.fig_axes.set_xlabel(r"Wavelength (${\rm \AA}$)")
@@ -170,8 +173,8 @@ class SpecFrame(ctk.CTkFrame):
 
             self.pyplot_canvas.draw_idle()
 
-            self.pyplot_canvas.get_tk_widget().grid(row=0, column=0, sticky="news")
-            toolbar.grid(row=1, column=0, sticky="news")
+            self.pyplot_canvas.get_tk_widget().grid(row=0, column=1, sticky="news")
+            toolbar.grid(row=0, column=0, sticky="news")
 
         if self.gal_id != self._root().current_gal_id.get():
             self.gal_id = self._root().current_gal_id.get()
@@ -992,3 +995,24 @@ def extract_pixel_ra_dec(q_table, celestial_wcs, key_ra="ra", key_dec="dec"):
     return pix_c
 
     # return new_ra, new_dec
+
+
+class VerticalNavigationToolbar2Tk(NavigationToolbar2Tk):
+    def __init__(self, canvas, window, pack_toolbar=False, **kwargs):
+        super().__init__(canvas, window, pack_toolbar=False, **kwargs)
+
+    # override _Button() to re-pack the toolbar button in vertical direction
+    def _Button(self, text, image_file, toggle, command):
+        b = super()._Button(text, image_file, toggle, command)
+        b.pack(side="top")  # re-pack button in vertical direction
+        return b
+
+    # override _Spacer() to create vertical separator
+    def _Spacer(self):
+        s = tk.Frame(self, width=26, relief="ridge", bg="DarkGray", padx=2)
+        s.pack(side="top", pady=5)  # pack in vertical direction
+        return s
+
+    # disable showing mouse position in toolbar
+    def set_message(self, s):
+        pass
