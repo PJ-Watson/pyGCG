@@ -36,19 +36,6 @@ class BeamFrame(ctk.CTkFrame):
             sticky="ew",
         )
         self.PA = PA
-        print(self.PA)
-
-        # PA_label = ctk.CTkLabel(self.settings_frame, text="Grism PA:")
-        # PA_label.grid(row=0, column=0, padx=(20, 5), pady=10, sticky="e")
-        # self.PA_menu = ctk.CTkOptionMenu(
-        #     self.settings_frame,
-        #     values=self._root().PAs,
-        #     command=self.change_PA,
-        # )
-        # self.PA_menu.grid(row=0, column=1, padx=(5, 20), pady=10, sticky="w")
-
-        # self._root().bind("<Up>", self.arrow_change_PA)
-        # self._root().bind("<Down>", self.arrow_change_PA)
 
         cmap_label = ctk.CTkLabel(self.settings_frame, text="Colourmap:")
         cmap_label.grid(row=0, column=2, padx=(20, 5), pady=10, sticky="e")
@@ -110,51 +97,25 @@ class BeamFrame(ctk.CTkFrame):
         except:
             self.file_path = None
 
-        # if not hasattr(self, "gal_id"):
-
-    # def change_PA(self, event=None):
-    #     # print(self.PA_menu.cget("values"))
-    #     self.PA = event
-    #     self._root().plot_options["PA"] = event
-    #     self.update_grid(force_update=True)
-
-    # def arrow_change_PA(self, event=None):
-    #     if self._root().main_tabs.get() == "Beam view":
-    #         current_idx = self.PA_menu.cget("values").index(self.PA_menu.get())
-    #         if event.keysym == "Down":
-    #             new_idx = (current_idx + 1) % len(self.PA_menu.cget("values"))
-    #         elif event.keysym == "Up":
-    #             new_idx = (current_idx - 1) % len(self.PA_menu.cget("values"))
-    #         self.PA = self.PA_menu.cget("values")[new_idx]
-    #         self.PA_menu.set(self.PA)
-    #         self.update_grid(force_update=True)
-
     def change_cmap(self, event=None):
-        # print (event)
-        # self.cmap = event
         self._root().plot_options["cmap"] = event
         self.update_grid(force_update=True)
 
     def change_stretch(self, event=None):
-        # self.stretch = event
         self._root().plot_options["stretch"] = event
         self.update_grid(force_update=True)
 
     def change_limits(self, event=None):
-        # self.limits = event
         self._root().plot_options["limits"] = event
         self.update_grid(force_update=True)
 
     def update_grid(self, force_update=False):
-        print(self.gal_id)
         if self.gal_id == self._root().current_gal_id.get() and not force_update:
             self.beam_single_PA_frame.quality_frame.save_current()
             for k, v in self.beam_single_PA_frame.coverage.items():
                 self._root().current_gal_data[k]["coverage"] = v
             pass
         else:
-            #     print("No need to panic.")
-            # else:
             self.gal_id = self._root().current_gal_id.get()
             self.file_path = [
                 *(
@@ -168,29 +129,14 @@ class BeamFrame(ctk.CTkFrame):
                 n_grism = len(self._root().filter_names)
                 n_pa = len(self._root().PAs)
                 self.beam_frame_list = []
-                # row = 0
                 extver_list = []
-                print(n_pa, n_grism)
-                # print
-                # for row, col in np.ndindex(n_pa, n_grism):
                 for i in range(n_grism):
                     try:
-                        # grism_name = header[f"GRISM{i+1:0>3}"]
                         grism_name = self._root().filter_names[::-1][i]
                         extver = grism_name + f",{self.PA}"
-                        print(extver)
-                        # # print (grism_name)
-                        # if self.PA == "PA 1":
-                        #     pa = "," + str(header[f"{grism_name}01"])
-                        # elif self.PA == "PA 2":
-                        #     pa = "," + str(header[f"{grism_name}02"])
-                        # elif self.PA == "Stack":
-                        #     pa = ""
-                        # extver = grism_name + pa
                     except:
                         extver = "none"
                     extver_list.append(extver)
-                # self.beam_single_PA_frame = SinglePABeamFrame(self, extvers = extver_list)
                 self.beam_single_PA_frame.update_plots(extvers=extver_list)
 
     def generate_grid(self):
@@ -209,7 +155,6 @@ class BeamFrame(ctk.CTkFrame):
                 extver = grism_name + pa
                 extver = grism_name + f",{self.PA}"
                 extver_list.append(extver)
-                print(extver)
             self.beam_single_PA_frame = SinglePABeamFrame(self, extvers=extver_list)
             self.beam_single_PA_frame.grid(row=1, column=0, sticky="news")
 
@@ -226,11 +171,11 @@ class SinglePABeamFrame(ctk.CTkFrame):
     ):
         super().__init__(master, **kwargs)
 
-        self.rowconfigure(1, weight=1)
+        self.rowconfigure(0, weight=1)
         self.columnconfigure(0, weight=1)
 
         self.pad_frame = ctk.CTkFrame(self)  # , fg_color="red")
-        self.pad_frame.grid(row=1, column=0, sticky="news")
+        self.pad_frame.grid(row=0, column=0, sticky="news")
         self.canvas_frame = ctk.CTkFrame(self.pad_frame)  # , fg_color="blue")
         self.canvas_frame.grid(row=0, column=0, sticky="news")
         self.canvas_frame.rowconfigure(0, weight=1)
@@ -257,9 +202,6 @@ class SinglePABeamFrame(ctk.CTkFrame):
         self.quality_frame = MultiQualityFrame(self.canvas_frame, extvers=self.extvers)
         self.quality_frame.grid(row=1, column=0, sticky="ew")
 
-        self.PA_plot_label = ctk.CTkLabel(self, text="Placeholder")
-        self.PA_plot_label.grid(row=0, column=0, sticky="ew")
-
         self.set_aspect()
         self.plotted_images = dict()
         self.update_plots()
@@ -273,9 +215,7 @@ class SinglePABeamFrame(ctk.CTkFrame):
             # either by fixing the width or the height and then
             # adjusting the height or width based on the aspect ratio.
 
-            other_heights = (
-                self.quality_frame.winfo_height()
-            )  # + self.PA_plot_label.winfo_height()
+            other_heights = self.quality_frame.winfo_height()
             # start by using the width as the controlling dimension
             desired_width = event.width
             desired_height = int(event.width / aspect_ratio) + other_heights
@@ -284,7 +224,6 @@ class SinglePABeamFrame(ctk.CTkFrame):
             # the controlling dimension
             if desired_height > event.height:
                 desired_height = event.height
-                # print ("new desired", desired_height)
                 desired_width = int((event.height - other_heights) * aspect_ratio)
 
             # place the window, giving it an explicit size
@@ -298,20 +237,9 @@ class SinglePABeamFrame(ctk.CTkFrame):
 
         self.pad_frame.bind("<Configure>", enforce_aspect_ratio)
 
-    # def optionmenu_callback(choice):
-    #     print("optionmenu dropdown clicked:", choice)
-
     def update_plots(self, extvers=None):
-        # self.quality_frame.get()
-
         if extvers != None:
-            # print ("Wrong!")
-            # print (extvers)
-            # print (self.extvers)
             try:
-                # for old_ext in ["SCI", "CONTAM", "MODEL", "RESIDUALS"]:
-                #     for old_ver in self.extvers:
-                #         print (self.plotted_images[old_ext+old_ver])
                 for current_key in self.plotted_images.keys():
                     for plot_name in self.plotted_images[current_key].keys():
                         self.plotted_images[current_key][plot_name].remove()
@@ -321,23 +249,6 @@ class SinglePABeamFrame(ctk.CTkFrame):
 
             self.extvers = extvers
             self.quality_frame.reload_extvers(new_extvers=self.extvers)
-        # print (self.extvers)
-
-        # print(self.extvers)
-        self.pa_var = None
-        for e in self.extvers:
-            try:
-                self.pa_var = e.split(",")[1]
-                break
-            except:
-                pass
-        if self.pa_var is None:
-            self.PA_plot_label.configure(
-                text="Stack of all grism pointings (Contamination map not available)"
-            )
-            self.pa_var = "Stack"
-        else:
-            self.PA_plot_label.configure(text=f"Current PA = {self.pa_var}deg")
 
         self.master.gal_id = self._root().current_gal_id.get()
 
@@ -357,8 +268,6 @@ class SinglePABeamFrame(ctk.CTkFrame):
                 self.plot_beam(self.fig_axes[j, (2 * i) + 1], name, ver)
         self.fig.canvas.draw_idle()
 
-        # self.fig.canvas.get_tk_widget().pack(fill="both", expand=1)
-        # print (self.fig.canvas.get_tk_widget())
         self.fig.canvas.get_tk_widget().grid(row=0, column=0, sticky="news")
 
         self.update()
@@ -413,8 +322,6 @@ class SinglePABeamFrame(ctk.CTkFrame):
             pass
         with pf.open(self.master.file_path) as hdul:
             try:
-                # print (hdul["SCI","F115W"])
-                # print (hdul.info())
                 if ext == "RESIDUALS":
                     data = hdul["SCI", extver].data
                     m = hdul["MODEL", extver].data
@@ -423,12 +330,6 @@ class SinglePABeamFrame(ctk.CTkFrame):
                     m = 0
 
                 if ext == "SCI":
-                    # print (data.shape)
-                    # print (np.nansum(data, axis=0))
-                    # print (np.nansum(data, axis=0).shape)
-                    # print (1-np.sum(np.all(
-                    #     (~np.isfinite(data)) | (data==0), axis=0))/data.shape[1])
-                    # print (self.quality_frame.coverage_menus)
                     self.coverage[extver] = (
                         1
                         - np.sum(np.all((~np.isfinite(data)) | (data == 0), axis=0))
@@ -489,7 +390,6 @@ class SinglePABeamFrame(ctk.CTkFrame):
                     c="k",
                 )
                 self._root().current_gal_data[extver]["coverage"] = 0.0
-                # print (extver)
                 self.quality_frame.quality_menus[extver.split(",")[0]].set("Unusable")
                 self.quality_frame.quality_menus[extver.split(",")[0]].configure(
                     state="disabled"
@@ -505,8 +405,6 @@ class MultiQualityFrame(ctk.CTkFrame):
         self.columnconfigure((0, 1, 2, 3, 4, 5), weight=1)
         self.extvers = extvers
         self.quality_menus = {}
-        # self.coverage_menus = []
-        # print (self._root.filter_names[::-1])
 
         for i, f in enumerate(self._root().filter_names[::-1]):
             label = ctk.CTkLabel(self, text="Beam Quality")
@@ -520,38 +418,23 @@ class MultiQualityFrame(ctk.CTkFrame):
             q_menu.grid(row=0, column=2 * i + 1, padx=10, pady=(10, 0), sticky="w")
             self.quality_menus[f] = q_menu
 
-            # label = ctk.CTkLabel(self, text="Beam Coverage")
-            # label.grid(row=1, column=2 * i, padx=10, pady=(10, 10), sticky="e")
-            # cov_menu = ctk.CTkOptionMenu(
-            #     self,
-            #     values=["Full", "Incomplete", "No data"],
-            #     command=self.save_current,
-            # )
-            # cov_menu.grid(row=1, column=2 * i + 1, padx=10, pady=(10, 10), sticky="w")
-            # self.coverage_menus.append(cov_menu)
-
         self.save_current()
 
     def reload_extvers(self, new_extvers=None):
-        # print(new_values, self.values)
-
-        # self.save_current()
         if self.extvers != None:
             self.extvers = new_extvers
 
-        # for c in self.coverage_menus:
-        #     c.set("Full")
-        for c in self.quality_menus.values():
-            c.set("Good")
+        for e, c in zip(self.extvers, self.quality_menus.values()):
+            try:
+                c.set(self._root().current_gal_data[e]["quality"])
+            except:
+                c.set("Good")
             c.configure(state="normal")
 
         self.save_current()
 
     def save_current(self, event=None):
-        # print ("progress", self._root().object_progress)
-        # print (self._root().current_gal_data)
         for v, q in zip(self.extvers, self.quality_menus.values()):
             if v not in self._root().current_gal_data.keys():
                 self._root().current_gal_data[v] = {}
             self._root().current_gal_data[v]["quality"] = q.get()
-            # self._root().current_gal_data[v]["coverage"] = cov.get()

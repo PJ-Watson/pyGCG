@@ -176,8 +176,6 @@ class SpecFrame(ctk.CTkFrame):
             self.pyplot_canvas.get_tk_widget().grid(row=0, column=0, sticky="news")
             toolbar.grid(row=1, column=0, sticky="news")
 
-        print("tab_id", self.gal_id)
-        print("root_id", self._root().current_gal_id.get())
         if self.gal_id != self._root().current_gal_id.get():
             self.gal_id = self._root().current_gal_id.get()
             self._update_all()
@@ -220,10 +218,6 @@ class SpecFrame(ctk.CTkFrame):
         if self.muse_checkbox.get():
             self.plot_MUSE_spec()
         try:
-            # tab_row = self._root().cat[self._root().id_col == self.gal_id]
-            # # self.fig_axes.set_title(
-            # #     f"IDs: v3={tab_row['v3_id'].value}, Xin={tab_row['Xin_id'].value}, NIRCAM={tab_row['NIRCAM_id'].value}"
-            # # )
             self.fig_axes.set_title(f"ID={self.gal_id}")
         except Exception as e:
             # print(e)
@@ -994,7 +988,6 @@ def extract_pixel_ra_dec(q_table, celestial_wcs, key_ra="ra", key_dec="dec"):
 
     new_ra, new_dec = check_deg(orig_ra), check_deg(orig_dec)
     if new_ra.unit == u.pix:
-        print(new_ra, new_dec)
         return new_ra, new_dec
 
     sc = SkyCoord(new_ra, new_dec)

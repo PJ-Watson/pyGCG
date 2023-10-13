@@ -36,7 +36,8 @@ class GCG(ctk.CTk):
             "WM_DELETE_WINDOW",
             self.quit_gracefully,
         )
-        self.bind("<Control-q>", self.quit_gracefully)
+
+        self.bind(f"<Control-q>", self.quit_gracefully)
         self.bind("<Left>", self.prev_gal_button_callback)
         self.bind("<Right>", self.next_gal_button_callback)
         self.bind("<c>", self.gal_comments_button_callback)
@@ -306,21 +307,7 @@ class GCG(ctk.CTk):
             self.tab_row = self.cat[0]
             self.seg_id = self.seg_id_col[0]
 
-            self.current_gal_data["id"] = self.current_gal_id.get()
-            self.current_gal_data["seg_id"] = self.seg_id
-            self.current_gal_data["ra"] = self.tab_row[
-                self.config["cat"].get("ra", "ra")
-            ]
-            self.current_gal_data["dec"] = self.tab_row[
-                self.config["cat"].get("dec", "dec")
-            ]
-            self.current_gal_data["comments"] = ""
-
-            self.current_gal_coords.set(
-                self.sky_coords[self.id_col == self.id_col[0]].to_string(
-                    "decimal", precision=6
-                )[0]
-            )
+            self.set_current_data()
 
             self.generate_tabs()
         except Exception as e:
@@ -361,33 +348,15 @@ class GCG(ctk.CTk):
         self.object_progress = {}
         for n in self.tab_names:
             self.object_progress[n] = False
-        # print (np.sum([*self.object_progress.values()]))
         self.update_progress()
 
         self.main_tabs = MyTabView(
             master=self,
             tab_names=self.tab_names,
-            # tab_names=["Spec view", "Beam view"],
             command=self.main_tabs_update,
         )
         self.main_tabs.grid(row=1, column=0, padx=20, pady=0, sticky="news")
-        # print (dir(self.main_tabs._segmented_button))
-        # self.main_tabs._segmented_button.grid(pady=0)
-        # self.main_tabs._segmented_button.grid_forget(
-        # self.main_tabs._top_spacing = 0
-        # self.main_tabs._top_button_overhang = 0
-        # self.main_tabs._segmented_button.grid_forget()
-        # self.main_tabs._configure_grid()
-        # print (self.main_tabs.grid_info())
         self.main_tabs._segmented_button.grid(sticky="ew")
-
-        # self.tab_sel_button = ctk.CTkSegmentedButton(self,
-        #     values=["PA 1", "PA 2", "Spec"],
-        #     # selected_color="red",
-        #     # selected_hover_color="dark red",
-        #     # command=self.read_write_colour,
-        # )
-        # self.tab_sel_button.grid(row=0, column=0, columnspan=8, sticky="ew", pady=0, padx=20)
 
         self.full_spec_frame = SpecFrame(
             self.main_tabs.tab(self.tab_names[2]), self.current_gal_id.get()
@@ -406,11 +375,6 @@ class GCG(ctk.CTk):
             self.PAs[1],
         )
         self.beam_frame_2.pack(fill="both", expand=1)
-
-        # self.main_tabs.tab("Beam view").grid_configure(row=1, rowspan=3)
-        # print (self.main_tabs.tab("Beam view").grid_info())
-        # print (self.main_tabs.tab("Beam view").grid_info())
-        # self.full_beam_frame.grid(row=0, column=0, padx=0, pady=0, sticky="nsew")
 
     def initialise_configuration(self, config_file=None):
         try:
@@ -474,8 +438,6 @@ class GCG(ctk.CTk):
                 )
             except:
                 self.cat = None
-
-        # print (self.cat)
 
         # Catalogue
         try:
@@ -587,8 +549,6 @@ class GCG(ctk.CTk):
         return self.config
 
     def update_progress(self):
-        # print (dir(self.progress_status))
-        # print (self.progress_status.winfo_width())
         num = np.sum([*self.object_progress.values()])
         blocks = num * 4 * "\u2588"
         self.progress_status.configure(text=f"|{blocks:\u2581<12}| {num}/3")
@@ -616,7 +576,6 @@ class GCG(ctk.CTk):
         if current_tab == self.tab_names[2]:
             self.main_tabs.set(self.tab_names[1])
             self.main_tabs_update()
-            # print (dir(self.main_tabs.tab(self.tab_names[1])))
         elif current_tab == self.tab_names[1]:
             self.main_tabs.set(self.tab_names[0])
             self.main_tabs_update()
@@ -628,19 +587,16 @@ class GCG(ctk.CTk):
             )
             self.main_tabs.set(self.tab_names[2])
             self.change_gal_id()
-        print("prev", [*self.current_gal_data.keys()])
 
     def next_gal_button_callback(self, event=None):
-        if event.widget.winfo_class() == ("Entry" or "Textbox"):
+        if event != None and event.widget.winfo_class() == ("Entry" or "Textbox"):
             return
-        # print ("next")
         current_tab = self.main_tabs.get()
         self.object_progress[current_tab] = True
         self.update_progress()
         if current_tab == self.tab_names[0]:
             self.main_tabs.set(self.tab_names[1])
             self.main_tabs_update()
-            # print (dir(self.main_tabs.tab(self.tab_names[1])))
         elif current_tab == self.tab_names[1]:
             self.main_tabs.set(self.tab_names[2])
             self.main_tabs_update()
@@ -652,33 +608,16 @@ class GCG(ctk.CTk):
             )
             self.main_tabs.set(self.tab_names[0])
             self.change_gal_id()
-        print("next", [*self.current_gal_data.keys()])
 
     def save_current_object(self, event=None):
         ### This is where the logic for loading/updating the tables will go
         flattened_data = flatten_dict(self.current_gal_data)
 
-        # # for k, v in flattened_data.items():
-        # #     print (k, v, type(v))
-        # print(repr(flattened_data))
-        # # if len(flattened_data) == 18:
-        # #     with open(fpe(self.config["files"]["out_dir"]) / f"{flattened_data['id']}_output.pkl", "wb") as fp:
-        # #         pickle.dump(flattened_data, fp)
-
-        # print(self.out_cat)
-        # print(flattened_data["SEG_ID"] in self.out_cat["SEG_ID"])
-
-        # This still needs work! Need to check columns match, and make sure I'm not overwriting existing data
-        print("saving?")
-        print(np.sum([*self.object_progress.values()]))
-        print(len(flattened_data))
-        print("Flattened", flattened_data)
         if (
             len(flattened_data) == 19
             and self.read_write_button.get() == "Write output"
             and np.sum([*self.object_progress.values()]) == 3
         ):
-            print("Ready to write")
             if flattened_data["SEG_ID"] in self.out_cat["SEG_ID"]:
                 warn_overwrite = CTkMessagebox(
                     title="Object already classified!",
@@ -692,19 +631,18 @@ class GCG(ctk.CTk):
                     option_2="Overwrite",
                     option_focus=2,
                 )
-                # print (flattened_data.keys())
-                # print (self.out_cat.colnames)
-                # print ([n for n in flattened_data.keys() if n not in self.out_cat.colnames])
                 if warn_overwrite.get() == "Cancel":
                     return
-            # print("Here")
+                else:
+                    self.out_cat.remove_rows(
+                        (flattened_data["SEG_ID"] == self.out_cat["SEG_ID"]).nonzero()[
+                            0
+                        ]
+                    )
             self.out_cat.add_row(flattened_data)
             self.out_cat.write(self.out_cat_path, overwrite=True)
-            # print("Written")
 
     def change_gal_id(self, event=None):
-        # print("Changing galaxy id!")
-
         for n in self.tab_names:
             self.object_progress[n] = False
         self.update_progress()
@@ -714,6 +652,12 @@ class GCG(ctk.CTk):
             self.tab_row = self.tab_row[0]
         self.seg_id = self.seg_id_col[self.id_col == self.current_gal_id.get()][0]
 
+        self.set_current_data()
+
+        self.main_tabs_update()
+        self.focus()
+
+    def set_current_data(self):
         self.current_gal_data = {}
         self.current_gal_data["id"] = self.current_gal_id.get()
         self.current_gal_data["seg_id"] = self.seg_id
@@ -729,8 +673,16 @@ class GCG(ctk.CTk):
             )[0]
         )
 
-        self.main_tabs_update()
-        self.focus()
+        if self.seg_id in self.out_cat["SEG_ID"]:
+            out_row = self.out_cat[self.out_cat["SEG_ID"] == self.seg_id][0]
+            if not hasattr(out_row["COMMENTS"], "mask"):
+                self.current_gal_data["comments"] = out_row["COMMENTS"]
+
+            for g in self.filter_names:
+                for p in self.PAs:
+                    self.current_gal_data[f"{g},{p}"] = {
+                        "quality": out_row[f"{g},{p}_QUALITY"]
+                    }
 
     def change_sky_coord(self, event=None):
         new_coord = None
@@ -792,7 +744,6 @@ class GCG(ctk.CTk):
             self.beam_frame_2.update_grid()
 
     def quit_gracefully(self, event=None):
-        # Put some lines here to save current output
         self.write_config()
         self.quit()
 
