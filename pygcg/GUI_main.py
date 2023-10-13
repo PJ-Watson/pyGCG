@@ -41,14 +41,14 @@ class GCG(ctk.CTk):
         self.bind("<Right>", self.next_gal_button_callback)
 
         # configure grid system
-        self.grid_rowconfigure(0, weight=1)
+        self.grid_rowconfigure(1, weight=1)
         self.grid_columnconfigure(0, weight=1)
 
         # Setup bottom navigation buttons
         nav_frame = ctk.CTkFrame(self)
         nav_frame.grid(
             column=0,
-            row=1,
+            row=2,
             # columnspan=5,
             sticky="ew",
         )
@@ -305,7 +305,7 @@ class GCG(ctk.CTk):
 
     def generate_splash(self):
         self.splash_frame = ctk.CTkFrame(self)
-        self.splash_frame.grid(row=0, column=0, sticky="news")
+        self.splash_frame.grid(row=0, column=0, rowspan=2, sticky="news")
         self.splash_frame.columnconfigure(0, weight=1)
         self.splash_frame.rowconfigure(0, weight=1)
         main_label = ctk.CTkLabel(
@@ -322,25 +322,63 @@ class GCG(ctk.CTk):
         if hasattr(self, "splash_frame"):
             self.splash_frame.destroy()
             del self.splash_frame
+
+
+        self.plot_options = {
+            "cmap": "plasma",
+            "stretch":"Square root",
+            "limits": "grizli default"
+        }
+
+        self.tab_names = [
+            f"Orientation 1: {self.PAs[0]} deg",
+            f"Orientation 2: {self.PAs[1]} deg",
+            f"Spectrum",
+        ]
+
         self.main_tabs = MyTabView(
             master=self,
-            tab_names=["Beam view", "Spec view"],
+            tab_names=self.tab_names,
             # tab_names=["Spec view", "Beam view"],
             command=self.main_tabs_update,
         )
-        self.main_tabs.grid(row=0, column=0, padx=20, pady=0, sticky="news")
+        self.main_tabs.grid(row=1, column=0, padx=20, pady=0, sticky="news")
+        # print (dir(self.main_tabs._segmented_button))
+        # self.main_tabs._segmented_button.grid(pady=0)
+        # self.main_tabs._segmented_button.grid_forget(
+        # self.main_tabs._top_spacing = 0
+        # self.main_tabs._top_button_overhang = 0
+        # self.main_tabs._segmented_button.grid_forget()
+        # self.main_tabs._configure_grid()
+        # print (self.main_tabs.grid_info())
+        self.main_tabs._segmented_button.grid(sticky="ew")
 
-        self.muse_spec_frame = SpecFrame(
-            self.main_tabs.tab("Spec view"), self.current_gal_id.get()
-        )
-        # self.muse_spec_frame.grid(row=0, column=0, padx=20, pady=20, sticky="nsew")
-        self.muse_spec_frame.pack(fill="both", expand=1)
+        # self.tab_sel_button = ctk.CTkSegmentedButton(self,
+        #     values=["PA 1", "PA 2", "Spec"],
+        #     # selected_color="red",
+        #     # selected_hover_color="dark red",
+        #     # command=self.read_write_colour,
+        # )
+        # self.tab_sel_button.grid(row=0, column=0, columnspan=8, sticky="ew", pady=0, padx=20)
 
-        self.full_beam_frame = BeamFrame(
-            self.main_tabs.tab("Beam view"), self.current_gal_id.get()
+        self.full_spec_frame = SpecFrame(
+            self.main_tabs.tab(self.tab_names[2]), self.current_gal_id.get()
         )
-        # self.muse_spec_frame.grid(row=0, column=0, padx=20, pady=20, sticky="nsew")
-        self.full_beam_frame.pack(fill="both", expand=1)
+        self.full_spec_frame.pack(fill="both", expand=1)
+
+        self.beam_frame_1 = BeamFrame(
+            self.main_tabs.tab(self.tab_names[0]), self.current_gal_id.get(), self.PAs[0]
+        )
+        self.beam_frame_1.pack(fill="both", expand=1)
+        self.beam_frame_2 = BeamFrame(
+            self.main_tabs.tab(self.tab_names[1]), self.current_gal_id.get(), self.PAs[1]
+        )
+        self.beam_frame_2.pack(fill="both", expand=1)
+
+        # self.main_tabs.tab("Beam view").grid_configure(row=1, rowspan=3)
+        # print (self.main_tabs.tab("Beam view").grid_info())
+        # print (self.main_tabs.tab("Beam view").grid_info())
+        # self.full_beam_frame.grid(row=0, column=0, padx=0, pady=0, sticky="nsew")
 
     def initialise_configuration(self, config_file=None):
         try:
@@ -529,60 +567,95 @@ class GCG(ctk.CTk):
             self.comments_window.focus()
 
     def prev_gal_button_callback(self, event=None):
-        if event.widget.winfo_class() == "Entry":
+        if event.widget.winfo_class() == ("Entry" or "Textbox"):
             return
-        if self.main_tabs.get() == "Beam view":
-            current_PA_idx = self.full_beam_frame.PA_menu.cget("values").index(
-                self.full_beam_frame.PA_menu.get()
-            )
-            if current_PA_idx == 0:
-                self.save_current_object()
-                current_gal_idx = (self.id_col == self.current_gal_id.get()).nonzero()[
-                    0
-                ]
-                self.current_gal_id.set(self.id_col[current_gal_idx - 1][0])
-                self.main_tabs.set("Spec view")
-                self.change_gal_id()
-            elif current_PA_idx == 1:
-                self.full_beam_frame.PA = self.full_beam_frame.PA_menu.cget("values")[0]
-                self.full_beam_frame.PA_menu.set(self.full_beam_frame.PA)
-                self.full_beam_frame.update_grid(force_update=True)
-            elif current_PA_idx == 2:
-                self.full_beam_frame.PA = self.full_beam_frame.PA_menu.cget("values")[1]
-                self.full_beam_frame.PA_menu.set(self.full_beam_frame.PA)
-                self.full_beam_frame.update_grid(force_update=True)
-        elif self.main_tabs.get() == "Spec view":
-            self.main_tabs.set("Beam view")
-            self.full_beam_frame.PA = self.full_beam_frame.PA_menu.cget("values")[1]
-            self.full_beam_frame.PA_menu.set(self.full_beam_frame.PA)
-            self.full_beam_frame.update_grid()
+        current_tab = self.main_tabs.get()
+        # if self.main_tabs.get() == "Beam view":
+        #     current_PA_idx = self.full_beam_frame.PA_menu.cget("values").index(
+        #         self.full_beam_frame.PA_menu.get()
+        #     )
+        #     if current_PA_idx == 0:
+        #         self.save_current_object()
+        #         current_gal_idx = (self.id_col == self.current_gal_id.get()).nonzero()[
+        #             0
+        #         ]
+        #         self.current_gal_id.set(self.id_col[current_gal_idx - 1][0])
+        #         self.main_tabs.set("Spec view")
+        #         self.change_gal_id()
+        #     elif current_PA_idx == 1:
+        #         self.full_beam_frame.PA = self.full_beam_frame.PA_menu.cget("values")[0]
+        #         self.full_beam_frame.PA_menu.set(self.full_beam_frame.PA)
+        #         self.full_beam_frame.update_grid(force_update=True)
+        #     elif current_PA_idx == 2:
+        #         self.full_beam_frame.PA = self.full_beam_frame.PA_menu.cget("values")[1]
+        #         self.full_beam_frame.PA_menu.set(self.full_beam_frame.PA)
+        #         self.full_beam_frame.update_grid(force_update=True)
+        # elif self.main_tabs.get() == "Spec view":
+        #     self.main_tabs.set("Beam view")
+        #     self.full_beam_frame.PA = self.full_beam_frame.PA_menu.cget("values")[1]
+        #     self.full_beam_frame.PA_menu.set(self.full_beam_frame.PA)
+        #     self.full_beam_frame.update_grid()
             # self.change_gal_id()
 
-    def next_gal_button_callback(self, event=None):
-        if event.widget.winfo_class() == "Entry":
-            return
-        if self.main_tabs.get() == "Beam view":
-            current_PA_idx = self.full_beam_frame.PA_menu.cget("values").index(
-                self.full_beam_frame.PA_menu.get()
+        
+        if current_tab == self.tab_names[2]:
+            self.main_tabs.set(self.tab_names[1])
+            self.main_tabs_update()
+            # print (dir(self.main_tabs.tab(self.tab_names[1])))
+        elif current_tab == self.tab_names[1]:
+            self.main_tabs.set(self.tab_names[0])
+            self.main_tabs_update()
+        elif current_tab == self.tab_names[0]:
+            self.save_current_object()
+            current_gal_idx = (self.id_col == self.current_gal_id.get()).nonzero()[0]
+            self.current_gal_id.set(
+                self.id_col[(current_gal_idx - 1) % len(self.id_col)][0]
             )
-            if current_PA_idx == 0:
-                self.full_beam_frame.PA = self.full_beam_frame.PA_menu.cget("values")[1]
-                self.full_beam_frame.PA_menu.set(self.full_beam_frame.PA)
-                self.full_beam_frame.update_grid(force_update=True)
-            elif current_PA_idx == 1 or current_PA_idx == 2:
-                self.main_tabs.set("Spec view")
-                self.muse_spec_frame.update_plot()
-        elif self.main_tabs.get() == "Spec view":
+            self.main_tabs.set(self.tab_names[2])
+            self.change_gal_id()
+
+    def next_gal_button_callback(self, event=None):
+        if event.widget.winfo_class() == ("Entry" or "Textbox"):
+            return
+        # print ("next")
+        current_tab = self.main_tabs.get()
+        if current_tab == self.tab_names[0]:
+            self.main_tabs.set(self.tab_names[1])
+            self.main_tabs_update()
+            # print (dir(self.main_tabs.tab(self.tab_names[1])))
+        elif current_tab == self.tab_names[1]:
+            self.main_tabs.set(self.tab_names[2])
+            self.main_tabs_update()
+        elif current_tab == self.tab_names[2]:
             self.save_current_object()
             current_gal_idx = (self.id_col == self.current_gal_id.get()).nonzero()[0]
             self.current_gal_id.set(
                 self.id_col[(current_gal_idx + 1) % len(self.id_col)][0]
             )
-            self.main_tabs.set("Beam view")
-            self.full_beam_frame.PA = self.full_beam_frame.PA_menu.cget("values")[0]
-            self.full_beam_frame.PA_menu.set(self.full_beam_frame.PA)
+            self.main_tabs.set(self.tab_names[0])
             self.change_gal_id()
-            # self.main_tabs_update()
+        # if self.main_tabs.get() == "Beam view":
+        #     current_PA_idx = self.full_beam_frame.PA_menu.cget("values").index(
+        #         self.full_beam_frame.PA_menu.get()
+        #     )
+        #     if current_PA_idx == 0:
+        #         self.full_beam_frame.PA = self.full_beam_frame.PA_menu.cget("values")[1]
+        #         self.full_beam_frame.PA_menu.set(self.full_beam_frame.PA)
+        #         self.full_beam_frame.update_grid(force_update=True)
+        #     elif current_PA_idx == 1 or current_PA_idx == 2:
+        #         self.main_tabs.set("Spec view")
+        #         self.full_spec_frame.update_plot()
+        # elif self.main_tabs.get() == "Spec view":
+        #     self.save_current_object()
+        #     current_gal_idx = (self.id_col == self.current_gal_id.get()).nonzero()[0]
+        #     self.current_gal_id.set(
+        #         self.id_col[(current_gal_idx + 1) % len(self.id_col)][0]
+        #     )
+        #     self.main_tabs.set("Beam view")
+        #     self.full_beam_frame.PA = self.full_beam_frame.PA_menu.cget("values")[0]
+        #     self.full_beam_frame.PA_menu.set(self.full_beam_frame.PA)
+        #     self.change_gal_id()
+        #     # self.main_tabs_update()
 
     def save_current_object(self, event=None):
         ### This is where the logic for loading/updating the tables will go
@@ -702,10 +775,12 @@ class GCG(ctk.CTk):
             )
 
     def main_tabs_update(self):
-        if self.main_tabs.get() == "Spec view":
-            self.muse_spec_frame.update_plot()
-        if self.main_tabs.get() == "Beam view":
-            self.full_beam_frame.update_grid()
+        if self.main_tabs.get() == self.tab_names[2]:
+            self.full_spec_frame.update_plot()
+        if self.main_tabs.get() == self.tab_names[0]:
+            self.beam_frame_1.update_grid()
+        if self.main_tabs.get() == self.tab_names[1]:
+            self.beam_frame_2.update_grid()
 
     def quit_gracefully(self, event=None):
         # Put some lines here to save current output

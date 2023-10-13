@@ -25,13 +25,8 @@ from tqdm import tqdm
 
 
 class BeamFrame(ctk.CTkFrame):
-    def __init__(self, master, gal_id, **kwargs):
+    def __init__(self, master, gal_id, PA, **kwargs):
         super().__init__(master, **kwargs)
-
-        self.cmap = "plasma"
-        self.PA = self._root().PAs[0]
-        self.stretch = "Square root"
-        self.limits = "grizli default"
 
         self.settings_frame = ctk.CTkFrame(self)
         self.settings_frame.grid(
@@ -40,21 +35,23 @@ class BeamFrame(ctk.CTkFrame):
             columnspan=3,
             sticky="ew",
         )
+        self.PA = PA
+        print (self.PA)
 
-        PA_label = ctk.CTkLabel(self.settings_frame, text="Grism PA:")
-        PA_label.grid(row=0, column=0, padx=(20, 5), pady=20, sticky="e")
-        self.PA_menu = ctk.CTkOptionMenu(
-            self.settings_frame,
-            values=self._root().PAs,
-            command=self.change_PA,
-        )
-        self.PA_menu.grid(row=0, column=1, padx=(5, 20), pady=20, sticky="w")
+        # PA_label = ctk.CTkLabel(self.settings_frame, text="Grism PA:")
+        # PA_label.grid(row=0, column=0, padx=(20, 5), pady=10, sticky="e")
+        # self.PA_menu = ctk.CTkOptionMenu(
+        #     self.settings_frame,
+        #     values=self._root().PAs,
+        #     command=self.change_PA,
+        # )
+        # self.PA_menu.grid(row=0, column=1, padx=(5, 20), pady=10, sticky="w")
 
-        self._root().bind("<Up>", self.arrow_change_PA)
-        self._root().bind("<Down>", self.arrow_change_PA)
+        # self._root().bind("<Up>", self.arrow_change_PA)
+        # self._root().bind("<Down>", self.arrow_change_PA)
 
         cmap_label = ctk.CTkLabel(self.settings_frame, text="Colourmap:")
-        cmap_label.grid(row=0, column=2, padx=(20, 5), pady=20, sticky="e")
+        cmap_label.grid(row=0, column=2, padx=(20, 5), pady=10, sticky="e")
         self.cmap_menu = ctk.CTkOptionMenu(
             self.settings_frame,
             values=[
@@ -68,20 +65,21 @@ class BeamFrame(ctk.CTkFrame):
             ],
             command=self.change_cmap,
         )
-        self.cmap_menu.grid(row=0, column=3, padx=(5, 20), pady=20, sticky="w")
+        self.cmap_menu.grid(row=0, column=3, padx=(5, 20), pady=10, sticky="w")
+        self.cmap_menu.set(self._root().plot_options["cmap"])
 
         stretch_label = ctk.CTkLabel(self.settings_frame, text="Image stretch:")
-        stretch_label.grid(row=0, column=4, padx=(20, 5), pady=20, sticky="e")
+        stretch_label.grid(row=0, column=4, padx=(20, 5), pady=10, sticky="e")
         self.stretch_menu = ctk.CTkOptionMenu(
             self.settings_frame,
             values=["Linear", "Square root", "Logarithmic"],
             command=self.change_stretch,
         )
-        self.stretch_menu.set("Square root")
-        self.stretch_menu.grid(row=0, column=5, padx=(5, 20), pady=20, sticky="w")
+        self.stretch_menu.set(self._root().plot_options["cmap"])
+        self.stretch_menu.grid(row=0, column=5, padx=(5, 20), pady=10, sticky="w")
 
         limits_label = ctk.CTkLabel(self.settings_frame, text="Colourmap limits:")
-        limits_label.grid(row=0, column=6, padx=(20, 5), pady=20, sticky="e")
+        limits_label.grid(row=0, column=6, padx=(20, 5), pady=10, sticky="e")
         self.limits_menu = ctk.CTkOptionMenu(
             self.settings_frame,
             values=[
@@ -96,7 +94,8 @@ class BeamFrame(ctk.CTkFrame):
             ],
             command=self.change_limits,
         )
-        self.limits_menu.grid(row=0, column=7, padx=(5, 20), pady=20, sticky="w")
+        self.limits_menu.set(self._root().plot_options["limits"])
+        self.limits_menu.grid(row=0, column=7, padx=(5, 20), pady=10, sticky="w")
 
         self.gal_id = gal_id
         try:
@@ -113,36 +112,41 @@ class BeamFrame(ctk.CTkFrame):
 
         # if not hasattr(self, "gal_id"):
 
-    def change_PA(self, event=None):
-        # print(self.PA_menu.cget("values"))
-        self.PA = event
-        self.update_grid(force_update=True)
+    # def change_PA(self, event=None):
+    #     # print(self.PA_menu.cget("values"))
+    #     self.PA = event
+    #     self._root().plot_options["PA"] = event
+    #     self.update_grid(force_update=True)
 
-    def arrow_change_PA(self, event=None):
-        if self._root().main_tabs.get() == "Beam view":
-            current_idx = self.PA_menu.cget("values").index(self.PA_menu.get())
-            if event.keysym == "Down":
-                new_idx = (current_idx + 1) % len(self.PA_menu.cget("values"))
-            elif event.keysym == "Up":
-                new_idx = (current_idx - 1) % len(self.PA_menu.cget("values"))
-            self.PA = self.PA_menu.cget("values")[new_idx]
-            self.PA_menu.set(self.PA)
-            self.update_grid(force_update=True)
+    # def arrow_change_PA(self, event=None):
+    #     if self._root().main_tabs.get() == "Beam view":
+    #         current_idx = self.PA_menu.cget("values").index(self.PA_menu.get())
+    #         if event.keysym == "Down":
+    #             new_idx = (current_idx + 1) % len(self.PA_menu.cget("values"))
+    #         elif event.keysym == "Up":
+    #             new_idx = (current_idx - 1) % len(self.PA_menu.cget("values"))
+    #         self.PA = self.PA_menu.cget("values")[new_idx]
+    #         self.PA_menu.set(self.PA)
+    #         self.update_grid(force_update=True)
 
     def change_cmap(self, event=None):
         # print (event)
-        self.cmap = event
+        # self.cmap = event
+        self._root().plot_options["cmap"] = event
         self.update_grid(force_update=True)
 
     def change_stretch(self, event=None):
-        self.stretch = event
+        # self.stretch = event
+        self._root().plot_options["stretch"] = event
         self.update_grid(force_update=True)
 
     def change_limits(self, event=None):
-        self.limits = event
+        # self.limits = event
+        self._root().plot_options["limits"] = event
         self.update_grid(force_update=True)
 
     def update_grid(self, force_update=False):
+        print (self.gal_id)
         if self.gal_id == self._root().current_gal_id.get() and not force_update:
             pass
         else:
@@ -163,12 +167,15 @@ class BeamFrame(ctk.CTkFrame):
                 self.beam_frame_list = []
                 # row = 0
                 extver_list = []
+                print (n_pa, n_grism)
+                # print 
                 # for row, col in np.ndindex(n_pa, n_grism):
                 for i in range(n_grism):
                     try:
                         # grism_name = header[f"GRISM{i+1:0>3}"]
                         grism_name = self._root().filter_names[::-1][i]
-                        extver = grism_name + f",{self.PA_menu.get()}"
+                        extver = grism_name + f",{self.PA}"
+                        print (extver)
                         # # print (grism_name)
                         # if self.PA == "PA 1":
                         #     pa = "," + str(header[f"{grism_name}01"])
@@ -197,7 +204,9 @@ class BeamFrame(ctk.CTkFrame):
                 grism_name = header[f"GRISM{i+1:0>3}"]
                 pa = "," + str(header[f"{grism_name}{row+1:0>2}"])
                 extver = grism_name + pa
+                extver = grism_name + f",{self.PA}"
                 extver_list.append(extver)
+                print (extver)
             self.beam_single_PA_frame = SinglePABeamFrame(self, extvers=extver_list)
             self.beam_single_PA_frame.grid(row=1, column=0, sticky="news")
 
@@ -328,11 +337,11 @@ class SinglePABeamFrame(ctk.CTkFrame):
 
         self.master.gal_id = self._root().current_gal_id.get()
 
-        if self.master.stretch.lower() == "linear":
+        if self._root().plot_options["stretch"].lower() == "linear":
             self.stretch_fn = LinearStretch
-        elif self.master.stretch.lower() == "square root":
+        elif self._root().plot_options["stretch"].lower() == "square root":
             self.stretch_fn = SqrtStretch
-        elif self.master.stretch.lower() == "logarithmic":
+        elif self._root().plot_options["stretch"].lower() == "logarithmic":
             self.stretch_fn = LogStretch
 
         for j, name in enumerate(["SCI", "CONTAM", "MODEL", "RESIDUALS"]):
@@ -360,14 +369,14 @@ class SinglePABeamFrame(ctk.CTkFrame):
             try:
                 data = hdul["KERNEL", extver].data
 
-                if self.master.limits == "grizli default":
+                if self._root().plot_options["limits"] == "grizli default":
                     vmax_kern = 1.1 * np.percentile(data, 99.5)
                     interval = ManualInterval(vmin=-0.1 * vmax_kern, vmax=vmax_kern)
-                elif self.master.limits == "Min-max":
+                elif self._root().plot_options["limits"] == "Min-max":
                     interval = MinMaxInterval()
                 else:
                     interval = PercentileInterval(
-                        float(self.master.limits.replace("%", ""))
+                        float(self._root().plot_options["limits"].replace("%", ""))
                     )
 
                 norm = ImageNormalize(
@@ -378,7 +387,7 @@ class SinglePABeamFrame(ctk.CTkFrame):
                 self.plotted_images[ext + extver]["kernel"] = ax.imshow(
                     data,
                     origin="lower",
-                    cmap=self.master.cmap,
+                    cmap=self._root().plot_options["cmap"],
                     # aspect="auto"
                     norm=norm,
                 )
@@ -425,7 +434,7 @@ class SinglePABeamFrame(ctk.CTkFrame):
                 header = hdul["SCI", extver].header
                 extent = [header["WMIN"], header["WMAX"], 0, data.shape[0]]
 
-                if self.master.limits == "grizli default":
+                if self._root().plot_options["limits"] == "grizli default":
                     wht_i = hdul["WHT", extver]
                     clip = wht_i.data > 0
                     if clip.sum() == 0:
@@ -435,11 +444,11 @@ class SinglePABeamFrame(ctk.CTkFrame):
                     vmax = np.maximum(1.1 * np.percentile(data[clip], 98), 5 * avg_rms)
                     vmin = -0.1 * vmax
                     interval = ManualInterval(vmin=vmin, vmax=vmax)
-                elif self.master.limits == "Min-max":
+                elif self._root().plot_options["limits"] == "Min-max":
                     interval = MinMaxInterval()
                 else:
                     interval = PercentileInterval(
-                        float(self.master.limits.replace("%", ""))
+                        float(self._root().plot_options["limits"].replace("%", ""))
                     )
 
                 norm = ImageNormalize(
@@ -450,7 +459,7 @@ class SinglePABeamFrame(ctk.CTkFrame):
                 self.plotted_images[ext + extver]["beam"] = ax.imshow(
                     data - m,
                     origin="lower",
-                    cmap=self.master.cmap,
+                    cmap=self._root().plot_options["cmap"],
                     aspect="auto",
                     norm=norm,
                     extent=extent,
