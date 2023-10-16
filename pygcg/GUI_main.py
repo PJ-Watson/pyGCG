@@ -431,10 +431,6 @@ class GCG(ctk.CTk):
         self.change_plot_colours()
 
     def change_plot_colours(self):
-        # self.fig.set_facecolor("none")
-
-        print(ctk.ThemeManager.theme["CTkFrame"]["fg_color"])
-
         if ctk.get_appearance_mode() == "Dark":
             mode = 1
         else:
@@ -452,34 +448,13 @@ class GCG(ctk.CTk):
                 ctk.ThemeManager.theme["CTkLabel"]["text_color"][mode]
             )
         ]
-        #     # self.fig.canvas.get_tk_widget().config(bg=self.cget("bg_color")[-1])
-        #     self.bg_colour = [
-        #         a / 65535
-        #         for a in self.winfo_rgb(self._root().cget("bg_color")[0])
-        #     ]
-        #     self.fg_colour = [
-        #         a / 65535
-        #         for a in self.winfo_rgb(self.progress_status.cget("text_color")[-1])
-        #     ]
-        # else:
-        #     self.bg_colour = [
-        #         a / 65535
-        #         for a in self.winfo_rgb(self._root().cget("bg_color")[0])
-        #     ]
-        #     self.fg_colour = [
-        #         a / 65535
-        #         for a in self.winfo_rgb(self.progress_status.cget("text_color")[0])
-        #     ]
-
-        # print(bg_colour)
-        # print(fg_colour)
 
         mpl.rcParams["text.color"] = self.text_colour
         mpl.rcParams["axes.labelcolor"] = self.text_colour
         mpl.rcParams["xtick.color"] = self.text_colour
         mpl.rcParams["ytick.color"] = self.text_colour
         mpl.rcParams["axes.edgecolor"] = self.text_colour
-        mpl.rcParams["axes.facecolor"] = "white" if mode == 0 else "k"  # self.bg_colour
+        mpl.rcParams["axes.facecolor"] = "white" if mode == 0 else "k"
 
     def write_config(self):
         try:
@@ -727,9 +702,6 @@ class GCG(ctk.CTk):
         for n in self.tab_names:
             self.object_progress[n] = False
         self.update_progress()
-
-        print(self.cat)
-        print(self.id_col)
         self.tab_row = self.cat[self.id_col == self.current_gal_id.get()]
         if len(self.tab_row) > 1:
             self.tab_row = self.tab_row[0]

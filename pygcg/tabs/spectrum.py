@@ -1,4 +1,3 @@
-import tkinter as tk
 from pathlib import Path
 
 import astropy.io.fits as pf
@@ -22,11 +21,8 @@ from astropy.visualization import (
     make_lupton_rgb,
 )
 from astropy.wcs import WCS
-from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2Tk
-from matplotlib.backends._backend_tk import ToolTip
-from matplotlib.backend_bases import NavigationToolbar2
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from matplotlib.figure import Figure
-from matplotlib import cbook
 from photutils.aperture import (
     CircularAperture,
     SkyCircularAperture,
@@ -34,7 +30,7 @@ from photutils.aperture import (
 )
 from tqdm import tqdm
 
-from PIL import Image, ImageTk
+from .toolbar_utils import VerticalNavigationToolbar2Tk
 
 
 class SpecFrame(ctk.CTkFrame):
@@ -226,6 +222,9 @@ class SpecFrame(ctk.CTkFrame):
         else:
             self._update_data()
 
+        self.update()
+        self.fig.set_layout_engine("none")
+
     def _update_data(self):
         _row_path = [
             *(
@@ -243,6 +242,7 @@ class SpecFrame(ctk.CTkFrame):
 
     def _update_all(self):
         self.check_axes_colours()
+        self.fig.set_layout_engine("constrained")
 
         self._update_data()
 
@@ -260,11 +260,6 @@ class SpecFrame(ctk.CTkFrame):
             self.plot_grizli(templates=True)
         if self.muse_checkbox.get():
             self.plot_MUSE_spec()
-        # try:
-        #     self.fig_axes.set_title(f"ID={self.gal_id}")
-        # except Exception as e:
-        #     # print(e)
-        #     pass
         self.images_frame.update_images()
         self.redshift_plot.update_z_grid()
 
@@ -309,6 +304,7 @@ class SpecFrame(ctk.CTkFrame):
                         data_table["line"][clip] / data_table["flat"][clip] / 1e-19,
                         c="red",
                         alpha=0.7,
+                        zorder=10,
                     )
                 else:
                     try:
@@ -503,6 +499,9 @@ class SpecFrame(ctk.CTkFrame):
                 pass
 
         self.fig.canvas.draw()
+
+        self.redshift_plot.update_z_line()
+
         self.update()
 
     def reset_redshift(self):
@@ -742,28 +741,7 @@ class ImagesFrame(ctk.CTkFrame):
 
     def check_axes_colours(self):
         self.fig.set_facecolor("none")
-        if ctk.get_appearance_mode() == "Dark":
-            self.fig.canvas.get_tk_widget().config(bg=self.cget("bg_color")[-1])
-            fg_colour = [
-                a / 65535
-                for a in self._root().winfo_rgb(
-                    self._root().progress_status.cget("text_color")[-1]
-                )
-            ]
-        if ctk.get_appearance_mode() == "Light":
-            self.fig.canvas.get_tk_widget().config(bg=self.cget("bg_color")[0])
-            fg_colour = [
-                a / 65535
-                for a in self._root().winfo_rgb(
-                    self._root().progress_status.cget("text_color")[0]
-                )
-            ]
-
-        mpl.rcParams["text.color"] = fg_colour
-        mpl.rcParams["axes.labelcolor"] = fg_colour
-        mpl.rcParams["xtick.color"] = fg_colour
-        mpl.rcParams["ytick.color"] = fg_colour
-        mpl.rcParams["axes.edgecolor"] = fg_colour
+        self.fig.canvas.get_tk_widget().config(bg=self._root().bg_colour_name)
 
     def update_seg_path(self, pattern="*seg.fits"):
         self.seg_path = [
@@ -804,7 +782,7 @@ class ImagesFrame(ctk.CTkFrame):
                     transform=a.transAxes,
                     ha="center",
                     va="center",
-                    c="k",
+                    c=self._root().text_colour,
                 )
             self.plotted_components[f"rgb_text"] = self.fig_axes[-2].text(
                 0.5,
@@ -813,7 +791,7 @@ class ImagesFrame(ctk.CTkFrame):
                 transform=self.fig_axes[-2].transAxes,
                 ha="center",
                 va="center",
-                c="k",
+                c=self._root().text_colour,
             )
             self.plotted_components[f"seg_text"] = self.fig_axes[-1].text(
                 0.5,
@@ -822,7 +800,7 @@ class ImagesFrame(ctk.CTkFrame):
                 transform=self.fig_axes[-1].transAxes,
                 ha="center",
                 va="center",
-                c="k",
+                c=self._root().text_colour,
             )
 
             return
@@ -979,7 +957,6 @@ class ImagesFrame(ctk.CTkFrame):
             or force
             or len(self.plotted_components) == 0
         ):
-            print(self.seg_path)
             self.gal_id = self._root().current_gal_id.get()
             self.plot_images()
 
@@ -1066,164 +1043,6 @@ def extract_pixel_ra_dec(q_table, celestial_wcs, key_ra="ra", key_dec="dec"):
     pix_c = np.hstack(sc.to_pixel(celestial_wcs)[:]) * u.pix
     return pix_c
 
-    # return new_ra, new_dec
-
-
-class VerticalNavigationToolbar2Tk(NavigationToolbar2Tk):
-    def __init__(self, canvas, window, pack_toolbar=False, **kwargs):
-        NavigationToolbar2Tk._set_image_for_button = self._set_image_for_button
-
-        super().__init__(canvas, window, pack_toolbar=False, **kwargs)
-
-        # print (dir(self))
-
-        # self._set_image_for_button("test")
-
-    # # Override the damn image selection
-    @staticmethod
-    def _set_image_for_button(self, button):
-        """
-        Set the image for a button based on its pixel size.
-
-        The pixel size is determined by the DPI scaling of the window.
-        """
-
-        print(ctk.get_appearance_mode())
-
-        if button._image_file is None:
-            return
-
-        # Allow _image_file to be relative to Matplotlib's "images" data
-        # directory.
-        path_regular = cbook._get_data_path("images", button._image_file)
-        path_large = path_regular.with_name(
-            path_regular.name.replace(".png", "_large.png")
-        )
-        size = button.winfo_pixels("18p")
-
-        # Nested functions because ToolbarTk calls  _Button.
-        def _get_color(color_name):
-            # `winfo_rgb` returns an (r, g, b) tuple in the range 0-65535
-            return button.winfo_rgb(button.cget(color_name))
-
-        def _is_dark(color):
-            if isinstance(color, str):
-                color = _get_color(color)
-            return max(color) < 65535 / 2
-
-        def _recolor_icon(image, color):
-            image_data = np.asarray(image).copy()
-            black_mask = (image_data[..., :3] == 0).all(axis=-1)
-            image_data[black_mask, :3] = color
-            return Image.fromarray(image_data, mode="RGBA")
-
-        # Use the high-resolution (48x48 px) icon if it exists and is needed
-        with Image.open(
-            path_large if (size > 24 and path_large.exists()) else path_regular
-        ) as im:
-            # assure a RGBA image as foreground color is RGB
-            im = im.convert("RGBA")
-            print("im", np.sum(np.asarray(im)))
-            image = ImageTk.PhotoImage(im.resize((size, size)), master=self)
-            button._ntimage = image
-
-            # create a version of the icon with the button's text color
-            # foreground = (255 / 65535) * np.array(
-            #     button.winfo_rgb(button.cget("foreground")))
-            foreground = 255 * np.array(self._root().text_colour)
-            print(foreground)
-            im_alt = _recolor_icon(im, foreground)
-            print("alt", np.sum(np.asarray(im_alt)))
-            image_alt = ImageTk.PhotoImage(im_alt.resize((size, size)), master=self)
-            button._ntimage_alt = image_alt
-
-        if ctk.get_appearance_mode() == "Dark":
-            image_kwargs = {"image": image_alt}
-        else:
-            image_kwargs = {"image": image}
-
-        # print (dir(image))
-        # print (image_alt)
-        # print (np.asarray(image))
-
-        # if _is_dark("background"):
-        #     # For Checkbuttons, we need to set `image` and `selectimage` at
-        #     # the same time. Otherwise, when updating the `image` option
-        #     # (such as when changing DPI), if the old `selectimage` has
-        #     # just been overwritten, Tk will throw an error.
-        #     image_kwargs = {"image": image_alt}
-        # else:
-        #     image_kwargs = {"image": image}
-        # Checkbuttons may switch the background to `selectcolor` in the
-        # checked state, so check separately which image it needs to use in
-        # that state to still ensure enough contrast with the background.
-        if isinstance(button, tk.Checkbutton) and button.cget("selectcolor") != "":
-            if self._windowingsystem != "x11":
-                selectcolor = "selectcolor"
-            else:
-                # On X11, selectcolor isn't used directly for indicator-less
-                # buttons. See `::tk::CheckEnter` in the Tk button.tcl source
-                # code for details.
-                r1, g1, b1 = _get_color("selectcolor")
-                r2, g2, b2 = _get_color("activebackground")
-                selectcolor = ((r1 + r2) / 2, (g1 + g2) / 2, (b1 + b2) / 2)
-            if _is_dark(selectcolor):
-                image_kwargs["selectimage"] = image_alt
-            else:
-                image_kwargs["selectimage"] = image
-
-        try:
-            button.configure(**image_kwargs, height="18p", width="18p")
-        except:
-            pass
-
-    # override _Button() to re-pack the toolbar button in vertical direction
-    def _Button(self, text, image_file, toggle, command):
-        if not toggle:
-            b = ctk.CTkButton(
-                master=self,
-                text=None,
-                command=command,
-                bg_color=self._root().bg_colour_name,
-                # relief="flat", overrelief="groove", borderwidth=1,
-            )
-        else:
-            # There is a bug in tkinter included in some python 3.6 versions
-            # that without this variable, produces a "visual" toggling of
-            # other near checkbuttons
-            # https://bugs.python.org/issue29402
-            # https://bugs.python.org/issue25684
-            var = ctk.IntVar(master=self)
-            b = ctk.CTkCheckBox(
-                master=self,
-                text=text,
-                command=command,
-                # indicatoron=False,
-                variable=var,
-                # offrelief="flat", overrelief="groove",
-                # borderwidth=1,
-                bg_color=self._root().bg_colour_name,
-            )
-            b.var = var
-        b._image_file = image_file
-        if image_file is not None:
-            # Explicit class because ToolbarTk calls _Button.
-            NavigationToolbar2Tk._set_image_for_button(self, b)
-        else:
-            b.configure(font=self._label_font)
-        b.pack(side="top", pady=5)  # re-pack button in vertical direction
-        return b
-
-    # override _Spacer() to create vertical separator
-    def _Spacer(self):
-        s = tk.Frame(self, width=26, relief="ridge", bg="DarkGray", padx=2)
-        s.pack(side="top", pady=5)  # pack in vertical direction
-        return s
-
-    # disable showing mouse position in toolbar
-    def set_message(self, s):
-        pass
-
 
 class RedshiftPlotFrame(ctk.CTkFrame):
     def __init__(self, master, gal_id, **kwargs):
@@ -1277,7 +1096,6 @@ class RedshiftPlotFrame(ctk.CTkFrame):
                 .resolve()
             ).glob(f"*{self.gal_id:0>5}.full.fits")
         ]
-        print(self.fits_path)
         if len(self.fits_path) == 0:
             print("Full extraction data not found.")
             self.fits_path = None
@@ -1294,10 +1112,9 @@ class RedshiftPlotFrame(ctk.CTkFrame):
                 transform=self.fig_axes.transAxes,
                 ha="center",
                 va="center",
-                c="k",
+                c=self._root().text_colour,
             )
-            return
-        if self.fits_path is not None:
+        else:
             for k, v in self.plotted_components.items():
                 v.remove()
             self.plotted_components = {}
@@ -1313,9 +1130,25 @@ class RedshiftPlotFrame(ctk.CTkFrame):
                 )
                 self.fig_axes.relim()
                 self.fig_axes.autoscale()
-                # self.plotted_components[f"{f}_text"] = a.text(
-                #     0.05, 0.95, f, transform=a.transAxes, ha="left", va="top", c="red"
-                # )
+
+        self.update_z_line()
+
+    def update_z_line(self):
+        if "z_line" not in self.plotted_components.keys():
+            self.plotted_components["z_line"] = self.fig_axes.axvline(
+                float(self.master.current_redshift.get()),
+                c="0.7",
+                alpha=0.7,
+                linewidth=2,
+            )
+        else:
+            self.plotted_components["z_line"].set_data(
+                [
+                    float(self.master.current_redshift.get()),
+                    float(self.master.current_redshift.get()),
+                ],
+                [0, 1],
+            )
 
         self.pyplot_canvas.draw_idle()
         self.update()

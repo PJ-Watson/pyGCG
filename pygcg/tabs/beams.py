@@ -419,7 +419,7 @@ class SinglePABeamFrame(ctk.CTkFrame):
                     transform=ax.transAxes,
                     ha="center",
                     va="center",
-                    c="k",
+                    c=self._root().text_colour,
                 )
                 self._root().current_gal_data[extver]["coverage"] = 0.0
                 self.quality_frame.quality_menus[extver].set("Unusable")
