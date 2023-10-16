@@ -433,7 +433,7 @@ class GCG(ctk.CTk):
     def change_plot_colours(self):
         # self.fig.set_facecolor("none")
 
-        print (ctk.ThemeManager.theme["CTkFrame"]["fg_color"])
+        print(ctk.ThemeManager.theme["CTkFrame"]["fg_color"])
 
         if ctk.get_appearance_mode() == "Dark":
             mode = 1
@@ -442,11 +442,15 @@ class GCG(ctk.CTk):
         self.bg_colour_name = ctk.ThemeManager.theme["CTkFrame"]["fg_color"][mode]
         self.bg_colour = [
             a / 65535
-            for a in self.winfo_rgb(ctk.ThemeManager.theme["CTkFrame"]["fg_color"][mode])
+            for a in self.winfo_rgb(
+                ctk.ThemeManager.theme["CTkFrame"]["fg_color"][mode]
+            )
         ]
         self.text_colour = [
             a / 65535
-            for a in self.winfo_rgb(ctk.ThemeManager.theme["CTkLabel"]["text_color"][mode])
+            for a in self.winfo_rgb(
+                ctk.ThemeManager.theme["CTkLabel"]["text_color"][mode]
+            )
         ]
         #     # self.fig.canvas.get_tk_widget().config(bg=self.cget("bg_color")[-1])
         #     self.bg_colour = [
@@ -475,7 +479,7 @@ class GCG(ctk.CTk):
         mpl.rcParams["xtick.color"] = self.text_colour
         mpl.rcParams["ytick.color"] = self.text_colour
         mpl.rcParams["axes.edgecolor"] = self.text_colour
-        mpl.rcParams["axes.facecolor"] = "white" if mode==0 else "k" #self.bg_colour
+        mpl.rcParams["axes.facecolor"] = "white" if mode == 0 else "k"  # self.bg_colour
 
     def write_config(self):
         try:
