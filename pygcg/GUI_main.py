@@ -428,38 +428,54 @@ class GCG(ctk.CTk):
 
         ctk.set_appearance_mode(self.config["appearance"]["appearance_mode"].lower())
         ctk.set_default_color_theme(self.config["appearance"]["theme"].lower())
+        self.change_plot_colours()
 
     def change_plot_colours(self):
         # self.fig.set_facecolor("none")
+
+        print (ctk.ThemeManager.theme["CTkFrame"]["fg_color"])
+
         if ctk.get_appearance_mode() == "Dark":
-            # self.fig.canvas.get_tk_widget().config(bg=self.cget("bg_color")[-1])
-            bg_colour = [
-                a / 65535
-                for a in self.winfo_rgb(self.full_spec_frame.cget("bg_color")[0])
-            ]
-            fg_colour = [
-                a / 65535
-                for a in self.winfo_rgb(self.progress_status.cget("text_color")[-1])
-            ]
-        if ctk.get_appearance_mode() == "Light":
-            bg_colour = [
-                a / 65535
-                for a in self.winfo_rgb(self.full_spec_frame.cget("bg_color")[0])
-            ]
-            fg_colour = [
-                a / 65535
-                for a in self.winfo_rgb(self.progress_status.cget("text_color")[0])
-            ]
+            mode = 1
+        else:
+            mode = 0
+        self.bg_colour_name = ctk.ThemeManager.theme["CTkFrame"]["fg_color"][mode]
+        self.bg_colour = [
+            a / 65535
+            for a in self.winfo_rgb(ctk.ThemeManager.theme["CTkFrame"]["fg_color"][mode])
+        ]
+        self.text_colour = [
+            a / 65535
+            for a in self.winfo_rgb(ctk.ThemeManager.theme["CTkLabel"]["text_color"][mode])
+        ]
+        #     # self.fig.canvas.get_tk_widget().config(bg=self.cget("bg_color")[-1])
+        #     self.bg_colour = [
+        #         a / 65535
+        #         for a in self.winfo_rgb(self._root().cget("bg_color")[0])
+        #     ]
+        #     self.fg_colour = [
+        #         a / 65535
+        #         for a in self.winfo_rgb(self.progress_status.cget("text_color")[-1])
+        #     ]
+        # else:
+        #     self.bg_colour = [
+        #         a / 65535
+        #         for a in self.winfo_rgb(self._root().cget("bg_color")[0])
+        #     ]
+        #     self.fg_colour = [
+        #         a / 65535
+        #         for a in self.winfo_rgb(self.progress_status.cget("text_color")[0])
+        #     ]
 
-        print(bg_colour)
-        print(fg_colour)
+        # print(bg_colour)
+        # print(fg_colour)
 
-        mpl.rcParams["text.color"] = fg_colour
-        mpl.rcParams["axes.labelcolor"] = fg_colour
-        mpl.rcParams["xtick.color"] = fg_colour
-        mpl.rcParams["ytick.color"] = fg_colour
-        mpl.rcParams["axes.edgecolor"] = fg_colour
-        mpl.rcParams["axes.facecolor"] = bg_colour
+        mpl.rcParams["text.color"] = self.text_colour
+        mpl.rcParams["axes.labelcolor"] = self.text_colour
+        mpl.rcParams["xtick.color"] = self.text_colour
+        mpl.rcParams["ytick.color"] = self.text_colour
+        mpl.rcParams["axes.edgecolor"] = self.text_colour
+        mpl.rcParams["axes.facecolor"] = "white" if mode==0 else "k" #self.bg_colour
 
     def write_config(self):
         try:
