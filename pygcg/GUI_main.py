@@ -274,6 +274,11 @@ class GCG(ctk.CTk):
             dir_to_chk = fpe(self.config["files"]["extractions_dir"])
 
             id_idx_list = []
+
+            row_ids = [s.stem[-9:-4] for s in dir_to_chk.glob("*.row.fits")]
+            stack_ids = [s.stem[-11:-6] for s in dir_to_chk.glob("*.stack.fits")]
+            oned_ids = [s.stem[-8:-3] for s in dir_to_chk.glob("*.1D.fits")]
+
             for i, (n, s) in tqdm(
                 enumerate(zip(self.id_col, self.seg_id_col)),
                 desc="Scanning directory for objects in catalogue",
@@ -282,8 +287,10 @@ class GCG(ctk.CTk):
                 if self.config["files"].get("skip_existing", True):
                     if s in self.out_cat["SEG_ID"]:
                         continue
-                if any(dir_to_chk.glob(f"*{s:0>5}.1D.fits")) and any(
-                    dir_to_chk.glob(f"*{s:0>5}.stack.fits")
+                if (
+                    f"{s:0>5}" in row_ids
+                    and f"{s:0>5}" in oned_ids
+                    and f"{s:0>5}" in stack_ids
                 ):
                     id_idx_list.append(i)
             try:
@@ -381,6 +388,9 @@ class GCG(ctk.CTk):
         )
         for l in self.quality_key_map.flatten():
             self.bind(f"{l}", self.select_quality_menu)
+
+        self.object_progress[self.main_tabs.get()] = True
+        self.update_progress()
 
     def select_quality_menu(self, event=None):
         if self.beam_frame_1.winfo_viewable():
@@ -586,8 +596,6 @@ class GCG(ctk.CTk):
         if event != None and event.widget.winfo_class() == ("Entry" or "Textbox"):
             return
         current_tab = self.main_tabs.get()
-        self.object_progress[current_tab] = True
-        self.update_progress()
         if current_tab == self.tab_names[2]:
             self.main_tabs.set(self.tab_names[1])
             self.main_tabs_update()
@@ -602,13 +610,13 @@ class GCG(ctk.CTk):
             )
             self.main_tabs.set(self.tab_names[2])
             self.change_gal_id()
+        self.object_progress[self.main_tabs.get()] = True
+        self.update_progress()
 
     def next_gal_button_callback(self, event=None):
         if event != None and event.widget.winfo_class() == ("Entry" or "Textbox"):
             return
         current_tab = self.main_tabs.get()
-        self.object_progress[current_tab] = True
-        self.update_progress()
         if current_tab == self.tab_names[0]:
             self.main_tabs.set(self.tab_names[1])
             self.main_tabs_update()
@@ -623,6 +631,8 @@ class GCG(ctk.CTk):
             )
             self.main_tabs.set(self.tab_names[0])
             self.change_gal_id()
+        self.object_progress[self.main_tabs.get()] = True
+        self.update_progress()
 
     def save_current_object(self, event=None):
         ### This is where the logic for loading/updating the tables will go

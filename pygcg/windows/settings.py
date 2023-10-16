@@ -23,7 +23,7 @@ class SettingsSelection(ctk.CTkFrame):
             pady=(10, 0),
         )
         self.settings_value = ctk.StringVar(
-            self, self._root().config["files"][self.value_key]
+            self, self._root().config["files"].get(self.value_key, "")
         )
         self.settings_entry = ctk.CTkEntry(
             master,
@@ -133,22 +133,22 @@ class SettingsWindow(ctk.CTkToplevel):
         )
 
         proper_names = [
-            "Catalogue filepath",
             "Output directory",
             "Extractions directory",
+            "Catalogue filepath",
             "Prep directory",
             "Cube filepath",
             "Temporary directory",
         ]
         backend_names = [
-            "cat_path",
             "out_dir",
             "extractions_dir",
+            "cat_path",
             "prep_dir",
             "cube_path",
             "temp_dir",
         ]
-        is_dir = [0, 1, 1, 1, 0, 1]
+        is_dir = [1, 1, 0, 1, 0, 1]
 
         additional_settings = []
 
