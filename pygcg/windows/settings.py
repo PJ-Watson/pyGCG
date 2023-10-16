@@ -32,6 +32,7 @@ class SettingsSelection(ctk.CTkFrame):
         self.settings_entry.grid(
             row=row,
             column=1,
+            columnspan=2,
             padx=20,
             pady=(10, 0),
             sticky="we",
@@ -97,11 +98,12 @@ class SettingsWindow(ctk.CTkToplevel):
         self.scrollable_frame = ctk.CTkScrollableFrame(self)
         self.scrollable_frame.grid_columnconfigure(0, weight=0)
         self.scrollable_frame.grid_columnconfigure(1, weight=1)
+        # self.scrollable_frame.grid_columnconfigure(1, weight=1)
         self.scrollable_frame.pack(side="top", fill="both", expand=True)
 
         self.rescan_button = ctk.CTkButton(
             self.scrollable_frame,
-            text="Rescan directories",
+            text="Rescan directories / Reload",
             command=self._root().rescan_and_reload,
         )
         self.rescan_button.grid(
@@ -130,6 +132,15 @@ class SettingsWindow(ctk.CTkToplevel):
         self.change_appearance_menu.grid(row=1, column=1, padx=20, pady=20, sticky="w")
         self.change_appearance_menu.set(
             self._root().config["appearance"]["appearance_mode"]
+        )
+        appearance_info_label = ctk.CTkLabel(
+            self.scrollable_frame, text="(Click reload to change the plots)"
+        )
+        appearance_info_label.grid(
+            row=1,
+            column=2,
+            padx=20,
+            pady=20,
         )
 
         proper_names = [
@@ -167,6 +178,7 @@ class SettingsWindow(ctk.CTkToplevel):
         ctk.set_appearance_mode(choice.lower())
         self._root().config["appearance"]["appearance_mode"] = choice.lower()
         self._root().write_config()
+        self._root().change_plot_colours()
 
     def quit_settings_gracefully(self, event=None):
         # Put some lines here to save current output

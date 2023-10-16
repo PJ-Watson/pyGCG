@@ -4,6 +4,7 @@ from pathlib import Path
 import astropy.io.fits as pf
 import astropy.units as u
 import customtkinter as ctk
+import matplotlib as mpl
 import matplotlib.colors as colors
 import matplotlib.pyplot as plt
 import numpy as np
@@ -189,6 +190,10 @@ class SinglePABeamFrame(ctk.CTkFrame):
             master=self.canvas_frame,
         )
 
+        self.check_axes_colours()
+
+        # plt.style.use("dark_background")
+
         self.extvers = extvers
         self.coverage = {}
         widths = [1 / 3, 1] * len(self.extvers)
@@ -205,6 +210,31 @@ class SinglePABeamFrame(ctk.CTkFrame):
         self.set_aspect()
         self.plotted_images = dict()
         self.update_plots()
+
+    def check_axes_colours(self):
+        self.fig.set_facecolor("none")
+        if ctk.get_appearance_mode() == "Dark":
+            self.fig.canvas.get_tk_widget().config(bg=self.cget("bg_color")[-1])
+            fg_colour = [
+                a / 65535
+                for a in self._root().winfo_rgb(
+                    self._root().progress_status.cget("text_color")[-1]
+                )
+            ]
+        if ctk.get_appearance_mode() == "Light":
+            self.fig.canvas.get_tk_widget().config(bg=self.cget("bg_color")[0])
+            fg_colour = [
+                a / 65535
+                for a in self._root().winfo_rgb(
+                    self._root().progress_status.cget("text_color")[0]
+                )
+            ]
+
+        mpl.rcParams["text.color"] = fg_colour
+        mpl.rcParams["axes.labelcolor"] = fg_colour
+        mpl.rcParams["xtick.color"] = fg_colour
+        mpl.rcParams["ytick.color"] = fg_colour
+        mpl.rcParams["axes.edgecolor"] = fg_colour
 
     def set_aspect(self, aspect_ratio=3):
         # a function which places a frame within a containing frame, and
@@ -238,6 +268,8 @@ class SinglePABeamFrame(ctk.CTkFrame):
         self.pad_frame.bind("<Configure>", enforce_aspect_ratio)
 
     def update_plots(self, extvers=None):
+        self.check_axes_colours()
+
         if extvers != None:
             try:
                 for current_key in self.plotted_images.keys():

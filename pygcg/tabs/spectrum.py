@@ -4,6 +4,7 @@ from pathlib import Path
 import astropy.io.fits as pf
 import astropy.units as u
 import customtkinter as ctk
+import matplotlib as mpl
 import matplotlib.colors as colors
 import matplotlib.pyplot as plt
 import numpy as np
@@ -143,6 +144,38 @@ class SpecFrame(ctk.CTkFrame):
         self.images_frame = ImagesFrame(self, gal_id=self.gal_id)
         self.images_frame.grid(row=2, column=0, columnspan=2, sticky="news")
 
+    def check_axes_colours(self):
+        self.fig.set_facecolor("none")
+        if ctk.get_appearance_mode() == "Dark":
+            bg_colour = [
+                a / 65535 for a in self._root().winfo_rgb(self.cget("bg_color")[-1])
+            ]
+            self.fig.canvas.get_tk_widget().config(bg=self.cget("bg_color")[-1])
+            fg_colour = [
+                a / 65535
+                for a in self._root().winfo_rgb(
+                    self._root().progress_status.cget("text_color")[-1]
+                )
+            ]
+        if ctk.get_appearance_mode() == "Light":
+            bg_colour = [
+                a / 65535 for a in self._root().winfo_rgb(self.cget("bg_color")[0])
+            ]
+            self.fig.canvas.get_tk_widget().config(bg=self.cget("bg_color")[0])
+            fg_colour = [
+                a / 65535
+                for a in self._root().winfo_rgb(
+                    self._root().progress_status.cget("text_color")[0]
+                )
+            ]
+
+        mpl.rcParams["text.color"] = fg_colour
+        mpl.rcParams["axes.labelcolor"] = fg_colour
+        mpl.rcParams["xtick.color"] = fg_colour
+        mpl.rcParams["ytick.color"] = fg_colour
+        mpl.rcParams["axes.edgecolor"] = fg_colour
+        mpl.rcParams["axes.facecolor"] = bg_colour
+
     def update_plot(self):
         if not hasattr(self, "pyplot_canvas"):
             self.gal_id = self._root().current_gal_id.get()
@@ -152,6 +185,7 @@ class SpecFrame(ctk.CTkFrame):
                 figure=self.fig,
                 master=self,
             )
+            self.check_axes_colours()
 
             self.fig_axes = self.fig.add_subplot(111)
 
@@ -206,6 +240,8 @@ class SpecFrame(ctk.CTkFrame):
             self.redshift_slider.set(self.grizli_redshift)
 
     def _update_all(self):
+        self.check_axes_colours()
+
         self._update_data()
 
         self.cube_path = (
@@ -268,7 +304,7 @@ class SpecFrame(ctk.CTkFrame):
                     (self.plotted_components[dict_key][hdu.name],) = self.fig_axes.plot(
                         data_table["wave"][clip],
                         data_table["line"][clip] / data_table["flat"][clip] / 1e-19,
-                        c="tab:red",
+                        c="red",
                         alpha=0.7,
                     )
                 else:
@@ -674,8 +710,9 @@ class ImagesFrame(ctk.CTkFrame):
             figure=self.fig,
             master=self,
         )
-        self.fig.set_facecolor("none")
-        self.pyplot_canvas.get_tk_widget().config(bg=self.cget("bg_color")[-1])
+
+        self.check_axes_colours()
+
         self.fig_axes = self.fig.subplots(
             1,
             5,
@@ -699,6 +736,31 @@ class ImagesFrame(ctk.CTkFrame):
 
         if self._root().main_tabs.get() == "Spec view":
             self.plot_seg_map()
+
+    def check_axes_colours(self):
+        self.fig.set_facecolor("none")
+        if ctk.get_appearance_mode() == "Dark":
+            self.fig.canvas.get_tk_widget().config(bg=self.cget("bg_color")[-1])
+            fg_colour = [
+                a / 65535
+                for a in self._root().winfo_rgb(
+                    self._root().progress_status.cget("text_color")[-1]
+                )
+            ]
+        if ctk.get_appearance_mode() == "Light":
+            self.fig.canvas.get_tk_widget().config(bg=self.cget("bg_color")[0])
+            fg_colour = [
+                a / 65535
+                for a in self._root().winfo_rgb(
+                    self._root().progress_status.cget("text_color")[0]
+                )
+            ]
+
+        mpl.rcParams["text.color"] = fg_colour
+        mpl.rcParams["axes.labelcolor"] = fg_colour
+        mpl.rcParams["xtick.color"] = fg_colour
+        mpl.rcParams["ytick.color"] = fg_colour
+        mpl.rcParams["axes.edgecolor"] = fg_colour
 
     def update_seg_path(self, pattern="*seg.fits"):
         self.seg_path = [
@@ -908,6 +970,7 @@ class ImagesFrame(ctk.CTkFrame):
         self.update()
 
     def update_images(self, force=False):
+        self.check_axes_colours()
         if (
             self.gal_id != self._root().current_gal_id.get()
             or force

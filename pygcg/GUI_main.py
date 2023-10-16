@@ -4,6 +4,7 @@ from pathlib import Path
 
 import astropy.units as u
 import customtkinter as ctk
+import matplotlib as mpl
 import numpy as np
 import tomlkit
 from astropy.coordinates import SkyCoord
@@ -308,6 +309,7 @@ class GCG(ctk.CTk):
                 self.cat[self.config["cat"].get("ra", "ra")],
                 self.cat[self.config["cat"].get("dec", "dec")],
             )
+
             assert len(self.id_col) > 0
 
             self.current_gal_id.set(self.id_col[0])
@@ -426,6 +428,38 @@ class GCG(ctk.CTk):
 
         ctk.set_appearance_mode(self.config["appearance"]["appearance_mode"].lower())
         ctk.set_default_color_theme(self.config["appearance"]["theme"].lower())
+
+    def change_plot_colours(self):
+        # self.fig.set_facecolor("none")
+        if ctk.get_appearance_mode() == "Dark":
+            # self.fig.canvas.get_tk_widget().config(bg=self.cget("bg_color")[-1])
+            bg_colour = [
+                a / 65535
+                for a in self.winfo_rgb(self.full_spec_frame.cget("bg_color")[0])
+            ]
+            fg_colour = [
+                a / 65535
+                for a in self.winfo_rgb(self.progress_status.cget("text_color")[-1])
+            ]
+        if ctk.get_appearance_mode() == "Light":
+            bg_colour = [
+                a / 65535
+                for a in self.winfo_rgb(self.full_spec_frame.cget("bg_color")[0])
+            ]
+            fg_colour = [
+                a / 65535
+                for a in self.winfo_rgb(self.progress_status.cget("text_color")[0])
+            ]
+
+        print(bg_colour)
+        print(fg_colour)
+
+        mpl.rcParams["text.color"] = fg_colour
+        mpl.rcParams["axes.labelcolor"] = fg_colour
+        mpl.rcParams["xtick.color"] = fg_colour
+        mpl.rcParams["ytick.color"] = fg_colour
+        mpl.rcParams["axes.edgecolor"] = fg_colour
+        mpl.rcParams["axes.facecolor"] = bg_colour
 
     def write_config(self):
         try:
@@ -674,6 +708,8 @@ class GCG(ctk.CTk):
             self.object_progress[n] = False
         self.update_progress()
 
+        print(self.cat)
+        print(self.id_col)
         self.tab_row = self.cat[self.id_col == self.current_gal_id.get()]
         if len(self.tab_row) > 1:
             self.tab_row = self.tab_row[0]
@@ -763,6 +799,8 @@ class GCG(ctk.CTk):
             )
 
     def main_tabs_update(self):
+        self.object_progress[self.main_tabs.get()] = True
+        self.update_progress()
         if self.main_tabs.get() == self.tab_names[2]:
             self.full_spec_frame.update_plot()
         if self.main_tabs.get() == self.tab_names[0]:
