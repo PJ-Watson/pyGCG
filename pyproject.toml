@@ -4,13 +4,13 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "pyGCG"
-version = "0.4.2"
+version = "0.5.0"
 authors = [
   { name="Peter Watson", email="peter.watson+pygcg@inaf.it" },
 ]
 description = "A GUI to aid in viewing and classifying NIRISS data products from GLASS-JWST."
 readme = "README.md"
-requires-python = ">=3.9"
+requires-python = ">=3.10"
 classifiers = [
     "Programming Language :: Python :: 3",
     "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
