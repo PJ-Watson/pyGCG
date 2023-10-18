@@ -71,7 +71,7 @@ class SpecFrame(ctk.CTkFrame):
             self.redshift_frame, text="Estimated redshift:"
         )
         self.redshift_label.grid(
-            row=0, column=0, columnspan=2, padx=10, pady=(10,), sticky="w"
+            row=0, column=0, columnspan=2, padx=(20, 10), pady=(10,), sticky="w"
         )
         self.current_redshift = ValidateFloatVar(
             master=self,
@@ -93,7 +93,9 @@ class SpecFrame(ctk.CTkFrame):
             self.update_lines,
         )
         self.reset_redshift_button = ctk.CTkButton(
-            self.redshift_frame, text="Reset", command=self.reset_redshift
+            self.redshift_frame,
+            text="Reset to grizli redshift",
+            command=self.reset_redshift,
         )
         self.reset_redshift_button.grid(
             row=1,
@@ -117,6 +119,13 @@ class SpecFrame(ctk.CTkFrame):
             pady=10,
             sticky="we",
         )
+
+        self.z_q_checkbox = ctk.CTkCheckBox(
+            self.redshift_frame,
+            text="Unreliable redshift",
+            command=self.z_q_update,
+        )
+        self.z_q_checkbox.grid(row=3, column=0, padx=(20, 10), pady=10, sticky="w")
 
         self.muse_checkbox = ctk.CTkCheckBox(
             self.plot_options_frame,
@@ -146,6 +155,9 @@ class SpecFrame(ctk.CTkFrame):
         )
         self.images_frame.grid(row=2, column=0, columnspan=2, sticky="news")
 
+    def z_q_update(self):
+        self._root().current_gal_data["unreliable_redshift"] = self.z_q_checkbox.get()
+
     def check_axes_colours(self):
         self.fig.set_facecolor("none")
         self.fig.canvas.get_tk_widget().config(background=self._root().bg_colour_name)
@@ -167,7 +179,6 @@ class SpecFrame(ctk.CTkFrame):
                 figure=self.fig,
                 master=self,
             )
-            # self.check_axes_colours()
             self.fig.canvas.get_tk_widget().config(
                 background=self._root().bg_colour_name
             )
@@ -179,7 +190,7 @@ class SpecFrame(ctk.CTkFrame):
             self.nav_toolbar = VerticalNavigationToolbar2Tk(
                 self.fig.canvas,
                 self,
-                pack_toolbar=False,  # background=self._root().bg_colour_name
+                pack_toolbar=False,
             )
 
             self.fig_axes.set_xlabel(r"Wavelength (${\rm \AA}$)")
@@ -193,8 +204,6 @@ class SpecFrame(ctk.CTkFrame):
             self._update_all()
 
             f = zoom_factory(self.fig_axes)
-
-            # self.pyplot_canvas.draw_idle()
 
             self.pyplot_canvas.get_tk_widget().grid(row=1, column=1, sticky="news")
             self.nav_toolbar.grid(row=1, column=0, sticky="news")
@@ -218,11 +227,27 @@ class SpecFrame(ctk.CTkFrame):
             ).glob(f"*{self._root().seg_id:0>5}.row.fits")
         ][0]
         with pf.open(_row_path) as hdul:
-            self.grizli_redshift = Table(hdul[1].data)["redshift"].value[0]
+            grizli_redshift = Table(hdul[1].data)["redshift"].value[0]
+            self.grizli_redshift = self._root().current_gal_data.get(
+                "grizli_redshift", grizli_redshift
+            )
+            self.estimated_redshift = self._root().current_gal_data.get(
+                "estimated_redshift", grizli_redshift
+            )
+            self.unreliable_redshift = self._root().current_gal_data.get(
+                "unreliable_redshift", False
+            )
+
             self._root().current_gal_data["grizli_redshift"] = self.grizli_redshift
-            self._root().current_gal_data["estimated_redshift"] = self.grizli_redshift
-            self.current_redshift.set(self.grizli_redshift)
-            self.redshift_slider.set(self.grizli_redshift)
+            self._root().current_gal_data[
+                "estimated_redshift"
+            ] = self.estimated_redshift
+            self._root().current_gal_data[
+                "unreliable_redshift"
+            ] = self.unreliable_redshift
+            self.current_redshift.set(self.estimated_redshift)
+            self.redshift_slider.set(self.estimated_redshift)
+            self.z_q_checkbox.select() if self.unreliable_redshift else self.z_q_checkbox.deselect()
 
     def _update_all(self):
         self.check_axes_colours()
