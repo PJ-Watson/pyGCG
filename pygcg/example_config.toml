@@ -10,6 +10,7 @@ prep_dir = "" # [optional] The directory containing the segmentation map and dir
 cube_path = "" # [optional] The file path of the corresponding MUSE datacube.
 temp_dir = "" # [optional] The directory in which temporary files are stored. Defaults to $OUT_DIR/.temp/
 skip_existing = false # [optional] Skip loading objects which already exist in the output catalogue.
+out_cat_name = "" # [optional] The name of the output catalogue. Defaults to "pyGCG_output.fits"
 
 [appearance]
 appearance_mode = "system" # System (default), light, or dark.

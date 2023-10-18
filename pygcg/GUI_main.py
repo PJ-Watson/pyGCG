@@ -254,9 +254,8 @@ class GCG(ctk.CTk):
                     self.temp_dir = self.out_dir / ".temp"
                     self.temp_dir.mkdir(exist_ok=True)
 
-                self.out_cat_path = (
-                    fpe(self.config["files"]["out_dir"]) / "pyGCG_output.fits"
-                )
+                out_name = self.config["files"].get("out_cat_name", "pyGCG_output.fits")
+                self.out_cat_path = fpe(self.config["files"]["out_dir"]) / out_name
                 self.read_write_button.configure(state="normal")
             except:
                 print(
