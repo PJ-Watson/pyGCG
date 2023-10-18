@@ -117,6 +117,8 @@ class GCG(ctk.CTk):
 
         self.current_gal_data = {}
 
+        self.warning_flag = True
+
         self.current_gal_id = ctk.StringVar(master=self)
         self.current_gal_coords = ctk.StringVar(master=self)
         gal_id_label = ctk.CTkLabel(
@@ -654,6 +656,10 @@ class GCG(ctk.CTk):
             self.comments_window.focus()
 
     def prev_gal_button_callback(self, event=None):
+        if self.warning_flag:
+            self.check_read_write()
+            self.warning_flag = False
+
         if event != None and event.widget.winfo_class() == ("Entry" or "Textbox"):
             return
         current_tab = self.main_tabs.get()
@@ -675,6 +681,10 @@ class GCG(ctk.CTk):
         self.update_progress()
 
     def next_gal_button_callback(self, event=None):
+        if self.warning_flag:
+            self.check_read_write()
+            self.warning_flag = False
+
         if event != None and event.widget.winfo_class() == ("Entry" or "Textbox"):
             return
         current_tab = self.main_tabs.get()
@@ -694,6 +704,27 @@ class GCG(ctk.CTk):
             self.change_gal_id()
         self.object_progress[self.main_tabs.get()] = True
         self.update_progress()
+
+    def check_read_write(self):
+        mid_message = (
+            "Classifications will not be saved."
+            if self.read_write_button.get().lower() == "read-only"
+            else "Classifications will be written to ??? in the output directory."
+        )
+        check_overwrite = CTkMessagebox(
+            title="Read/Write Mode",
+            message=(
+                f"This program is currently set to {self.read_write_button.get().lower()}."
+                # "Overwrite existing classification?" if self.read_write_button.get().lower()=="read-only" else "test")
+                f"{mid_message} If this is the expected behaviour, please continue.\n(This message will not be shown again.)"
+            ),
+            icon="info",
+            option_1="OK",
+            option_focus=1,
+        )
+        if check_overwrite.get() == "OK":
+            self.focus()
+            return
 
     def save_current_object(self, event=None):
         ### This is where the logic for loading/updating the tables will go
