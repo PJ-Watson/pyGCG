@@ -2,6 +2,8 @@ from pathlib import Path
 
 import customtkinter as ctk
 
+from pygcg.utils.misc import fpe
+
 
 class SettingsSelection(ctk.CTkFrame):
     def __init__(
@@ -56,15 +58,23 @@ class SettingsSelection(ctk.CTkFrame):
         )
 
     def change_settings_callback(self, event=None):
+
+        if self.settings_value.get() == "":
+            new_value = ""
+        else:
+            new_value = fpe(self.settings_value.get())
+
         self._root().config["files"][self.value_key] = str(
-            Path(self.settings_value.get()).expanduser().resolve()
+            new_value
         )
         self._root().write_config()
+
+        self.master.focus()
 
     def browse_dir(self):
         dir_output = ctk.filedialog.askdirectory(
             parent=self,
-            initialdir=Path(self.settings_value.get()).expanduser().resolve(),
+            initialdir=fpe(self.settings_value.get()),
         )
         self.settings_value.set(dir_output)
         self.change_settings_callback()
@@ -73,7 +83,7 @@ class SettingsSelection(ctk.CTkFrame):
         path_output = str(
             ctk.filedialog.askopenfilename(
                 parent=self,
-                initialdir=Path(self.settings_value.get())
+                initialdir=fpe(self.settings_value.get())
                 .expanduser()
                 .resolve()
                 .parent,
