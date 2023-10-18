@@ -205,7 +205,7 @@ class GCG(ctk.CTk):
 
         self.rescan_and_reload(message=False)
 
-    def rescan_and_reload(self, message=True):
+    def rescan_and_reload(self, message=True, skip=False):
         try:
             # assert len(self.config["files"]["out_dir"]) > 0
             # assert len(self.config["files"]["cat_path"]) > 0
@@ -336,7 +336,7 @@ class GCG(ctk.CTk):
                 desc="Scanning directory for objects in catalogue",
                 total=len(self.id_col),
             ):
-                if self.config["files"].get("skip_existing", True):
+                if self.config["files"].get("skip_existing", True) or skip:
                     if s in self.out_cat["SEG_ID"]:
                         continue
                 if (
@@ -656,9 +656,12 @@ class GCG(ctk.CTk):
             self.comments_window.focus()
 
     def prev_gal_button_callback(self, event=None):
+        if not hasattr(self, "main_tabs"):
+            return
         if self.warning_flag:
             self.check_read_write()
             self.warning_flag = False
+            self.focus_force()
 
         if event != None and event.widget.winfo_class() == ("Entry" or "Textbox"):
             return
@@ -681,9 +684,12 @@ class GCG(ctk.CTk):
         self.update_progress()
 
     def next_gal_button_callback(self, event=None):
+        if not hasattr(self, "main_tabs"):
+            return
         if self.warning_flag:
             self.check_read_write()
             self.warning_flag = False
+            self.focus_force()
 
         if event != None and event.widget.winfo_class() == ("Entry" or "Textbox"):
             return
@@ -696,6 +702,17 @@ class GCG(ctk.CTk):
             self.main_tabs_update()
         elif current_tab == self.tab_names[2]:
             self.save_current_object()
+            if self.current_gal_id.get() == self.id_col[-1]:
+                match self.check_end_objects():
+                    case "continue":
+                        pass
+                    case "cancel":
+                        return
+                    case "reload":
+                        self.rescan_and_reload(skip=True)
+                        return
+                    case "quit":
+                        self.quit_gracefully()
             current_gal_idx = (self.id_col == self.current_gal_id.get()).nonzero()[0]
             self.current_gal_id.set(
                 self.id_col[(current_gal_idx + 1) % len(self.id_col)][0]
@@ -715,16 +732,61 @@ class GCG(ctk.CTk):
             title="Read/Write Mode",
             message=(
                 f"This program is currently set to {self.read_write_button.get().lower()}."
-                # "Overwrite existing classification?" if self.read_write_button.get().lower()=="read-only" else "test")
                 f"{mid_message} If this is the expected behaviour, please continue.\n(This message will not be shown again.)"
             ),
             icon="info",
             option_1="OK",
             option_focus=1,
         )
+
         if check_overwrite.get() == "OK":
-            self.focus()
             return
+
+    def check_end_objects(self):
+        num_classified = len(
+            np.intersect1d(self.seg_id_col, self.out_cat["SEG_ID"].value)
+        )
+
+        if num_classified < len(self.seg_id_col):
+            check_end = CTkMessagebox(
+                title="End of Input Catalogue",
+                message=(
+                    "You have reached the end of the current object list. However, "
+                    f"only {num_classified}/{len(self.seg_id_col)} objects have been "
+                    "classified. Continue viewing the existing objects, or reload "
+                    "only the unclassified objects?\n\n"
+                    "(If you want to skip classified objects on program load, set "
+                    "`skip_existing = True' in the config file.)"
+                ),
+                icon="info",
+                option_3="Continue",
+                option_2="Reload",
+                option_1="Cancel",
+                option_focus=3,
+                width=500,
+            )
+
+        else:
+            check_end = CTkMessagebox(
+                title="Read/Write Mode",
+                message=(
+                    "You have reached the end of the current object list, and all "
+                    "objects have been classified. Continue viewing objects, or quit?"
+                ),
+                icon="info",
+                option_2="Continue",
+                option_1="Quit",
+                option_focus=2,
+            )
+
+        out = check_end.get()
+        try:
+            out = out.lower()
+        except:
+            out = "cancel"
+
+        self.focus_force()
+        return out
 
     def save_current_object(self, event=None):
         ### This is where the logic for loading/updating the tables will go
