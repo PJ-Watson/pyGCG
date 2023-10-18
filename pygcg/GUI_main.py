@@ -450,7 +450,7 @@ class GCG(ctk.CTk):
                 self.config_file_path = fpe(config_file)
             else:
                 self.config_file_path = "./config.toml"
-            with open(config_file, "rt") as fp:
+            with open(self.config_file_path, "rt") as fp:
                 self.config = tomlkit.load(fp)
             self.write_config()
         except Exception as e:
