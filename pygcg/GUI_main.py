@@ -287,6 +287,7 @@ class GCG(ctk.CTk):
                         f"{self.filter_names[0]},{self.PAs[1]}_COVERAGE",
                         "GRIZLI_REDSHIFT",
                         "ESTIMATED_REDSHIFT",
+                        "UNRELIABLE_REDSHIFT",
                         "COMMENTS",
                     ],
                     dtype=[
@@ -308,6 +309,7 @@ class GCG(ctk.CTk):
                         float,
                         float,
                         float,
+                        bool,
                         str,
                     ],
                 )
@@ -792,7 +794,7 @@ class GCG(ctk.CTk):
         flattened_data = flatten_dict(self.current_gal_data)
 
         if (
-            len(flattened_data) == 19
+            len(flattened_data) == 20
             and self.read_write_button.get() == "Write output"
             and np.sum([*self.object_progress.values()]) == 3
         ):
@@ -862,6 +864,11 @@ class GCG(ctk.CTk):
                     self.current_gal_data[f"{g},{p}"] = {
                         "quality": out_row[f"{g},{p}_QUALITY"]
                     }
+            self.current_gal_data["grizli_redshift"] = out_row["GRIZLI_REDSHIFT"]
+            self.current_gal_data["estimated_redshift"] = out_row["ESTIMATED_REDSHIFT"]
+            self.current_gal_data["unreliable_redshift"] = out_row[
+                "UNRELIABLE_REDSHIFT"
+            ]
 
     def change_sky_coord(self, event=None):
         new_coord = None
