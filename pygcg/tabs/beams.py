@@ -24,6 +24,8 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolb
 from matplotlib.figure import Figure
 from tqdm import tqdm
 
+from ..utils.blitting import BlitManager
+
 
 class BeamFrame(ctk.CTkFrame):
     def __init__(self, master, gal_id, PA, **kwargs):
@@ -94,9 +96,13 @@ class BeamFrame(ctk.CTkFrame):
                     .resolve()
                 ).glob(f"*{self._root().seg_id:0>5}.stack.fits")
             ][0]
-            self.generate_grid()
         except:
             self.file_path = None
+
+        # print (self.master)
+        # if self._root().main_tabs.get() in self._root().tab_names[0:2]:
+            # print ("yes")
+        self.generate_grid()
 
     def change_cmap(self, event=None):
         self._root().plot_options["cmap"] = event
@@ -139,6 +145,8 @@ class BeamFrame(ctk.CTkFrame):
                         extver = "none"
                     extver_list.append(extver)
                 self.beam_single_PA_frame.update_plots(extvers=extver_list)
+
+            self.update()
 
     def generate_grid(self):
         with pf.open(self.file_path) as hdul:
@@ -268,16 +276,11 @@ class SinglePABeamFrame(ctk.CTkFrame):
         self.pad_frame.bind("<Configure>", enforce_aspect_ratio)
 
     def update_plots(self, extvers=None):
+        import time
+        t1 = time.perf_counter()
         self.check_axes_colours()
 
         if extvers != None:
-            try:
-                for current_key in self.plotted_images.keys():
-                    for plot_name in self.plotted_images[current_key].keys():
-                        self.plotted_images[current_key][plot_name].remove()
-                self.plotted_images = dict()
-            except:
-                pass
 
             self.extvers = extvers
             self.quality_frame.reload_extvers(new_extvers=self.extvers)
@@ -296,20 +299,17 @@ class SinglePABeamFrame(ctk.CTkFrame):
                 if name + ver not in self.plotted_images.keys():
                     self.plotted_images[name + ver] = dict()
                 self.plot_kernel(self.fig_axes[j, 2 * i], name, ver)
-                # print (name)
                 self.plot_beam(self.fig_axes[j, (2 * i) + 1], name, ver)
+            
+        # print("T2:", time.perf_counter() - t1)
+
         self.fig.canvas.draw_idle()
 
         self.fig.canvas.get_tk_widget().grid(row=0, column=0, sticky="news")
 
-        self.update()
+        # print("T3:", time.perf_counter() - t1)
 
     def plot_kernel(self, ax, ext, extver):
-        try:
-            self.plotted_images[ext + extver]["kernel"].remove()
-            del self.plotted_images[ext + extver]["kernel"]
-        except:
-            pass
         with pf.open(self.master.file_path) as hdul:
             try:
                 data = hdul["KERNEL", extver].data
@@ -329,29 +329,33 @@ class SinglePABeamFrame(ctk.CTkFrame):
                     interval=interval,
                     stretch=self.stretch_fn(),
                 )
-                self.plotted_images[ext + extver]["kernel"] = ax.imshow(
-                    data,
-                    origin="lower",
-                    cmap=self._root().plot_options["cmap"],
-                    # aspect="auto"
-                    norm=norm,
-                )
+                try:
+                    self.plotted_images[ext + extver]["kernel"].set_data(data)
+                    self.plotted_images[ext + extver]["kernel"].set_norm(norm)
+                    self.plotted_images[ext + extver]["kernel"].set_cmap(
+                        self._root().plot_options["cmap"]
+                    )
+                    self.plotted_images[ext+extver]["kernel"].set_visible(True)
+                except Exception as e:
+                    self.plotted_images[ext + extver]["kernel"] = ax.imshow(
+                        data,
+                        origin="lower",
+                        cmap=self._root().plot_options["cmap"],
+                        # aspect="auto"
+                        norm=norm,
+                        visible=True,
+                    )
                 ax.set_xticklabels("")
                 ax.set_yticklabels("")
                 ax.tick_params(axis="both", direction="in", top=True, right=True)
                 if ax in self.fig_axes[:, 0]:
                     ax.set_ylabel(ext)
             except Exception as e:
-                # print("kernel?", e)
+                if "kernel" in self.plotted_images[ext+extver].keys():
+                    self.plotted_images[ext+extver]["kernel"].set_visible(False)
                 pass
 
     def plot_beam(self, ax, ext, extver):
-        try:
-            self.plotted_images[ext + extver]["beam"].remove()
-            del self.plotted_images[ext + extver]["beam"]
-        except Exception as e:
-            # print ("Error here", e)
-            pass
         with pf.open(self.master.file_path) as hdul:
             try:
                 if ext == "RESIDUALS":
@@ -396,14 +400,23 @@ class SinglePABeamFrame(ctk.CTkFrame):
                     interval=interval,
                     stretch=self.stretch_fn(),
                 )
-                self.plotted_images[ext + extver]["beam"] = ax.imshow(
-                    data - m,
-                    origin="lower",
-                    cmap=self._root().plot_options["cmap"],
-                    aspect="auto",
-                    norm=norm,
-                    extent=extent,
-                )
+                try:
+                    self.plotted_images[ext + extver]["beam"].set_data(data - m)
+                    self.plotted_images[ext + extver]["beam"].set_norm(norm)
+                    self.plotted_images[ext + extver]["beam"].set_cmap(
+                        self._root().plot_options["cmap"]
+                    )
+                    self.plotted_images[ext + extver]["beam"].set_visible(True)
+                except:
+                    self.plotted_images[ext + extver]["beam"] = ax.imshow(
+                        data - m,
+                        origin="lower",
+                        cmap=self._root().plot_options["cmap"],
+                        aspect="auto",
+                        norm=norm,
+                        extent=extent,
+                        visible=True
+                    )
                 ax.tick_params(axis="both", direction="in", top=True, right=True)
 
                 if ax not in self.fig_axes[-1]:
@@ -411,16 +424,30 @@ class SinglePABeamFrame(ctk.CTkFrame):
                     ax.set_yticklabels("")
                 else:
                     ax.set_xlabel(r"$\lambda$ ($\mu$m) - " + extver.split(",")[0])
-            except KeyError:
-                self.plotted_images[ext + extver]["beam"] = ax.text(
-                    0.5,
-                    0.5,
-                    "No data",
-                    transform=ax.transAxes,
-                    ha="center",
-                    va="center",
-                    c=self._root().text_colour,
-                )
+                try:
+                    self.plotted_images[ext + extver]["beam_failed"].set_visible(False)
+                except:
+                    pass
+            except KeyError as e:
+                # print (e)
+                try:
+                    self.plotted_images[ext + extver]["beam_failed"].set_visible(True)
+                except Exception as e:
+                    # print (e)
+
+                    self.plotted_images[ext + extver]["beam_failed"] = ax.text(
+                        0.5,
+                        0.5,
+                        "No data",
+                        transform=ax.transAxes,
+                        ha="center",
+                        va="center",
+                        c=self._root().text_colour,
+                    )
+                try:
+                    self.plotted_images[ext + extver]["beam"].set_visible(False)
+                except:
+                    pass
                 self._root().current_gal_data[extver]["coverage"] = 0.0
                 self.quality_frame.quality_menus[extver].set("Unusable")
                 self.quality_frame.quality_menus[extver].configure(state="disabled")

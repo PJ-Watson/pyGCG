@@ -1,4 +1,3 @@
-import collections
 import re
 from pathlib import Path
 
@@ -16,6 +15,7 @@ from pygcg.tabs.beams import BeamFrame
 from pygcg.tabs.spectrum import SpecFrame
 from pygcg.windows.comments import CommentsWindow
 from pygcg.windows.settings import SettingsWindow
+from pygcg.utils.misc import fpe, flatten_dict
 
 
 class GCG(ctk.CTk):
@@ -205,14 +205,55 @@ class GCG(ctk.CTk):
 
     def rescan_and_reload(self):
         try:
-            assert len(self.config["files"]["out_dir"]) > 0
+            # assert len(self.config["files"]["out_dir"]) > 0
             # assert len(self.config["files"]["cat_path"]) > 0
-            assert self.cat is not None
             assert len(self.config["files"]["extractions_dir"]) > 0
 
-            self.out_cat_path = (
-                fpe(self.config["files"]["out_dir"]) / "pyGCG_output.fits"
-            )
+            try:
+                self.cat = QTable.read(fpe(self.config["files"]["cat_path"]))
+            except:
+                try:
+                    self.cat = QTable.read(
+                        [*fpe(self.config["files"]["extractions_dir"]).glob("*ir.cat.fits")][0]
+                    )
+                except:
+                    self.cat = None
+
+            assert self.cat is not None
+
+
+
+            self.filter_names = [
+                self.config["grisms"].get("R", "F200W"),
+                self.config["grisms"].get("G", "F150W"),
+                self.config["grisms"].get("B", "F115W"),
+            ]
+            self.PAs = [
+                str(self.config["grisms"].get("PA1", 72.0)),
+                str(self.config["grisms"].get("PA2", 341.0)),
+            ]
+
+            try:
+                assert len(self.config["files"]["out_dir"]) > 0
+
+                fpe(self.config["files"]["out_dir"]).mkdir(exist_ok=True, parents=True)
+                self.out_dir = fpe(self.config["files"]["out_dir"])
+
+                if len(self.config["files"]["temp_dir"]) > 0:
+                    fpe(self.config["files"]["temp_dir"]).mkdir(exist_ok=True, parents=True)
+                    self.temp_dir = fpe(self.config["files"]["temp_dir"])
+                else:
+                    self.temp_dir = self.out_dir / ".temp"
+                    self.temp_dir.mkdir(exist_ok=True)
+                
+                self.out_cat_path = (
+                    fpe(self.config["files"]["out_dir"]) / "pyGCG_output.fits"
+                )
+                self.read_write_button.configure(state="normal")
+            except:
+                print("Could not find or create output directory. Disabling write mode.")
+                self.read_write_button.set("Read-only")
+                self.read_write_button.configure(state="disabled")
 
             try:
                 self.out_cat = QTable.read(self.out_cat_path)
@@ -405,8 +446,10 @@ class GCG(ctk.CTk):
 
     def initialise_configuration(self, config_file=None):
         try:
-            assert config_file is not None
-            self.config_file_path = config_file
+            if config_file is not None:
+                self.config_file_path = fpe(config_file)
+            else:
+                self.config_file_path = "./config.toml"
             with open(config_file, "rt") as fp:
                 self.config = tomlkit.load(fp)
             self.write_config()
@@ -464,34 +507,11 @@ class GCG(ctk.CTk):
             self.config.add("files", files_tab)
             files = self.config["files"]
 
-        for f in ["out_dir", "extractions_dir"]:
+        for f in ["extractions_dir"]:
             try:
                 files[f]
             except:
                 files.add(f, "")
-
-        if len(files["out_dir"]) > 0:
-            try:
-                fpe(files["out_dir"]).mkdir(exist_ok=True, parents=True)
-                self.out_dir = fpe(files["out_dir"])
-                if len(files["temp_dir"]) > 0:
-                    fpe(files["temp_dir"]).mkdir(exist_ok=True, parents=True)
-                    self.temp_dir = fpe(files["temp_dir"])
-                else:
-                    self.temp_dir = self.out_dir / ".temp"
-                    self.temp_dir.mkdir(exist_ok=True)
-            except:
-                print("Could not find or create output directory.")
-
-        try:
-            self.cat = QTable.read(fpe(files["cat_path"]))
-        except:
-            try:
-                self.cat = QTable.read(
-                    [*fpe(files["extractions_dir"]).glob("*ir.cat.fits")][0]
-                )
-            except:
-                self.cat = None
 
         # Catalogue
         try:
@@ -506,16 +526,6 @@ class GCG(ctk.CTk):
         except:
             grism_tab = tomlkit.table()
             self.config.add("grisms", grism_tab)
-
-        self.filter_names = [
-            self.config["grisms"].get("R", "F200W"),
-            self.config["grisms"].get("G", "F150W"),
-            self.config["grisms"].get("B", "F115W"),
-        ]
-        self.PAs = [
-            str(self.config["grisms"].get("PA1", 72.0)),
-            str(self.config["grisms"].get("PA2", 341.0)),
-        ]
 
         # Appearance
         try:
@@ -745,7 +755,7 @@ class GCG(ctk.CTk):
             new_coord = SkyCoord(self.current_gal_coords.get())
         except ValueError:
             try:
-                parts = re.split("[,|;|\s]\s*", self.current_gal_coords.get())
+                parts = re.split("\s*[,|;|\s]\s*", self.current_gal_coords.get())
                 if len(parts) == 2:
                     new_coord = SkyCoord(
                         float(parts[0]) * u.deg, float(parts[1]) * u.deg
@@ -769,6 +779,8 @@ class GCG(ctk.CTk):
                 return
 
         sky_match_idx, dist, _ = new_coord.match_to_catalog_sky(self.sky_coords)
+
+        print (f"Closest match: ID {self.id_col[sky_match_idx]}, on-sky distance {dist[0].to(u.arcsec)}.")
 
         self.current_gal_id.set(self.id_col[sky_match_idx])
 
@@ -816,24 +828,6 @@ class MyTabView(ctk.CTkTabview):
                 self.tab(name).bind("<<TabChanged>>", expose_bind_fns[i])
             except:
                 pass
-
-
-def fpe(filepath):
-    return Path(filepath).expanduser().resolve()
-
-
-def flatten_dict(input_dict, parent_key=False, separator="_"):
-    items = []
-    for key, value in input_dict.items():
-        new_key = str(parent_key) + separator + key if parent_key else key
-        if isinstance(value, collections.abc.MutableMapping):
-            items.extend(flatten_dict(value, new_key, separator).items())
-        elif isinstance(value, list):
-            for k, v in enumerate(value):
-                items.extend(flatten_dict({str(k): v}, new_key).items())
-        else:
-            items.append((new_key.upper(), value))
-    return dict(items)
 
 
 def run_app(**kwargs):

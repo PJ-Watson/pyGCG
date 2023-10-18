@@ -30,7 +30,8 @@ from photutils.aperture import (
 )
 from tqdm import tqdm
 
-from .toolbar_utils import VerticalNavigationToolbar2Tk
+from ..utils.toolbar import VerticalNavigationToolbar2Tk
+from ..utils.misc import update_errorbar, error_bar_visibility
 
 
 class SpecFrame(ctk.CTkFrame):
@@ -49,17 +50,9 @@ class SpecFrame(ctk.CTkFrame):
         self.plot_options_frame = ctk.CTkFrame(self)
         self.plot_options_frame.grid(row=0, column=0, columnspan=2, sticky="ew")
 
-        # self.scrollable_frame = ctk.CTkScrollableFrame(self)
-        # self.scrollable_frame.grid(row=0, column=2, rowspan=2, sticky="news")
-        # self.scrollable_frame.grid_columnconfigure(0, weight=1)
-
         self.redshift_plot = RedshiftPlotFrame(self, self.gal_id)
         self.redshift_plot.grid(row=1, column=2, sticky="news")
 
-        # self.reference_lines_label = ctk.CTkLabel(
-        #     self.scrollable_frame, text="Show reference lines:"
-        # )
-        # self.reference_lines_label.grid(row=0, padx=10, pady=(10, 0), sticky="w")
         self.emission_checkbox = ctk.CTkCheckBox(
             self.plot_options_frame, text="Emission", command=self.change_lines
         )
@@ -163,11 +156,6 @@ class SpecFrame(ctk.CTkFrame):
         self.nav_toolbar.winfo_children()[-1].config(
             background=self._root().bg_colour_name
         )
-        # self.nav_toolbar._message_label.config(background=self._root().bg_colour_name)
-        # for button in self.nav_toolbar.winfo_children():
-        #     button.config(background=self._root().bg_colour_name)
-        # self.nav_toolbar.update()
-        # self.nav_toolbar._rescale()
         self.nav_toolbar.update()
 
     def update_plot(self):
@@ -204,11 +192,9 @@ class SpecFrame(ctk.CTkFrame):
 
             self._update_all()
 
-            self.add_lines()
-
             f = zoom_factory(self.fig_axes)
 
-            self.pyplot_canvas.draw_idle()
+            # self.pyplot_canvas.draw_idle()
 
             self.pyplot_canvas.get_tk_widget().grid(row=1, column=1, sticky="news")
             self.nav_toolbar.grid(row=1, column=0, sticky="news")
@@ -216,12 +202,11 @@ class SpecFrame(ctk.CTkFrame):
         if self.gal_id != self._root().current_gal_id.get():
             self.gal_id = self._root().current_gal_id.get()
             self._update_all()
-            self.update_lines()
-            self.pyplot_canvas.draw()
-            self.update()
         else:
             self._update_data()
 
+
+        self.pyplot_canvas.draw_idle()
         self.update()
         self.fig.set_layout_engine("none")
 
@@ -260,6 +245,8 @@ class SpecFrame(ctk.CTkFrame):
             self.plot_grizli(templates=True)
         if self.muse_checkbox.get():
             self.plot_MUSE_spec()
+
+        self.change_lines()
         self.images_frame.update_images()
         self.redshift_plot.update_z_grid()
 
@@ -279,19 +266,13 @@ class SpecFrame(ctk.CTkFrame):
 
         ymax = 0
         colours = {
-            "F115W": "C0",
-            "F150W": "C1",
-            "F200W": "C2",
+            self._root().filter_names[0]: "C2",
+            self._root().filter_names[1]: "C1",
+            self._root().filter_names[2]: "C0",
         }
 
         if dict_key not in self.plotted_components.keys():
             self.plotted_components[dict_key] = dict()
-        else:
-            try:
-                for v in self.plotted_components[dict_key].values():
-                    v.remove()
-            except:
-                pass
         with pf.open(file_path) as hdul:
             for hdu in hdul[1:]:
                 data_table = Table(hdu.data)
@@ -299,13 +280,21 @@ class SpecFrame(ctk.CTkFrame):
                 if clip.sum() == 0:
                     clip = np.isfinite(data_table["err"])
                 if templates:
-                    (self.plotted_components[dict_key][hdu.name],) = self.fig_axes.plot(
-                        data_table["wave"][clip],
-                        data_table["line"][clip] / data_table["flat"][clip] / 1e-19,
-                        c="red",
-                        alpha=0.7,
-                        zorder=10,
-                    )
+                    try:
+                        self.plotted_components[dict_key][hdu.name].set_data(
+                            data_table["wave"][clip],
+                            data_table["line"][clip] / data_table["flat"][clip] / 1e-19,
+                        )
+                    except:
+                        (
+                            self.plotted_components[dict_key][hdu.name],
+                        ) = self.fig_axes.plot(
+                            data_table["wave"][clip],
+                            data_table["line"][clip] / data_table["flat"][clip] / 1e-19,
+                            c="red",
+                            alpha=0.7,
+                            zorder=10,
+                        )
                 else:
                     try:
                         y_vals = (
@@ -327,17 +316,26 @@ class SpecFrame(ctk.CTkFrame):
                         y_err = (
                             data_table["err"][clip] / data_table["flat"][clip] / 1e-19
                         )
-                    self.plotted_components[dict_key][
-                        hdu.name
-                    ] = self.fig_axes.errorbar(
-                        data_table["wave"][clip],
-                        y_vals,
-                        yerr=y_err,
-                        fmt="o",
-                        markersize=3,
-                        ecolor=colors.to_rgba(colours[hdu.name], 0.5),
-                        c=colours[hdu.name],
-                    )
+
+                    try:
+                        update_errorbar(
+                            self.plotted_components[dict_key][hdu.name],
+                            data_table["wave"][clip],
+                            y_vals,
+                            yerr=y_err,
+                        )
+                    except:
+                        self.plotted_components[dict_key][
+                            hdu.name
+                        ] = self.fig_axes.errorbar(
+                            data_table["wave"][clip],
+                            y_vals,
+                            yerr=y_err,
+                            fmt="o",
+                            markersize=3,
+                            ecolor=colors.to_rgba(colours[hdu.name], 0.5),
+                            c=colours[hdu.name],
+                        )
                     ymax = np.nanmax([ymax, np.nanmax(y_vals)])
 
         if not templates:
@@ -469,7 +467,7 @@ class SpecFrame(ctk.CTkFrame):
             )
 
         self.fig_axes.set_xlim(xlims)
-        self.pyplot_canvas.draw()
+        self.pyplot_canvas.draw_idle()
 
     def update_lines(self, event=None):
         if type(event) == float:
@@ -498,7 +496,7 @@ class SpecFrame(ctk.CTkFrame):
             except:
                 pass
 
-        self.fig.canvas.draw()
+        self.fig.canvas.draw_idle()
 
         self.redshift_plot.update_z_line()
 
@@ -518,81 +516,64 @@ class SpecFrame(ctk.CTkFrame):
 
         if self.grizli_checkbox.get():
             self.plot_grizli()
+            view = True
         elif "grisms" in self.plotted_components.keys():
+            view = False
+        try:
             for v in self.plotted_components["grisms"].values():
-                v.remove()
-            del self.plotted_components["grisms"]
+                error_bar_visibility(v, view)
+        except Exception as e:
+            pass
 
         if self.grizli_temp_checkbox.get():
             self.plot_grizli(templates=True)
+            view = True
         elif "grism_templates" in self.plotted_components.keys():
+            view = False
+        try:
             for v in self.plotted_components["grism_templates"].values():
-                v.remove()
-            del self.plotted_components["grism_templates"]
+                v.set_visible(view)
+        except Exception as e:
+            pass
 
-        self.pyplot_canvas.draw()
-        self.update()
+        self.pyplot_canvas.draw_idle()
 
     def change_lines(self):
-        if (
-            self.emission_checkbox.get()
-            and len(self.plotted_components["emission"]) == 0
-        ):
+        if len(self.plotted_components["emission"]) == 0:
             self.add_lines(line_type="emission")
-            self.update_lines()
-        elif (
-            not self.emission_checkbox.get()
-            and len(self.plotted_components["emission"]) > 0
-        ):
-            for line in self.fig_axes.get_lines():
-                if line in self.plotted_components["emission"].values():
-                    line.remove()
-            for line_key, line_data in self._root().config["lines"]["emission"].items():
-                del self.plotted_components["emission"][line_key]
-
-        if (
-            self.absorption_checkbox.get()
-            and len(self.plotted_components["absorption"]) == 0
-        ):
+        # if self.emission_checkbox.get():
+        for line in self.plotted_components["emission"].values():
+            line.set_visible(self.emission_checkbox.get())
+        if len(self.plotted_components["absorption"]) == 0:
             self.add_lines(line_type="absorption")
-            self.update_lines()
-        elif (
-            not self.absorption_checkbox.get()
-            and len(self.plotted_components["absorption"]) > 0
-        ):
-            for line in self.fig_axes.get_lines():
-                if line in self.plotted_components["absorption"].values():
-                    line.remove()
-            for line_key, line_data in (
-                self._root().config["lines"]["absorption"].items()
-            ):
-                del self.plotted_components["absorption"][line_key]
+        for line in self.plotted_components["absorption"].values():
+            line.set_visible(self.absorption_checkbox.get())
 
-        self.pyplot_canvas.draw()
-        self.update()
+        self.all_plotted_lines = (
+            self.plotted_components["emission"] | self.plotted_components["absorption"]
+        )
+        self.config_lines_data = (
+            self._root().config["lines"]["emission"]
+            | self._root().config["lines"]["absorption"]
+        )
+
+        self.update_lines()
+
+        self.pyplot_canvas.draw_idle()
 
     def hover(self, event):
         if event.inaxes == self.fig_axes:
-            for line_type in ["emission", "absorption"]:
-                if len(self.plotted_components[line_type]) > 0:
-                    for line_key, line_data in (
-                        self._root().config["lines"][line_type].items()
-                    ):
-                        if self.plotted_components[line_type][line_key].contains(event)[
-                            0
-                        ]:
-                            self.custom_annotation.xy = [event.xdata, event.ydata]
-                            self.custom_annotation.set_text(
-                                self._root().config["lines"][line_type][line_key][
-                                    "latex_name"
-                                ]
-                            )
-
-                            self.custom_annotation.set_visible(True)
-                            self.fig.canvas.draw()
-                            return
+            for k, l in self.all_plotted_lines.items():
+                if l.contains(event)[0] and l.get_visible():
+                    self.custom_annotation.xy = [event.xdata, event.ydata]
+                    self.custom_annotation.set_text(
+                        self.config_lines_data[k]["latex_name"]
+                    )
+                    self.custom_annotation.set_visible(True)
+                    self.fig.canvas.draw_idle()
+                    return
         self.custom_annotation.set_visible(False)
-        self.fig.canvas.draw()
+        self.fig.canvas.draw_idle()
 
 
 # based on https://gist.github.com/tacaswell/3144287
@@ -727,6 +708,7 @@ class ImagesFrame(ctk.CTkFrame):
             a.set_xticklabels("")
             a.set_yticklabels("")
             a.tick_params(axis="both", direction="in", top=True, right=True)
+            # a.tick_params(axis="both", direction="in", left=False, bottom=False)
 
         self.default_cmap = colors.ListedColormap(["C1", "C0", "C2", "C3", "C4", "C5"])
 
@@ -771,43 +753,61 @@ class ImagesFrame(ctk.CTkFrame):
             else:
                 self.rgb_paths.append(rgb_path[0])
 
-    def plot_images(self, border=5):
-        if self.seg_path is None and all(x is None for x in self.rgb_paths):
-            print("No images to plot.")
-            for a, f in zip(self.fig_axes[:-2][::-1], self._root().filter_names):
-                self.plotted_components[f"{f}_text"] = a.text(
-                    0.5,
-                    0.5,
-                    f,
-                    transform=a.transAxes,
-                    ha="center",
-                    va="center",
-                    c=self._root().text_colour,
-                )
-            self.plotted_components[f"rgb_text"] = self.fig_axes[-2].text(
+    def plot_failed(self, ax, plot_name, text=None):
+        for k in ["img", "marker", "text"]:
+            try:
+                self.plotted_components[f"{plot_name}_{k}"].set_visible(False)
+            except Exception as e:
+                pass
+        if text is None:
+            text = f"No data found\nfor {plot_name}."
+        try:
+            self.plotted_components[f"{plot_name}_failed"].set_text(text)
+            self.plotted_components[f"{plot_name}_failed"].set_visible(True)
+        except:
+            self.plotted_components[f"{plot_name}_failed"] = ax.text(
                 0.5,
                 0.5,
-                "No images found.",
-                transform=self.fig_axes[-2].transAxes,
+                text,
+                transform=ax.transAxes,
                 ha="center",
                 va="center",
                 c=self._root().text_colour,
-            )
-            self.plotted_components[f"seg_text"] = self.fig_axes[-1].text(
-                0.5,
-                0.5,
-                "Segmentation map\nnot found.",
-                transform=self.fig_axes[-1].transAxes,
-                ha="center",
-                va="center",
-                c=self._root().text_colour,
+                visible=True,
             )
 
-            return
-        if self.seg_path is not None:
-            for k, v in self.plotted_components.items():
-                v.remove()
-            self.plotted_components = {}
+    def plot_images(self, border=5):
+        plot_names = self._root().filter_names[::-1] + ["rgb", "seg"]
+
+        # if self.seg_path is None and all(x is None for x in self.rgb_paths):
+        #     print("No images to plot.")
+        #     missing_data_text = self._root().filter_names[::-1] + [
+        #         "No images found.",
+        #         "Segmentation map\nnot found.",
+        #     ]
+
+        #     try:
+        #         for v in self.plotted_components.values():
+        #             v.set_visible(False)
+        #     except:
+        #         pass
+
+        #     for a, n, t in zip(self.fig_axes, plot_names, missing_data_text):
+        #         print(t)
+        #         self.plotted_components[f"{n}_text"] = a.text(
+        #             0.5,
+        #             0.5,
+        #             t,
+        #             transform=a.transAxes,
+        #             ha="center",
+        #             va="center",
+        #             c=self._root().text_colour,
+        #             visible=True
+        #         )
+        #     self.pyplot_canvas.draw_idle()
+        #     return
+
+        try:
             with pf.open(self.seg_path) as hdul:
                 seg_wcs = WCS(hdul[0].header)
                 seg_data = hdul[0].data
@@ -863,33 +863,56 @@ class ImagesFrame(ctk.CTkFrame):
                 cutout_copy = cutout % 5 + 1
                 cutout_copy[cutout == float(self._root().seg_id)] = 0
 
-                self.plotted_components["seg"] = self.fig_axes[-1].imshow(
-                    cutout_copy,
-                    origin="lower",
-                    cmap=self.default_cmap,
-                    aspect="equal",
-                    extent=[0, cutout_copy.shape[0], 0, cutout_copy.shape[1]],
-                )
+                try:
+                    self.plotted_components["seg_img"].set_data(cutout_copy)
+                    self.plotted_components["seg_img"].set_extent(
+                        [0, cutout_copy.shape[0], 0, cutout_copy.shape[1]]
+                    )
+                    self.plotted_components["seg_img"].set_visible(True)
+                except Exception as e:
+                    self.plotted_components["seg_img"] = self.fig_axes[-1].imshow(
+                        cutout_copy,
+                        origin="lower",
+                        cmap=self.default_cmap,
+                        interpolation="nearest",
+                        vmin=0,
+                        vmax=5,
+                        aspect="equal",
+                        extent=[0, cutout_copy.shape[0], 0, cutout_copy.shape[1]],
+                        visible=True,
+                    )
                 self.fig_axes[-1].set_xlim(xmax=cutout_copy.shape[0])
                 self.fig_axes[-1].set_ylim(ymax=cutout_copy.shape[1])
 
-                self.plotted_components["seg_marker"] = self.fig_axes[-1].scatter(
-                    y_c
-                    - int(
-                        np.clip(
-                            np.nanmin(location[1]) - border - h_d, 0, seg_data.shape[1]
-                        )
-                    ),
-                    x_c
-                    - int(
-                        np.clip(
-                            np.nanmin(location[0]) - border - w_d, 0, seg_data.shape[0]
-                        )
-                    ),
-                    marker="P",
-                    c="k",
+                marker_xs = y_c - int(
+                    np.clip(np.nanmin(location[1]) - border - h_d, 0, seg_data.shape[1])
                 )
-        if not all(x is None for x in self.rgb_paths):
+                marker_ys = x_c - int(
+                    np.clip(np.nanmin(location[0]) - border - w_d, 0, seg_data.shape[0])
+                )
+                try:
+                    self.plotted_components["seg_marker"].set_offsets(
+                        (marker_xs, marker_ys)
+                    )
+                    self.plotted_components["seg_marker"].set_visible(True)
+                except Exception as e:
+                    self.plotted_components["seg_marker"] = self.fig_axes[-1].scatter(
+                        marker_xs,
+                        marker_ys,
+                        marker="P",
+                        c="k",
+                        visible=True,
+                    )
+            if "seg_failed" in self.plotted_components.keys():
+                self.plotted_components["seg_failed"].set_visible(False)
+        except:
+            self.plot_failed(
+                ax=self.fig_axes[-1],
+                plot_name="seg",
+                text="Segmentation map\nnot found.",
+            )
+
+        try:
             self.rgb_data = np.empty(
                 (
                     3,
@@ -911,14 +934,30 @@ class ImagesFrame(ctk.CTkFrame):
                 self.rgb_data[2],
                 stretch=0.1,  # Q=10
             )
-            self.plotted_components["rgb"] = self.fig_axes[-2].imshow(
-                self.rgb_stretched,
-                origin="lower",
-                aspect="equal",
-                extent=[0, self.rgb_stretched.shape[0], 0, self.rgb_stretched.shape[1]],
-            )
+            try:
+                self.plotted_components["rgb_img"].set_data(self.rgb_stretched)
+                self.plotted_components["rgb_img"].set_extent(
+                    [0, self.rgb_stretched.shape[0], 0, self.rgb_stretched.shape[1]]
+                )
+                self.plotted_components["rgb_img"].set_visible(True)
+            except Exception as e:
+                self.plotted_components["rgb_img"] = self.fig_axes[-2].imshow(
+                    self.rgb_stretched,
+                    origin="lower",
+                    aspect="equal",
+                    extent=[
+                        0,
+                        self.rgb_stretched.shape[0],
+                        0,
+                        self.rgb_stretched.shape[1],
+                    ],
+                    visible=True,
+                )
             self.fig_axes[-2].set_xlim(xmax=self.rgb_stretched.shape[0])
             self.fig_axes[-2].set_ylim(ymax=self.rgb_stretched.shape[1])
+
+            if "rgb_failed" in self.plotted_components.keys():
+                self.plotted_components["rgb_failed"].set_visible(False)
 
             vmax = np.nanmax(
                 [1.1 * np.percentile(self.rgb_data, 98), 5 * np.std(self.rgb_data)]
@@ -928,27 +967,55 @@ class ImagesFrame(ctk.CTkFrame):
             for a, d, f in zip(
                 self.fig_axes[:-2][::-1], self.rgb_data, self._root().filter_names
             ):
-                norm = ImageNormalize(
-                    d,
-                    interval=interval,
-                    stretch=SqrtStretch(),
-                )
-                self.plotted_components[f] = a.imshow(
-                    d,
-                    origin="lower",
-                    cmap="binary",
-                    aspect="equal",
-                    extent=[0, d.shape[0], 0, d.shape[1]],
-                    norm=norm,
-                )
-                self.plotted_components[f"{f}_text"] = a.text(
-                    0.05, 0.95, f, transform=a.transAxes, ha="left", va="top", c="red"
-                )
+                try:
+                    norm = ImageNormalize(
+                        d,
+                        interval=interval,
+                        stretch=SqrtStretch(),
+                    )
+                    try:
+                        self.plotted_components[f"{f}_img"].set_data(d)
+                        self.plotted_components[f"{f}_img"].set_extent(
+                            [0, d.shape[0], 0, d.shape[1]]
+                        )
+                        self.plotted_components[f"{f}_img"].set_norm(norm)
+                    except:
+                        self.plotted_components[f"{f}_img"] = a.imshow(
+                            d,
+                            origin="lower",
+                            cmap="binary",
+                            aspect="equal",
+                            extent=[0, d.shape[0], 0, d.shape[1]],
+                            norm=norm,
+                        )
 
-        # self.fig_axes.set_facecolor("0.7")
+                    try:
+                        self.plotted_components[f"{f}_text"].set_text(f)
+                    except:
+                        self.plotted_components[f"{f}_text"] = a.text(
+                            0.05,
+                            0.95,
+                            f,
+                            transform=a.transAxes,
+                            ha="left",
+                            va="top",
+                            c="red",
+                        )
+                    
+                    if f"{f}_failed" in self.plotted_components.keys():
+                        self.plotted_components[f"{f}_failed"].set_visible(False)
+                except:
+                    self.plot_failed(ax=a, plot_name=f)
+        except Exception as e:
+            self.plot_failed(ax=self.fig_axes[-2], plot_name="rgb")
+            for a, f in zip(
+                self.fig_axes[:3], plot_names[:3]
+            ):
+                self.plot_failed(ax=a, plot_name=f)
+
 
         self.pyplot_canvas.draw_idle()
-        self.update()
+        # self.update()
 
     def update_images(self, force=False):
         self.check_axes_colours()
@@ -1103,33 +1170,39 @@ class RedshiftPlotFrame(ctk.CTkFrame):
             self.fits_path = self.fits_path[0]
 
     def plot_z_grid(self):
-        if self.fits_path is None:
-            print("No redshift grid to plot.")
-            self.plotted_components[f"z_text"] = self.fig_axes.text(
-                0.5,
-                0.5,
-                "No data.",
-                transform=self.fig_axes.transAxes,
-                ha="center",
-                va="center",
-                c=self._root().text_colour,
-            )
-        else:
-            for k, v in self.plotted_components.items():
-                v.remove()
-            self.plotted_components = {}
+        try:
             with pf.open(self.fits_path) as hdul_all:
+                hdul = hdul_all["ZFIT_STACK"]
                 try:
-                    hdul = hdul_all["ZFIT_STACK"]
+                    self.plotted_components["chi2_grid"].set_data(
+                        hdul.data["zgrid"],
+                        hdul.data["chi2"] / hdul.header["DOF"],
+                    )
                 except:
-                    print("Cannot find redshift grid.")
-                    return
-                (self.plotted_components["chi2_grid"],) = self.fig_axes.plot(
-                    hdul.data["zgrid"],
-                    hdul.data["chi2"] / hdul.header["DOF"],
-                )
+                    (self.plotted_components["chi2_grid"],) = self.fig_axes.plot(
+                        hdul.data["zgrid"],
+                        hdul.data["chi2"] / hdul.header["DOF"],
+                    )
                 self.fig_axes.relim()
                 self.fig_axes.autoscale()
+            try:
+                self.plotted_components[f"z_failed"].set_visible(False)
+            except:
+                pass
+        except:
+            try:
+                self.plotted_components[f"z_failed"].set_visible(True)
+            except:
+                self.plotted_components[f"z_failed"] = self.fig_axes.text(
+                    0.5,
+                    0.5,
+                    "No data.",
+                    transform=self.fig_axes.transAxes,
+                    ha="center",
+                    va="center",
+                    c=self._root().text_colour,
+                    visible=True,
+                )
 
         self.update_z_line()
 
@@ -1151,7 +1224,7 @@ class RedshiftPlotFrame(ctk.CTkFrame):
             )
 
         self.pyplot_canvas.draw_idle()
-        self.update()
+        # self.update()
 
     def update_z_grid(self, force=False):
         self.check_axes_colours()
