@@ -154,7 +154,7 @@ class GCG(ctk.CTk):
         )
         self.progress_status = ctk.CTkLabel(
             nav_frame,
-            text="???:",
+            text="",
         )
         self.progress_status.grid(
             row=1,
@@ -201,13 +201,13 @@ class GCG(ctk.CTk):
         )
         self.find_coord_button.grid(row=1, column=5, padx=(5, 20), pady=10, sticky="w")
 
-        self.rescan_and_reload()
+        self.rescan_and_reload(message=False)
 
-    def rescan_and_reload(self):
+    def rescan_and_reload(self, message=True):
         try:
             # assert len(self.config["files"]["out_dir"]) > 0
             # assert len(self.config["files"]["cat_path"]) > 0
-            assert len(self.config["files"]["extractions_dir"]) > 0
+            assert len(self.config["files"]["extractions_dir"]) > 0, "Extractions directory is not defined."
 
             try:
                 self.cat = QTable.read(fpe(self.config["files"]["cat_path"]))
@@ -219,9 +219,7 @@ class GCG(ctk.CTk):
                 except:
                     self.cat = None
 
-            assert self.cat is not None
-
-
+            assert self.cat is not None, "No catalogue found."
 
             self.filter_names = [
                 self.config["grisms"].get("R", "F200W"),
@@ -335,6 +333,9 @@ class GCG(ctk.CTk):
                     and f"{s:0>5}" in stack_ids
                 ):
                     id_idx_list.append(i)
+
+            assert len(id_idx_list) > 0, f"No matches found in the extractions directory for the {len(self.id_col)} objects in the catalogue."
+
             try:
                 sorted_idx = np.asarray(id_idx_list)[
                     np.argsort(self.id_col[id_idx_list].astype(float))
@@ -361,8 +362,17 @@ class GCG(ctk.CTk):
 
             self.generate_tabs()
         except Exception as e:
-            print(e)
-            self.generate_splash()
+            if message == False:
+                self.generate_splash()
+            else:
+                error = CTkMessagebox(
+                    title="Error",
+                    message=e,
+                    icon="cancel",
+                    option_focus=1,
+                )
+                if error.get() == "OK":
+                    self.generate_splash()
 
     def generate_splash(self):
         self.splash_frame = ctk.CTkFrame(self)
