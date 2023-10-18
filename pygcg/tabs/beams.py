@@ -101,7 +101,7 @@ class BeamFrame(ctk.CTkFrame):
 
         # print (self.master)
         # if self._root().main_tabs.get() in self._root().tab_names[0:2]:
-            # print ("yes")
+        # print ("yes")
         self.generate_grid()
 
     def change_cmap(self, event=None):
@@ -277,11 +277,11 @@ class SinglePABeamFrame(ctk.CTkFrame):
 
     def update_plots(self, extvers=None):
         import time
+
         t1 = time.perf_counter()
         self.check_axes_colours()
 
         if extvers != None:
-
             self.extvers = extvers
             self.quality_frame.reload_extvers(new_extvers=self.extvers)
 
@@ -300,7 +300,7 @@ class SinglePABeamFrame(ctk.CTkFrame):
                     self.plotted_images[name + ver] = dict()
                 self.plot_kernel(self.fig_axes[j, 2 * i], name, ver)
                 self.plot_beam(self.fig_axes[j, (2 * i) + 1], name, ver)
-            
+
         # print("T2:", time.perf_counter() - t1)
 
         self.fig.canvas.draw_idle()
@@ -335,7 +335,7 @@ class SinglePABeamFrame(ctk.CTkFrame):
                     self.plotted_images[ext + extver]["kernel"].set_cmap(
                         self._root().plot_options["cmap"]
                     )
-                    self.plotted_images[ext+extver]["kernel"].set_visible(True)
+                    self.plotted_images[ext + extver]["kernel"].set_visible(True)
                 except Exception as e:
                     self.plotted_images[ext + extver]["kernel"] = ax.imshow(
                         data,
@@ -351,8 +351,8 @@ class SinglePABeamFrame(ctk.CTkFrame):
                 if ax in self.fig_axes[:, 0]:
                     ax.set_ylabel(ext)
             except Exception as e:
-                if "kernel" in self.plotted_images[ext+extver].keys():
-                    self.plotted_images[ext+extver]["kernel"].set_visible(False)
+                if "kernel" in self.plotted_images[ext + extver].keys():
+                    self.plotted_images[ext + extver]["kernel"].set_visible(False)
                 pass
 
     def plot_beam(self, ax, ext, extver):
@@ -415,7 +415,7 @@ class SinglePABeamFrame(ctk.CTkFrame):
                         aspect="auto",
                         norm=norm,
                         extent=extent,
-                        visible=True
+                        visible=True,
                     )
                 ax.tick_params(axis="both", direction="in", top=True, right=True)
 

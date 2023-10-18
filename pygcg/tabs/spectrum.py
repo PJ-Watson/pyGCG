@@ -30,8 +30,8 @@ from photutils.aperture import (
 )
 from tqdm import tqdm
 
+from ..utils.misc import error_bar_visibility, update_errorbar
 from ..utils.toolbar import VerticalNavigationToolbar2Tk
-from ..utils.misc import update_errorbar, error_bar_visibility
 
 
 class SpecFrame(ctk.CTkFrame):
@@ -204,7 +204,6 @@ class SpecFrame(ctk.CTkFrame):
             self._update_all()
         else:
             self._update_data()
-
 
         self.pyplot_canvas.draw_idle()
         self.update()
@@ -1001,18 +1000,15 @@ class ImagesFrame(ctk.CTkFrame):
                             va="top",
                             c="red",
                         )
-                    
+
                     if f"{f}_failed" in self.plotted_components.keys():
                         self.plotted_components[f"{f}_failed"].set_visible(False)
                 except:
                     self.plot_failed(ax=a, plot_name=f)
         except Exception as e:
             self.plot_failed(ax=self.fig_axes[-2], plot_name="rgb")
-            for a, f in zip(
-                self.fig_axes[:3], plot_names[:3]
-            ):
+            for a, f in zip(self.fig_axes[:3], plot_names[:3]):
                 self.plot_failed(ax=a, plot_name=f)
-
 
         self.pyplot_canvas.draw_idle()
         # self.update()

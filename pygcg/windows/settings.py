@@ -58,15 +58,12 @@ class SettingsSelection(ctk.CTkFrame):
         )
 
     def change_settings_callback(self, event=None):
-
         if self.settings_value.get() == "":
             new_value = ""
         else:
             new_value = fpe(self.settings_value.get())
 
-        self._root().config["files"][self.value_key] = str(
-            new_value
-        )
+        self._root().config["files"][self.value_key] = str(new_value)
         self._root().write_config()
 
         self.master.focus()
@@ -83,10 +80,7 @@ class SettingsSelection(ctk.CTkFrame):
         path_output = str(
             ctk.filedialog.askopenfilename(
                 parent=self,
-                initialdir=fpe(self.settings_value.get())
-                .expanduser()
-                .resolve()
-                .parent,
+                initialdir=fpe(self.settings_value.get()).parent,
             )
         )
         if Path(path_output) is not None and Path(path_output).is_file():

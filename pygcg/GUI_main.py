@@ -13,9 +13,9 @@ from tqdm import tqdm
 
 from pygcg.tabs.beams import BeamFrame
 from pygcg.tabs.spectrum import SpecFrame
+from pygcg.utils.misc import flatten_dict, fpe
 from pygcg.windows.comments import CommentsWindow
 from pygcg.windows.settings import SettingsWindow
-from pygcg.utils.misc import fpe, flatten_dict
 
 
 class GCG(ctk.CTk):
@@ -207,14 +207,20 @@ class GCG(ctk.CTk):
         try:
             # assert len(self.config["files"]["out_dir"]) > 0
             # assert len(self.config["files"]["cat_path"]) > 0
-            assert len(self.config["files"]["extractions_dir"]) > 0, "Extractions directory is not defined."
+            assert (
+                len(self.config["files"]["extractions_dir"]) > 0
+            ), "Extractions directory is not defined."
 
             try:
                 self.cat = QTable.read(fpe(self.config["files"]["cat_path"]))
             except:
                 try:
                     self.cat = QTable.read(
-                        [*fpe(self.config["files"]["extractions_dir"]).glob("*ir.cat.fits")][0]
+                        [
+                            *fpe(self.config["files"]["extractions_dir"]).glob(
+                                "*ir.cat.fits"
+                            )
+                        ][0]
                     )
                 except:
                     self.cat = None
@@ -238,18 +244,22 @@ class GCG(ctk.CTk):
                 self.out_dir = fpe(self.config["files"]["out_dir"])
 
                 if len(self.config["files"]["temp_dir"]) > 0:
-                    fpe(self.config["files"]["temp_dir"]).mkdir(exist_ok=True, parents=True)
+                    fpe(self.config["files"]["temp_dir"]).mkdir(
+                        exist_ok=True, parents=True
+                    )
                     self.temp_dir = fpe(self.config["files"]["temp_dir"])
                 else:
                     self.temp_dir = self.out_dir / ".temp"
                     self.temp_dir.mkdir(exist_ok=True)
-                
+
                 self.out_cat_path = (
                     fpe(self.config["files"]["out_dir"]) / "pyGCG_output.fits"
                 )
                 self.read_write_button.configure(state="normal")
             except:
-                print("Could not find or create output directory. Disabling write mode.")
+                print(
+                    "Could not find or create output directory. Disabling write mode."
+                )
                 self.read_write_button.set("Read-only")
                 self.read_write_button.configure(state="disabled")
 
@@ -334,7 +344,9 @@ class GCG(ctk.CTk):
                 ):
                     id_idx_list.append(i)
 
-            assert len(id_idx_list) > 0, f"No matches found in the extractions directory for the {len(self.id_col)} objects in the catalogue."
+            assert (
+                len(id_idx_list) > 0
+            ), f"No matches found in the extractions directory for the {len(self.id_col)} objects in the catalogue."
 
             try:
                 sorted_idx = np.asarray(id_idx_list)[
@@ -790,7 +802,9 @@ class GCG(ctk.CTk):
 
         sky_match_idx, dist, _ = new_coord.match_to_catalog_sky(self.sky_coords)
 
-        print (f"Closest match: ID {self.id_col[sky_match_idx]}, on-sky distance {dist[0].to(u.arcsec)}.")
+        print(
+            f"Closest match: ID {self.id_col[sky_match_idx]}, on-sky distance {dist[0].to(u.arcsec)}."
+        )
 
         self.current_gal_id.set(self.id_col[sky_match_idx])
 

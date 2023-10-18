@@ -24,7 +24,7 @@ dependencies = [
     "CTkMessageBox>=2.5",
     "matplotlib>=3.6",
     "tqdm>=4.66",
-    "photutils>=1.9"
+    "photutils>=1.9",
 ]
 
 [project.urls]
@@ -39,5 +39,5 @@ line-length = 88
 target-version = ['py311']
 extend-exclude = '(.*.txt|.*.md|.*.toml|.*.odg)'
 
-[tools.isort]
+[tool.isort]
 profile = "black"
