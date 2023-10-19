@@ -12,17 +12,6 @@ temp_dir = "" # [optional] The directory in which temporary files are stored. De
 skip_existing = false # [optional] Skip loading objects which already exist in the output catalogue.
 out_cat_name = "" # [optional] The name of the output catalogue. Defaults to "pyGCG_output.fits"
 
-[appearance]
-appearance_mode = "system" # System (default), light, or dark.
-theme = "blue" # Blue (default), dark-blue, or green. The CustomTKinter color theme. Can also point to the location of a custom .json file describing the desired theme.
-
-[cat]
-# [optional] If the catalogue does not contain id, ra, and dec column names, specify the equivalent labels here.
-id = "NUMBER"
-ra = "X_WORLD"
-dec = "Y_WORLD"
-seg_id = "NUMBER" # [optional] If the galaxy id is different to the id in the segmentation map, and by extension, the grizli output files
-
 [grisms]
 # [optional] Change these if using different grisms. R, G, B refer to the red, green and blue channels in the image viewer.
 R = "F200W"
@@ -32,11 +21,25 @@ B = "F115W"
 PA1 = 72.0
 PA2 = 341.0
 
+[catalogue]
+# [optional] If the catalogue does not contain id, ra, and dec column names, specify the equivalent labels here.
+id = "NUMBER"
+ra = "X_WORLD"
+dec = "Y_WORLD"
+seg_id = "NUMBER" # [optional] If the galaxy id is different to the id in the segmentation map, and by extension, the grizli output files
+
+
+
+[appearance]
+appearance_mode = "system" # System (default), light, or dark.
+theme = "blue" # Blue (default), dark-blue, or green. The CustomTKinter color theme. Can also point to the location of a custom .json file describing the desired theme.
+
+
 [lines]
 # [optional] These tables define the lines shown in the redshift tab.
 
     [lines.emission]
-    # These are the emission lines.
+    # These are the emission lines. Each name (lines.emission.XXX) must be unique.
 
         [lines.emission.Lyman_alpha]
         latex_name = "Ly$\\alpha$"

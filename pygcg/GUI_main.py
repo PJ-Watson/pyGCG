@@ -314,9 +314,13 @@ class GCG(ctk.CTk):
                     ],
                 )
 
-            self.id_col = self.cat[self.config["cat"].get("id", "id")].astype(str)
+            self.id_col = self.cat[
+                self.config.get("cat", {}).get("id", "NUMBER")
+            ].astype(str)
             self.seg_id_col = self.cat[
-                self.config["cat"].get("seg_id", self.config["cat"].get("id", "id"))
+                self.config.get("cat", {}).get(
+                    "seg_id", self.config.get("cat", {}).get("id", "NUMBER")
+                )
             ].astype(int)
 
             # Segmentation map ids must be a unique identifier!
@@ -351,20 +355,20 @@ class GCG(ctk.CTk):
                 len(id_idx_list) > 0
             ), f"No matches found in the extractions directory for the {len(self.id_col)} objects in the catalogue."
 
-            try:
-                sorted_idx = np.asarray(id_idx_list)[
-                    np.argsort(self.id_col[id_idx_list].astype(float))
-                ]
+            # try:
+            #     sorted_idx = np.asarray(id_idx_list)[
+            #         np.argsort(self.id_col[id_idx_list].astype(float))
+            #     ]
 
-            except Exception as e:
-                sorted_idx = id_idx_list
+            # except Exception as e:
+            sorted_idx = id_idx_list
 
             self.id_col = self.id_col[sorted_idx]
             self.seg_id_col = self.seg_id_col[sorted_idx]
             self.cat = self.cat[sorted_idx]
             self.sky_coords = SkyCoord(
-                self.cat[self.config["cat"].get("ra", "ra")],
-                self.cat[self.config["cat"].get("dec", "dec")],
+                self.cat[self.config.get("cat", {}).get("ra", "X_WORLD")],
+                self.cat[self.config.get("cat", {}).get("dec", "Y_WORLD")],
             )
 
             assert len(self.id_col) > 0
@@ -538,12 +542,12 @@ class GCG(ctk.CTk):
             except:
                 files.add(f, "")
 
-        # Catalogue
-        try:
-            cat = self.config["cat"]
-        except:
-            cat_tab = tomlkit.table()
-            self.config.add("cat", cat_tab)
+        # # Catalogue
+        # try:
+        #     cat = self.config["cat"]
+        # except:
+        #     cat_tab = tomlkit.table()
+        #     self.config.add("cat", cat_tab)
 
         # Grisms
         try:
@@ -842,9 +846,11 @@ class GCG(ctk.CTk):
         self.current_gal_data = {}
         self.current_gal_data["id"] = self.current_gal_id.get()
         self.current_gal_data["seg_id"] = self.seg_id
-        self.current_gal_data["ra"] = self.tab_row[self.config["cat"].get("ra", "ra")]
+        self.current_gal_data["ra"] = self.tab_row[
+            self.config.get("cat", {}).get("ra", "X_WORLD")
+        ]
         self.current_gal_data["dec"] = self.tab_row[
-            self.config["cat"].get("dec", "dec")
+            self.config.get("cat", {}).get("dec", "Y_WORLD")
         ]
         self.current_gal_data["comments"] = ""
 

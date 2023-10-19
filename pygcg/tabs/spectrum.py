@@ -385,8 +385,12 @@ class SpecFrame(ctk.CTkFrame):
             MUSE_spec = self.cube_extract_spectra(
                 cube_hdul[1].data,
                 cube_wcs,
-                self._root().tab_row[self._root().config["cat"].get("ra", "ra")],
-                self._root().tab_row[self._root().config["cat"].get("dec", "dec")],
+                self._root().tab_row[
+                    self._root().config.get("cat", {}).get("ra", "X_WORLD")
+                ],
+                self._root().tab_row[
+                    self._root().config.get("cat", {}).get("dec", "Y_WORLD")
+                ],
                 # radius=tab_row["r50_SE"][0],
             )
 
@@ -839,8 +843,8 @@ class ImagesFrame(ctk.CTkFrame):
                 y_c, x_c = extract_pixel_ra_dec(
                     self._root().tab_row,
                     seg_wcs,
-                    key_ra=self._root().config["cat"].get("ra", "ra"),
-                    key_dec=self._root().config["cat"].get("dec", "dec"),
+                    key_ra=self._root().config.get("cat", {}).get("ra", "X_WORLD"),
+                    key_dec=self._root().config.get("cat", {}).get("dec", "Y_WORLD"),
                 ).value
 
                 location = np.where(seg_data == self._root().seg_id)
