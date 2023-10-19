@@ -30,7 +30,7 @@ from photutils.aperture import (
 )
 from tqdm import tqdm
 
-from ..utils.misc import error_bar_visibility, update_errorbar
+from ..utils.misc import ValidateFloatVar, error_bar_visibility, update_errorbar
 from ..utils.toolbar import VerticalNavigationToolbar2Tk
 
 
@@ -698,24 +698,6 @@ def zoom_factory(ax, base_scale=1.1):
     return disconnect_zoom
 
 
-# From https://stackoverflow.com/questions/4140437/
-class ValidateFloatVar(ctk.StringVar):
-    """StringVar subclass that only allows valid float values to be put in it."""
-
-    def __init__(self, master=None, value=None, name=None):
-        ctk.StringVar.__init__(self, master, value, name)
-        self._old_value = self.get()
-        self.trace("w", self._validate)
-
-    def _validate(self, *_):
-        new_value = self.get()
-        try:
-            new_value == "" or float(new_value)
-            self._old_value = new_value
-        except ValueError:
-            ctk.StringVar.set(self, self._old_value)
-
-
 class ImagesFrame(ctk.CTkFrame):
     def __init__(self, master, gal_id, **kwargs):
         super().__init__(master, **kwargs)
@@ -1206,7 +1188,7 @@ class RedshiftPlotFrame(ctk.CTkFrame):
                 Path(self._root().config["files"]["extractions_dir"])
                 .expanduser()
                 .resolve()
-            ).glob(f"*{self.gal_id:0>{pad}}.full.fits")
+            ).glob(f"*{self._root().seg_id:0>{pad}}.full.fits")
         ]
         if len(self.fits_path) == 0:
             print("Full extraction data not found.")

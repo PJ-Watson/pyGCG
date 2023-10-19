@@ -1,6 +1,7 @@
 import collections
 from pathlib import Path
 
+import customtkinter as ctk
 import numpy as np
 
 
@@ -112,3 +113,21 @@ def error_bar_visibility(errobj, visible=True):
             err_bot.set_visible(visible)
         except ValueError:  # in case there is no caps
             pass
+
+
+# From https://stackoverflow.com/questions/4140437/
+class ValidateFloatVar(ctk.StringVar):
+    """StringVar subclass that only allows valid float values to be put in it."""
+
+    def __init__(self, master=None, value=None, name=None):
+        ctk.StringVar.__init__(self, master, value, name)
+        self._old_value = self.get()
+        self.trace("w", self._validate)
+
+    def _validate(self, *_):
+        new_value = self.get()
+        try:
+            new_value == "" or float(new_value)
+            self._old_value = new_value
+        except ValueError:
+            ctk.StringVar.set(self, self._old_value)

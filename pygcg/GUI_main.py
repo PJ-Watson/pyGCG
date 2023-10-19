@@ -13,7 +13,7 @@ from tqdm import tqdm
 
 from pygcg.tabs.beams import BeamFrame
 from pygcg.tabs.spectrum import SpecFrame
-from pygcg.utils.misc import flatten_dict, fpe
+from pygcg.utils.misc import ValidateFloatVar, flatten_dict, fpe
 from pygcg.windows.comments import CommentsWindow
 from pygcg.windows.settings import SettingsWindow
 
@@ -55,8 +55,8 @@ class GCG(ctk.CTk):
             # columnspan=5,
             sticky="ew",
         )
-        nav_frame.grid_columnconfigure((0, 1, 3, 5, 6, 7), weight=1, uniform="blah")
-        nav_frame.grid_columnconfigure((2, 4), weight=0, uniform="other")
+        nav_frame.grid_columnconfigure((0, 1, 2, 3, 5, 6, 7), weight=1, uniform="blah")
+        nav_frame.grid_columnconfigure((4), weight=0, uniform="other")
 
         self.read_write_button = ctk.CTkSegmentedButton(
             nav_frame,
@@ -119,15 +119,24 @@ class GCG(ctk.CTk):
 
         self.warning_flag = True
 
+        self.id_frame = ctk.CTkFrame(nav_frame, fg_color=self.bg_colour_name)
+        self.id_frame.grid(
+            column=2,
+            row=0,
+            columnspan=2,
+            sticky="ew",
+        )
+        self.id_frame.grid_columnconfigure((0, 1), weight=1, uniform="blah")
+
         self.current_gal_id = ctk.StringVar(master=self)
         self.current_gal_coords = ctk.StringVar(master=self)
         gal_id_label = ctk.CTkLabel(
-            nav_frame,
+            self.id_frame,
             text="Current ID:",
         )
         gal_id_label.grid(
             row=0,
-            column=2,
+            column=0,
             padx=(20, 5),
             pady=10,
             sticky="e",
@@ -166,7 +175,7 @@ class GCG(ctk.CTk):
             sticky="w",
         )
         self.current_gal_entry = ctk.CTkEntry(
-            nav_frame,
+            self.id_frame,
             textvariable=self.current_gal_id,
         )
         self.current_gal_entry.bind(
@@ -175,7 +184,7 @@ class GCG(ctk.CTk):
         )
         self.current_gal_entry.grid(
             row=0,
-            column=3,
+            column=1,
             padx=(5, 20),
             pady=10,
             sticky="w",
@@ -323,9 +332,8 @@ class GCG(ctk.CTk):
                     name in self.cat.colnames
                 ), f'No <{key}> column with name "{name}" found in catalogue.'
 
-            self.id_col = self.cat[
-                self.config.get("catalogue", {}).get("id", "NUMBER")
-            ].astype(str)
+            id_name = self.config.get("catalogue", {}).get("id", "NUMBER")
+            self.id_col = self.cat[id_name].astype(str)
 
             seg_name = self.config.get("catalogue", {}).get(
                 "seg_id", self.config.get("catalogue", {}).get("id", "NUMBER")
@@ -334,6 +342,40 @@ class GCG(ctk.CTk):
                 seg_name in self.cat.colnames
             ), f'No <seg_id> column with name "{seg_name}" found in catalogue.'
             self.seg_id_col = self.cat[seg_name].astype(int)
+
+            if id_name != seg_name:
+                print("gotta do something")
+
+                self.id_frame.grid_columnconfigure((0, 2), weight=0, uniform="label")
+                self.id_frame.grid_columnconfigure((1, 3), weight=1, uniform="entry")
+
+                self.seg_id_label = ctk.CTkLabel(
+                    self.id_frame,
+                    text="Segmentation ID:",
+                )
+                self.seg_id_label.grid(
+                    row=0,
+                    column=2,
+                    padx=(20, 5),
+                    pady=10,
+                    sticky="e",
+                )
+                self.current_seg_id = ValidateFloatVar(self)
+                self.current_seg_entry = ctk.CTkEntry(
+                    self.id_frame,
+                    textvariable=self.current_seg_id,
+                )
+                self.current_seg_entry.bind(
+                    "<Return>",
+                    self.change_seg_entry,
+                )
+                self.current_seg_entry.grid(
+                    row=0,
+                    column=3,
+                    padx=(5, 20),
+                    pady=10,
+                    sticky="w",
+                )
 
             # Segmentation map ids must be a unique identifier!
             # If you're reading this comment, something has gone horribly wrong
@@ -384,6 +426,8 @@ class GCG(ctk.CTk):
             self.current_gal_id.set(self.id_col[0])
             self.tab_row = self.cat[0]
             self.seg_id = self.seg_id_col[0]
+            if hasattr(self, "current_seg_id"):
+                self.current_seg_id.set(self.seg_id)
 
             self.set_current_data()
 
@@ -830,6 +874,8 @@ class GCG(ctk.CTk):
         if len(self.tab_row) > 1:
             self.tab_row = self.tab_row[0]
         self.seg_id = self.seg_id_col[self.id_col == self.current_gal_id.get()][0]
+        if hasattr(self, "current_seg_id"):
+            self.current_seg_id.set(self.seg_id)
 
         self.set_current_data()
 
@@ -914,7 +960,46 @@ class GCG(ctk.CTk):
 
     def change_id_entry(self, event=None):
         self.save_current_object()
-        self.change_gal_id()
+
+        try:
+            new_id = self.id_col[self.id_col == self.current_gal_entry.get()].value[0]
+            self.current_gal_id.set(new_id)
+            self.change_gal_id()
+        except:
+            error = CTkMessagebox(
+                title="Error",
+                message="Input is not a valid ID.",
+                icon="cancel",
+                option_focus=1,
+            )
+            if error.get() == "OK":
+                self.id_col[self.seg_id_col == self.seg_id].value[0]
+                self.current_gal_id.set(
+                    self.id_col[self.seg_id_col == self.seg_id].value[0]
+                )
+                self.focus()
+                return
+
+    def change_seg_entry(self, event=None):
+        self.save_current_object()
+
+        try:
+            new_id = self.id_col[
+                self.seg_id_col == int(self.current_seg_entry.get())
+            ].value[0]
+            self.current_gal_id.set(new_id)
+            self.change_gal_id()
+        except:
+            error = CTkMessagebox(
+                title="Error",
+                message="Input is not a valid segmentation map ID.",
+                icon="cancel",
+                option_focus=1,
+            )
+            if error.get() == "OK":
+                self.current_seg_id.set(self.seg_id)
+                self.focus()
+                return
 
     def read_write_colour(self, event=None):
         if self.read_write_button.get() == "Read-only":
