@@ -93,8 +93,8 @@ This table can be used to specify non-standard column names (compared to the def
 | Key | Default | Description |
 | --- | --- | --- |
 | `id` | `"NUMBER"` | The unique label used to identify objects. Any type which can be represented as a string is acceptable. |
-| `ra` | `"X_WORLD"` | |
-| `dec` | `"Y_WORLD"` | |
+| `ra` | `"X_WORLD"` | The right ascension of the object, assumed to be in degrees if no unit is present. |
+| `dec` | `"Y_WORLD"` | The declination of the object, assumed to be in degrees if no unit is present. |
 | `seg_id` | `"NUMBER"` | The unique number corresponding to the object identification in the `grizli` segmentation map and extractions (_e.g._ `nis-wfss_{seg_id}.1D.fits`). By default, this is also used as the object `id`. |
 | `seg_id_length` | `5` | The number of characters used for `seg_id`, which is assumed to be zero-padded (_e.g._ 76 -> 00076). |
 

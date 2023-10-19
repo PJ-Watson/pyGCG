@@ -271,9 +271,9 @@ class SpecFrame(ctk.CTkFrame):
         if self.muse_checkbox.get():
             self.plot_MUSE_spec()
 
+        self.redshift_plot.update_z_grid()
         self.change_lines()
         self.images_frame.update_images()
-        self.redshift_plot.update_z_grid()
 
     def plot_grizli(self, templates=False):
         pad = self._root().config.get("catalogue", {}).get("seg_id_length", 5)
@@ -1216,7 +1216,15 @@ class RedshiftPlotFrame(ctk.CTkFrame):
                         hdul.data["chi2"] / hdul.header["DOF"],
                     )
                 self.fig_axes.relim()
-                self.fig_axes.autoscale()
+                self.fig_axes.autoscale(axis="y")
+                z_range = np.nanmax(hdul.data["zgrid"]) - np.nanmin(hdul.data["zgrid"])
+                self.fig_axes.set_xlim(
+                    [
+                        np.nanmin(hdul.data["zgrid"]) - 0.05 * z_range,
+                        np.nanmax(hdul.data["zgrid"]) + 0.05 * z_range,
+                    ]
+                )
+
             try:
                 self.plotted_components[f"z_failed"].set_visible(False)
             except:
