@@ -68,7 +68,7 @@ class GCG(ctk.CTk):
         self.read_write_button.grid(
             row=0,
             column=1,
-            padx=20,
+            padx=10,
             pady=10,
             sticky="ew",
         )
@@ -82,7 +82,7 @@ class GCG(ctk.CTk):
         self.open_settings_button.grid(
             row=1,
             column=1,
-            padx=20,
+            padx=10,
             pady=10,
             sticky="ew",
         )
@@ -92,7 +92,7 @@ class GCG(ctk.CTk):
             command=self.prev_gal_button_callback,
         )
         self.prev_gal_button.grid(
-            row=0, column=0, padx=20, pady=10, rowspan=2, sticky="news"
+            row=0, column=0, padx=10, pady=10, rowspan=2, sticky="news"
         )
         self.next_gal_button = ctk.CTkButton(
             nav_frame,
@@ -100,7 +100,7 @@ class GCG(ctk.CTk):
             command=self.next_gal_button_callback,
         )
         self.next_gal_button.grid(
-            row=0, column=7, padx=20, pady=10, rowspan=2, sticky="news"
+            row=0, column=7, padx=10, pady=10, rowspan=2, sticky="news"
         )
         self.comments_button = ctk.CTkButton(
             nav_frame,
@@ -110,7 +110,7 @@ class GCG(ctk.CTk):
         self.comments_button.grid(
             row=0,
             column=6,
-            padx=20,
+            padx=10,
             pady=10,
             sticky="ew",
         )
@@ -137,7 +137,7 @@ class GCG(ctk.CTk):
         gal_id_label.grid(
             row=0,
             column=0,
-            padx=(20, 5),
+            padx=(10, 5),
             pady=10,
             sticky="e",
         )
@@ -148,7 +148,7 @@ class GCG(ctk.CTk):
         gal_coord_label.grid(
             row=0,
             column=4,
-            padx=(20, 5),
+            padx=(10, 5),
             pady=10,
             sticky="e",
         )
@@ -159,7 +159,7 @@ class GCG(ctk.CTk):
         progress_label.grid(
             row=1,
             column=2,
-            padx=(20, 5),
+            padx=(10, 5),
             pady=10,
             sticky="e",
         )
@@ -170,7 +170,7 @@ class GCG(ctk.CTk):
         self.progress_status.grid(
             row=1,
             column=3,
-            padx=(5, 20),
+            padx=(5, 10),
             pady=10,
             sticky="w",
         )
@@ -185,7 +185,7 @@ class GCG(ctk.CTk):
         self.current_gal_entry.grid(
             row=0,
             column=1,
-            padx=(5, 20),
+            padx=(5, 10),
             pady=10,
             sticky="w",
         )
@@ -201,7 +201,7 @@ class GCG(ctk.CTk):
         self.coord_entry.grid(
             row=0,
             column=5,
-            padx=(5, 20),
+            padx=(5, 10),
             pady=10,
             sticky="w",
         )
@@ -210,11 +210,11 @@ class GCG(ctk.CTk):
             text="Sky search",
             command=self.change_sky_coord,
         )
-        self.find_coord_button.grid(row=1, column=5, padx=(5, 20), pady=10, sticky="w")
+        self.find_coord_button.grid(row=1, column=5, padx=(5, 10), pady=10, sticky="w")
 
-        self.rescan_and_reload(message=False)
+        self.rescan_and_reload()
 
-    def rescan_and_reload(self, message=True, skip=False):
+    def rescan_and_reload(self, skip=False):
         try:
             assert (
                 len(self.config["files"]["extractions_dir"]) > 0
@@ -338,14 +338,27 @@ class GCG(ctk.CTk):
             seg_name = self.config.get("catalogue", {}).get(
                 "seg_id", self.config.get("catalogue", {}).get("id", "NUMBER")
             )
-            assert (
-                seg_name in self.cat.colnames
-            ), f'No <seg_id> column with name "{seg_name}" found in catalogue.'
+            if not seg_name in self.cat.colnames:
+                warn_seg = CTkMessagebox(
+                    title="Invalid Configuration",
+                    message=(
+                        f'No <seg_id> column with name "{seg_name}" '
+                        f'found in catalogue. Use <id> ("{id_name}") '
+                        "instead, or cancel?"
+                    ),
+                    icon="warning",
+                    option_1="Cancel",
+                    option_2="Continue",
+                    option_focus=2,
+                )
+                if warn_seg.get() == "Cancel":
+                    return
+                else:
+                    seg_name = id_name
+
             self.seg_id_col = self.cat[seg_name].astype(int)
 
             if id_name != seg_name:
-                print("gotta do something")
-
                 self.id_frame.grid_columnconfigure((0, 2), weight=0, uniform="label")
                 self.id_frame.grid_columnconfigure((1, 3), weight=1, uniform="entry")
 
@@ -356,7 +369,7 @@ class GCG(ctk.CTk):
                 self.seg_id_label.grid(
                     row=0,
                     column=2,
-                    padx=(20, 5),
+                    padx=(10, 5),
                     pady=10,
                     sticky="e",
                 )
@@ -372,10 +385,18 @@ class GCG(ctk.CTk):
                 self.current_seg_entry.grid(
                     row=0,
                     column=3,
-                    padx=(5, 20),
+                    padx=(5, 10),
                     pady=10,
                     sticky="w",
                 )
+            else:
+                try:
+                    self.current_seg_entry.destroy()
+                    del self.current_seg_id
+                    self.seg_id_label.destroy()
+                    self.id_frame.grid_columnconfigure((0, 1), weight=1, uniform="blah")
+                except Exception as e:
+                    pass
 
             # Segmentation map ids must be a unique identifier!
             # If you're reading this comment, something has gone horribly wrong
@@ -409,9 +430,10 @@ class GCG(ctk.CTk):
                 ):
                     id_idx_list.append(i)
 
-            assert (
-                len(id_idx_list) > 0
-            ), f"No matches found in the extractions directory for the {len(self.id_col)} objects in the catalogue."
+            assert len(id_idx_list) > 0, (
+                f"No matches found in the extractions directory for the "
+                f"{len(self.id_col)} objects in the catalogue."
+            )
 
             self.id_col = self.id_col[id_idx_list]
             self.seg_id_col = self.seg_id_col[id_idx_list]
@@ -433,17 +455,14 @@ class GCG(ctk.CTk):
 
             self.generate_tabs()
         except Exception as e:
-            if message == False:
+            error = CTkMessagebox(
+                title="Error",
+                message=e,
+                icon="cancel",
+                option_focus=1,
+            )
+            if error.get() == "OK":
                 self.generate_splash()
-            else:
-                error = CTkMessagebox(
-                    title="Error",
-                    message=e,
-                    icon="cancel",
-                    option_focus=1,
-                )
-                if error.get() == "OK":
-                    self.generate_splash()
 
     def generate_splash(self):
         self.splash_frame = ctk.CTkFrame(self)
@@ -486,7 +505,7 @@ class GCG(ctk.CTk):
             tab_names=self.tab_names,
             command=self.main_tabs_update,
         )
-        self.main_tabs.grid(row=1, column=0, padx=20, pady=0, sticky="news")
+        self.main_tabs.grid(row=1, column=0, padx=10, pady=0, sticky="news")
         self.main_tabs._segmented_button.grid(sticky="ew")
 
         self.full_spec_frame = SpecFrame(
@@ -517,6 +536,9 @@ class GCG(ctk.CTk):
         self.update_progress()
 
     def select_quality_menu(self, event=None):
+        if event != None and event.widget.winfo_class() == ("Entry" or "Textbox"):
+            return
+
         if self.beam_frame_1.winfo_viewable():
             widg = self.beam_frame_1
         else:
@@ -537,7 +559,8 @@ class GCG(ctk.CTk):
         except Exception as e:
             print(e)
             print(
-                "No valid config file supplied. Creating config.toml in the current working directory."
+                "No valid config file supplied. "
+                "Creating config.toml in the current working directory."
             )
             example_path = Path(__file__).parent / "example_config.toml"
             with open(example_path, "rt") as fp:
@@ -614,7 +637,8 @@ class GCG(ctk.CTk):
             appearance.add("theme", "blue")
             appearance["theme"].comment(
                 "Blue (default), dark-blue, or green. The CustomTKinter color theme. "
-                + "Can also point to the location of a custom .json file describing the desired theme."
+                "This can also point to the location of a custom .json file describing"
+                " the desired theme."
             )
 
         # Lines
@@ -774,8 +798,10 @@ class GCG(ctk.CTk):
         check_overwrite = CTkMessagebox(
             title="Read/Write Mode",
             message=(
-                f"This program is currently set to {self.read_write_button.get().lower()}."
-                f"{mid_message} If this is the expected behaviour, please continue.\n(This message will not be shown again.)"
+                f"This program is currently set to "
+                f"{self.read_write_button.get().lower()}."
+                f"{mid_message} If this is the expected behaviour, please continue."
+                "\n\n(This message will not be shown again.)"
             ),
             icon="info",
             option_1="OK",
@@ -854,7 +880,7 @@ class GCG(ctk.CTk):
                     option_focus=2,
                 )
                 if warn_overwrite.get() == "Cancel":
-                    self.focus()
+                    self.focus_force()
                     return
                 else:
                     self.out_cat.remove_rows(
@@ -862,7 +888,7 @@ class GCG(ctk.CTk):
                             0
                         ]
                     )
-                    self.focus()
+                    self.focus_force()
             self.out_cat.add_row(flattened_data)
             self.out_cat.write(self.out_cat_path, overwrite=True)
 
@@ -880,7 +906,7 @@ class GCG(ctk.CTk):
         self.set_current_data()
 
         self.main_tabs_update()
-        self.focus()
+        self.focus_force()
 
     def set_current_data(self):
         self.current_gal_data = {}
@@ -943,18 +969,19 @@ class GCG(ctk.CTk):
                 option_focus=1,
             )
             if error.get() == "OK":
-                self.focus()
+                self.focus_force()
                 return
 
         sky_match_idx, dist, _ = new_coord.match_to_catalog_sky(self.sky_coords)
 
         print(
-            f"Closest match: ID {self.id_col[sky_match_idx]}, on-sky distance {dist[0].to(u.arcsec)}."
+            f"Closest match: ID {self.id_col[sky_match_idx]}, "
+            f"on-sky distance {dist[0].to(u.arcsec)}."
         )
 
         self.current_gal_id.set(self.id_col[sky_match_idx])
 
-        self.focus()
+        self.focus_force()
         self.save_current_object()
         self.change_gal_id()
 
@@ -977,7 +1004,7 @@ class GCG(ctk.CTk):
                 self.current_gal_id.set(
                     self.id_col[self.seg_id_col == self.seg_id].value[0]
                 )
-                self.focus()
+                self.focus_force()
                 return
 
     def change_seg_entry(self, event=None):
@@ -998,7 +1025,7 @@ class GCG(ctk.CTk):
             )
             if error.get() == "OK":
                 self.current_seg_id.set(self.seg_id)
-                self.focus()
+                self.focus_force()
                 return
 
     def read_write_colour(self, event=None):
