@@ -89,12 +89,13 @@ class BeamFrame(ctk.CTkFrame):
 
         self.gal_id = gal_id
         try:
+            pad = self._root().config.get("catalogue", {}).get("seg_id_length", 5)
             self.file_path = [
                 *(
                     Path(self._root().config["files"]["extractions_dir"])
                     .expanduser()
                     .resolve()
-                ).glob(f"*{self._root().seg_id:0>5}.stack.fits")
+                ).glob(f"*{self._root().seg_id:0>{pad}}.stack.fits")
             ][0]
         except:
             self.file_path = None
@@ -124,12 +125,13 @@ class BeamFrame(ctk.CTkFrame):
             pass
         else:
             self.gal_id = self._root().current_gal_id.get()
+            pad = self._root().config.get("catalogue", {}).get("seg_id_length", 5)
             self.file_path = [
                 *(
                     Path(self._root().config["files"]["extractions_dir"])
                     .expanduser()
                     .resolve()
-                ).glob(f"*{self._root().seg_id:0>5}.stack.fits")
+                ).glob(f"*{self._root().seg_id:0>{pad}}.stack.fits")
             ][0]
             with pf.open(self.file_path) as hdul:
                 header = hdul[0].header

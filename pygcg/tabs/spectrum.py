@@ -219,12 +219,13 @@ class SpecFrame(ctk.CTkFrame):
         self.fig.set_layout_engine("none")
 
     def _update_data(self):
+        pad = self._root().config.get("catalogue", {}).get("seg_id_length", 5)
         _row_path = [
             *(
                 Path(self._root().config["files"]["extractions_dir"])
                 .expanduser()
                 .resolve()
-            ).glob(f"*{self._root().seg_id:0>5}.row.fits")
+            ).glob(f"*{self._root().seg_id:0>{pad}}.row.fits")
         ][0]
         with pf.open(_row_path) as hdul:
             grizli_redshift = Table(hdul[1].data)["redshift"].value[0]
@@ -275,12 +276,13 @@ class SpecFrame(ctk.CTkFrame):
         self.redshift_plot.update_z_grid()
 
     def plot_grizli(self, templates=False):
+        pad = self._root().config.get("catalogue", {}).get("seg_id_length", 5)
         file_path = [
             *(
                 Path(self._root().config["files"]["extractions_dir"])
                 .expanduser()
                 .resolve()
-            ).glob(f"*{self._root().seg_id:0>5}.1D.fits")
+            ).glob(f"*{self._root().seg_id:0>{pad}}.1D.fits")
         ][0]
 
         if templates:
@@ -386,10 +388,10 @@ class SpecFrame(ctk.CTkFrame):
                 cube_hdul[1].data,
                 cube_wcs,
                 self._root().tab_row[
-                    self._root().config.get("cat", {}).get("ra", "X_WORLD")
+                    self._root().config.get("catalogue", {}).get("ra", "X_WORLD")
                 ],
                 self._root().tab_row[
-                    self._root().config.get("cat", {}).get("dec", "Y_WORLD")
+                    self._root().config.get("catalogue", {}).get("dec", "Y_WORLD")
                 ],
                 # radius=tab_row["r50_SE"][0],
             )
@@ -595,7 +597,7 @@ class SpecFrame(ctk.CTkFrame):
                 if l.contains(event)[0] and l.get_visible():
                     self.custom_annotation.xy = [event.xdata, event.ydata]
                     self.custom_annotation.set_text(
-                        self.config_lines_data[k]["latex_name"]
+                        self.config_lines_data[k]["tex_name"]
                     )
                     self.custom_annotation.set_visible(True)
                     self.fig.canvas.draw_idle()
@@ -843,8 +845,12 @@ class ImagesFrame(ctk.CTkFrame):
                 y_c, x_c = extract_pixel_ra_dec(
                     self._root().tab_row,
                     seg_wcs,
-                    key_ra=self._root().config.get("cat", {}).get("ra", "X_WORLD"),
-                    key_dec=self._root().config.get("cat", {}).get("dec", "Y_WORLD"),
+                    key_ra=self._root()
+                    .config.get("catalogue", {})
+                    .get("ra", "X_WORLD"),
+                    key_dec=self._root()
+                    .config.get("catalogue", {})
+                    .get("dec", "Y_WORLD"),
                 ).value
 
                 location = np.where(seg_data == self._root().seg_id)
@@ -1181,12 +1187,13 @@ class RedshiftPlotFrame(ctk.CTkFrame):
         self.fig.canvas.get_tk_widget().config(bg=self._root().bg_colour_name)
 
     def update_fits_path(self):
+        pad = self._root().config.get("catalogue", {}).get("seg_id_length", 5)
         self.fits_path = [
             *(
                 Path(self._root().config["files"]["extractions_dir"])
                 .expanduser()
                 .resolve()
-            ).glob(f"*{self.gal_id:0>5}.full.fits")
+            ).glob(f"*{self.gal_id:0>{pad}}.full.fits")
         ]
         if len(self.fits_path) == 0:
             print("Full extraction data not found.")

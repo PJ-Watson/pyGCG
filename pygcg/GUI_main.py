@@ -207,8 +207,6 @@ class GCG(ctk.CTk):
 
     def rescan_and_reload(self, message=True, skip=False):
         try:
-            # assert len(self.config["files"]["out_dir"]) > 0
-            # assert len(self.config["files"]["cat_path"]) > 0
             assert (
                 len(self.config["files"]["extractions_dir"]) > 0
             ), "Extractions directory is not defined."
@@ -315,16 +313,16 @@ class GCG(ctk.CTk):
                 )
 
             self.id_col = self.cat[
-                self.config.get("cat", {}).get("id", "NUMBER")
+                self.config.get("catalogue", {}).get("id", "NUMBER")
             ].astype(str)
             self.seg_id_col = self.cat[
-                self.config.get("cat", {}).get(
-                    "seg_id", self.config.get("cat", {}).get("id", "NUMBER")
+                self.config.get("catalogue", {}).get(
+                    "seg_id", self.config.get("catalogue", {}).get("id", "NUMBER")
                 )
             ].astype(int)
 
             # Segmentation map ids must be a unique identifier!
-            # If you're reading this message, something has gone horribly wrong
+            # If you're reading this comment, something has gone horribly wrong
             self.seg_id_col, unique_idx = np.unique(self.seg_id_col, return_index=True)
             self.id_col = self.id_col[unique_idx]
             self.cat = self.cat[unique_idx]
@@ -332,9 +330,11 @@ class GCG(ctk.CTk):
 
             id_idx_list = []
 
-            row_ids = [s.stem[-9:-4] for s in dir_to_chk.glob("*.row.fits")]
-            stack_ids = [s.stem[-11:-6] for s in dir_to_chk.glob("*.stack.fits")]
-            oned_ids = [s.stem[-8:-3] for s in dir_to_chk.glob("*.1D.fits")]
+            pad = self.config.get("catalogue", {}).get("seg_id_length", 5)
+
+            row_ids = [s.stem[-4 - pad : -4] for s in dir_to_chk.glob("*.row.fits")]
+            stack_ids = [s.stem[-6 - pad : -6] for s in dir_to_chk.glob("*.stack.fits")]
+            oned_ids = [s.stem[-3 - pad : -3] for s in dir_to_chk.glob("*.1D.fits")]
 
             for i, (n, s) in tqdm(
                 enumerate(zip(self.id_col, self.seg_id_col)),
@@ -345,9 +345,9 @@ class GCG(ctk.CTk):
                     if s in self.out_cat["SEG_ID"]:
                         continue
                 if (
-                    f"{s:0>5}" in row_ids
-                    and f"{s:0>5}" in oned_ids
-                    and f"{s:0>5}" in stack_ids
+                    f"{s:0>{pad}}" in row_ids
+                    and f"{s:0>{pad}}" in oned_ids
+                    and f"{s:0>{pad}}" in stack_ids
                 ):
                     id_idx_list.append(i)
 
@@ -367,8 +367,8 @@ class GCG(ctk.CTk):
             self.seg_id_col = self.seg_id_col[sorted_idx]
             self.cat = self.cat[sorted_idx]
             self.sky_coords = SkyCoord(
-                self.cat[self.config.get("cat", {}).get("ra", "X_WORLD")],
-                self.cat[self.config.get("cat", {}).get("dec", "Y_WORLD")],
+                self.cat[self.config.get("catalogue", {}).get("ra", "X_WORLD")],
+                self.cat[self.config.get("catalogue", {}).get("dec", "Y_WORLD")],
             )
 
             assert len(self.id_col) > 0
@@ -544,10 +544,10 @@ class GCG(ctk.CTk):
 
         # # Catalogue
         # try:
-        #     cat = self.config["cat"]
+        #     cat = self.config["catalogue"]
         # except:
         #     cat_tab = tomlkit.table()
-        #     self.config.add("cat", cat_tab)
+        #     self.config.add("catalogue", cat_tab)
 
         # Grisms
         try:
@@ -604,11 +604,11 @@ class GCG(ctk.CTk):
 
         em_lines = {
             "Lyman_alpha": {
-                "latex_name": r"Ly$\alpha$",
+                "tex_name": r"Ly$\alpha$",
                 "centre": 1215.24,
             },
             "H_alpha": {
-                "latex_name": r"H$\alpha$",
+                "tex_name": r"H$\alpha$",
                 "centre": 6564.61,
             },
         }
@@ -847,10 +847,10 @@ class GCG(ctk.CTk):
         self.current_gal_data["id"] = self.current_gal_id.get()
         self.current_gal_data["seg_id"] = self.seg_id
         self.current_gal_data["ra"] = self.tab_row[
-            self.config.get("cat", {}).get("ra", "X_WORLD")
+            self.config.get("catalogue", {}).get("ra", "X_WORLD")
         ]
         self.current_gal_data["dec"] = self.tab_row[
-            self.config.get("cat", {}).get("dec", "Y_WORLD")
+            self.config.get("catalogue", {}).get("dec", "Y_WORLD")
         ]
         self.current_gal_data["comments"] = ""
 
