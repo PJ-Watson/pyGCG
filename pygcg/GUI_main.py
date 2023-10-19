@@ -213,7 +213,8 @@ class GCG(ctk.CTk):
 
             try:
                 self.cat = QTable.read(fpe(self.config["files"]["cat_path"]))
-            except:
+            except Exception as e:
+                print("Catalogue could not be loaded from `cat_path' in config.")
                 try:
                     self.cat = QTable.read(
                         [
@@ -228,13 +229,13 @@ class GCG(ctk.CTk):
             assert self.cat is not None, "No catalogue found."
 
             self.filter_names = [
-                self.config["grisms"].get("R", "F200W"),
-                self.config["grisms"].get("G", "F150W"),
-                self.config["grisms"].get("B", "F115W"),
+                self.config.get("grisms", {}).get("R", "F200W"),
+                self.config.get("grisms", {}).get("G", "F150W"),
+                self.config.get("grisms", {}).get("B", "F115W"),
             ]
             self.PAs = [
-                str(self.config["grisms"].get("PA1", 72.0)),
-                str(self.config["grisms"].get("PA2", 341.0)),
+                str(self.config.get("grisms", {}).get("PA1", 72.0)),
+                str(self.config.get("grisms", {}).get("PA2", 341.0)),
             ]
 
             try:
@@ -312,18 +313,31 @@ class GCG(ctk.CTk):
                     ],
                 )
 
+            for key, default in zip(
+                ["id", "ra", "dec"], ["NUMBER", "X_WORLD", "Y_WORLD"]
+            ):
+                name = self.config.get("catalogue", {}).get(key, default)
+                assert (
+                    name in self.cat.colnames
+                ), f'No <{key}> column with name "{name}" found in catalogue.'
+
             self.id_col = self.cat[
                 self.config.get("catalogue", {}).get("id", "NUMBER")
             ].astype(str)
-            self.seg_id_col = self.cat[
-                self.config.get("catalogue", {}).get(
-                    "seg_id", self.config.get("catalogue", {}).get("id", "NUMBER")
-                )
-            ].astype(int)
+
+            seg_name = self.config.get("catalogue", {}).get(
+                "seg_id", self.config.get("catalogue", {}).get("id", "NUMBER")
+            )
+            assert (
+                seg_name in self.cat.colnames
+            ), f'No <seg_id> column with name "{seg_name}" found in catalogue.'
+            self.seg_id_col = self.cat[seg_name].astype(int)
 
             # Segmentation map ids must be a unique identifier!
             # If you're reading this comment, something has gone horribly wrong
-            self.seg_id_col, unique_idx = np.unique(self.seg_id_col, return_index=True)
+            _, unique_idx = np.unique(self.seg_id_col, return_index=True)
+            unique_idx = np.sort(unique_idx)
+            self.seg_id_col = self.seg_id_col[unique_idx]
             self.id_col = self.id_col[unique_idx]
             self.cat = self.cat[unique_idx]
             dir_to_chk = fpe(self.config["files"]["extractions_dir"])
@@ -355,17 +369,9 @@ class GCG(ctk.CTk):
                 len(id_idx_list) > 0
             ), f"No matches found in the extractions directory for the {len(self.id_col)} objects in the catalogue."
 
-            # try:
-            #     sorted_idx = np.asarray(id_idx_list)[
-            #         np.argsort(self.id_col[id_idx_list].astype(float))
-            #     ]
-
-            # except Exception as e:
-            sorted_idx = id_idx_list
-
-            self.id_col = self.id_col[sorted_idx]
-            self.seg_id_col = self.seg_id_col[sorted_idx]
-            self.cat = self.cat[sorted_idx]
+            self.id_col = self.id_col[id_idx_list]
+            self.seg_id_col = self.seg_id_col[id_idx_list]
+            self.cat = self.cat[id_idx_list]
             self.sky_coords = SkyCoord(
                 self.cat[self.config.get("catalogue", {}).get("ra", "X_WORLD")],
                 self.cat[self.config.get("catalogue", {}).get("dec", "Y_WORLD")],
@@ -549,12 +555,12 @@ class GCG(ctk.CTk):
         #     cat_tab = tomlkit.table()
         #     self.config.add("catalogue", cat_tab)
 
-        # Grisms
-        try:
-            grisms = self.config["grisms"]
-        except:
-            grism_tab = tomlkit.table()
-            self.config.add("grisms", grism_tab)
+        # # Grisms
+        # try:
+        #     grisms = self.config["grisms"]
+        # except:
+        #     grism_tab = tomlkit.table()
+        #     self.config.add("grisms", grism_tab)
 
         # Appearance
         try:
