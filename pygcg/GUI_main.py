@@ -287,6 +287,7 @@ class GCG(ctk.CTk):
                         "GRIZLI_REDSHIFT",
                         "ESTIMATED_REDSHIFT",
                         "UNRELIABLE_REDSHIFT",
+                        "BAD_SEG_MAP",
                         "COMMENTS",
                     ],
                     dtype=[
@@ -308,6 +309,7 @@ class GCG(ctk.CTk):
                         float,
                         float,
                         float,
+                        bool,
                         bool,
                         str,
                     ],
@@ -548,20 +550,6 @@ class GCG(ctk.CTk):
             except:
                 files.add(f, "")
 
-        # # Catalogue
-        # try:
-        #     cat = self.config["catalogue"]
-        # except:
-        #     cat_tab = tomlkit.table()
-        #     self.config.add("catalogue", cat_tab)
-
-        # # Grisms
-        # try:
-        #     grisms = self.config["grisms"]
-        # except:
-        #     grism_tab = tomlkit.table()
-        #     self.config.add("grisms", grism_tab)
-
         # Appearance
         try:
             appearance = self.config["appearance"]
@@ -755,7 +743,7 @@ class GCG(ctk.CTk):
 
     def check_end_objects(self):
         num_classified = len(
-            np.intersect1d(self.seg_id_col, self.out_cat["SEG_ID"].value)
+            [a for a in self.seg_id_col if a in self.out_cat["SEG_ID"].value]
         )
 
         if num_classified < len(self.seg_id_col):
@@ -804,7 +792,7 @@ class GCG(ctk.CTk):
         flattened_data = flatten_dict(self.current_gal_data)
 
         if (
-            len(flattened_data) == 20
+            len(flattened_data) == 21
             and self.read_write_button.get() == "Write output"
             and np.sum([*self.object_progress.values()]) == 3
         ):
@@ -881,6 +869,7 @@ class GCG(ctk.CTk):
             self.current_gal_data["unreliable_redshift"] = out_row[
                 "UNRELIABLE_REDSHIFT"
             ]
+            self.current_gal_data["bad_seg_map"] = out_row["BAD_SEG_MAP"]
 
     def change_sky_coord(self, event=None):
         new_coord = None

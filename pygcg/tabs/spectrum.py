@@ -127,6 +127,13 @@ class SpecFrame(ctk.CTkFrame):
         )
         self.z_q_checkbox.grid(row=3, column=0, padx=(20, 10), pady=10, sticky="w")
 
+        self.bad_seg_checkbox = ctk.CTkCheckBox(
+            self.redshift_frame,
+            text="Bad segmentation map",
+            command=self.bad_seg_update,
+        )
+        self.bad_seg_checkbox.grid(row=3, column=1, padx=(20, 10), pady=10, sticky="w")
+
         self.muse_checkbox = ctk.CTkCheckBox(
             self.plot_options_frame,
             text="MUSE spectrum",
@@ -157,6 +164,9 @@ class SpecFrame(ctk.CTkFrame):
 
     def z_q_update(self):
         self._root().current_gal_data["unreliable_redshift"] = self.z_q_checkbox.get()
+
+    def bad_seg_update(self):
+        self._root().current_gal_data["bad_seg_map"] = self.bad_seg_checkbox.get()
 
     def check_axes_colours(self):
         self.fig.set_facecolor("none")
@@ -238,6 +248,7 @@ class SpecFrame(ctk.CTkFrame):
             self.unreliable_redshift = self._root().current_gal_data.get(
                 "unreliable_redshift", False
             )
+            self.bad_seg = self._root().current_gal_data.get("bad_seg_map", False)
 
             self._root().current_gal_data["grizli_redshift"] = self.grizli_redshift
             self._root().current_gal_data[
@@ -246,9 +257,11 @@ class SpecFrame(ctk.CTkFrame):
             self._root().current_gal_data[
                 "unreliable_redshift"
             ] = self.unreliable_redshift
+            self._root().current_gal_data["bad_seg_map"] = self.bad_seg
             self.current_redshift.set(self.estimated_redshift)
             self.redshift_slider.set(self.estimated_redshift)
             self.z_q_checkbox.select() if self.unreliable_redshift else self.z_q_checkbox.deselect()
+            self.bad_seg_checkbox.select() if self.bad_seg else self.bad_seg_checkbox.deselect()
 
     def _update_all(self):
         self.check_axes_colours()
