@@ -340,7 +340,7 @@ class GCG(ctk.CTk):
                 ), f'No <{key}> column with name "{name}" found in catalogue.'
 
             id_name = self.config.get("catalogue", {}).get("id", "NUMBER")
-            self.id_col = self.cat[id_name].astype(str)
+            self.id_col = np.array(self.cat[id_name].astype(str))
 
             seg_name = self.config.get("catalogue", {}).get(
                 "seg_id", self.config.get("catalogue", {}).get("id", "NUMBER")
@@ -363,7 +363,7 @@ class GCG(ctk.CTk):
                 else:
                     seg_name = id_name
 
-            self.seg_id_col = self.cat[seg_name].astype(int)
+            self.seg_id_col = np.array(self.cat[seg_name].astype(int))
 
             if id_name != seg_name:
                 self.id_frame.grid_columnconfigure((1, 3), weight=1, uniform="entry")
@@ -1015,7 +1015,7 @@ class GCG(ctk.CTk):
         self.save_current_object()
 
         try:
-            new_id = self.id_col[self.id_col == self.current_gal_entry.get()].value[0]
+            new_id = self.id_col[self.id_col == self.current_gal_entry.get()][0]
             self.current_gal_id.set(new_id)
             self.change_gal_id()
         except:
@@ -1026,10 +1026,8 @@ class GCG(ctk.CTk):
                 option_focus=1,
             )
             if error.get() == "OK":
-                self.id_col[self.seg_id_col == self.seg_id].value[0]
-                self.current_gal_id.set(
-                    self.id_col[self.seg_id_col == self.seg_id].value[0]
-                )
+                self.id_col[self.seg_id_col == self.seg_id][0]
+                self.current_gal_id.set(self.id_col[self.seg_id_col == self.seg_id][0])
                 self.focus_force()
                 return
 
@@ -1037,9 +1035,9 @@ class GCG(ctk.CTk):
         self.save_current_object()
 
         try:
-            new_id = self.id_col[
-                self.seg_id_col == int(self.current_seg_entry.get())
-            ].value[0]
+            new_id = self.id_col[self.seg_id_col == int(self.current_seg_entry.get())][
+                0
+            ]
             self.current_gal_id.set(new_id)
             self.change_gal_id()
         except:
