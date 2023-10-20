@@ -55,8 +55,9 @@ class GCG(ctk.CTk):
             # columnspan=5,
             sticky="ew",
         )
-        nav_frame.grid_columnconfigure((0, 1, 2, 3, 5, 6, 7), weight=1, uniform="blah")
-        nav_frame.grid_columnconfigure((4), weight=0, uniform="other")
+        # nav_frame.grid_columnconfigure((0, 7), weight=1, uniform="buttons")
+        nav_frame.grid_columnconfigure((1, 2, 3, 5, 6), weight=1, uniform="settings")
+        nav_frame.grid_columnconfigure((4), weight=0, uniform="frame")
 
         self.read_write_button = ctk.CTkSegmentedButton(
             nav_frame,
@@ -205,12 +206,20 @@ class GCG(ctk.CTk):
             pady=10,
             sticky="w",
         )
-        self.find_coord_button = ctk.CTkButton(
+        # self.find_coord_button = ctk.CTkButton(
+        #     nav_frame,
+        #     text="Sky search",
+        #     command=self.change_sky_coord,
+        # )
+        # self.find_coord_button.grid(row=1, column=5, padx=(5, 10), pady=10, sticky="w")
+
+        self.gal_info_label = ctk.CTkLabel(
             nav_frame,
-            text="Sky search",
-            command=self.change_sky_coord,
+            text="",
         )
-        self.find_coord_button.grid(row=1, column=5, padx=(5, 10), pady=10, sticky="w")
+        self.gal_info_label.grid(
+            row=1, column=4, columnspan=2, padx=(5, 10), pady=10, sticky="ew"
+        )
 
         self.rescan_and_reload()
 
@@ -706,7 +715,7 @@ class GCG(ctk.CTk):
     def update_progress(self):
         num = np.sum([*self.object_progress.values()])
         blocks = num * 4 * "\u2588"
-        self.progress_status.configure(text=f"|{blocks:\u2581<12}| {num}/3")
+        self.progress_status.configure(text=f"|{blocks:\u2591<12}| {num}/3")
 
     def open_settings_callback(self, event=None):
         if self.settings_window is None or not self.settings_window.winfo_exists():
@@ -896,9 +905,7 @@ class GCG(ctk.CTk):
         for n in self.tab_names:
             self.object_progress[n] = False
         self.update_progress()
-        self.tab_row = self.cat[self.id_col == self.current_gal_id.get()]
-        if len(self.tab_row) > 1:
-            self.tab_row = self.tab_row[0]
+        self.tab_row = self.cat[self.id_col == self.current_gal_id.get()][0]
         self.seg_id = self.seg_id_col[self.id_col == self.current_gal_id.get()][0]
         if hasattr(self, "current_seg_id"):
             self.current_seg_id.set(self.seg_id)
@@ -924,6 +931,28 @@ class GCG(ctk.CTk):
             self.sky_coords[self.seg_id_col == self.seg_id].to_string(
                 "decimal", precision=6
             )[0]
+        )
+
+        try:
+            mag_name = self.config.get("catalogue", {}).get("mag", "MAG_AUTO")
+            mag_val = self.tab_row[mag_name].value
+            mag_text = f"mag\u2090\u1d64\u209c\u2092 = {mag_val:.2f}    "
+        except:
+            mag_text = ""
+        try:
+            rad_name = self.config.get("catalogue", {}).get("radius", "KRON_RCIRC")
+            plate_scale = self.config.get("catalogue", {}).get("plate_scale", None)
+            if plate_scale is None:
+                rad_val = f"{self.tab_row[rad_name]:.0f}"
+            else:
+                rad_val = float(plate_scale) * self.tab_row[rad_name].value * u.arcsec
+                print(rad_val)
+                rad_val = f"{rad_val:.2f}"
+            rad_text = f"r\u2096\u1d63\u2092\u2099 = {rad_val}"
+        except Exception as e:
+            rad_text = ""
+        self.gal_info_label.configure(
+            text=(f"{mag_text}" f"{rad_text}"),
         )
 
         if self.seg_id in self.out_cat["SEG_ID"]:

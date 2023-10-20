@@ -28,6 +28,9 @@ ra = "X_WORLD"
 dec = "Y_WORLD"
 seg_id = "NUMBER" # [optional] If the galaxy id is different to the id in the segmentation map, and by extension, the grizli output files
 seg_id_length = 5 # [optional] The number of characters in $SEG_ID.
+mag = "MAG_AUTO"
+radius = "KRON_RCIRC"
+plate_scale = 0.03 # arcsec/pixel. If specified, radii are taken to be in pixels, and converted to arcseconds.
 
 
 [lines]
