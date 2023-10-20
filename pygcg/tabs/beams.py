@@ -24,8 +24,6 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolb
 from matplotlib.figure import Figure
 from tqdm import tqdm
 
-from ..utils.blitting import BlitManager
-
 
 class BeamFrame(ctk.CTkFrame):
     def __init__(self, master, gal_id, PA, **kwargs):

@@ -11,11 +11,9 @@ from astropy.table import QTable
 from CTkMessagebox import CTkMessagebox
 from tqdm import tqdm
 
-from pygcg.tabs.beams import BeamFrame
-from pygcg.tabs.spectrum import SpecFrame
-from pygcg.utils.misc import ValidateFloatVar, flatten_dict, fpe
-from pygcg.windows.comments import CommentsWindow
-from pygcg.windows.settings import SettingsWindow
+from pygcg.tabs import BeamFrame, SpecFrame
+from pygcg.utils import ValidateFloatVar, flatten_dict, fpe
+from pygcg.windows import CommentsWindow, SearchWindow, SettingsWindow
 
 
 class GCG(ctk.CTk):
@@ -31,6 +29,7 @@ class GCG(ctk.CTk):
         self.initialise_configuration(config_file)
         self.settings_window = None
         self.comments_window = None
+        self.search_window = None
 
         # Key bindings
         self.protocol(
@@ -205,12 +204,12 @@ class GCG(ctk.CTk):
             pady=10,
             sticky="w",
         )
-        # self.find_coord_button = ctk.CTkButton(
-        #     nav_frame,
-        #     text="Sky search",
-        #     command=self.change_sky_coord,
-        # )
-        # self.find_coord_button.grid(row=1, column=5, padx=(5, 10), pady=10, sticky="w")
+        self.search_button = ctk.CTkButton(
+            nav_frame,
+            text="Find Objects",
+            command=self.search_button_callback,
+        )
+        self.search_button.grid(row=1, column=6, padx=10, pady=10, sticky="ew")
 
         self.gal_info_label = ctk.CTkLabel(
             nav_frame,
@@ -1054,6 +1053,14 @@ class GCG(ctk.CTk):
                 self.current_seg_id.set(self.seg_id)
                 self.focus_force()
                 return
+
+    def search_button_callback(self, event=None):
+        if event != None and event.widget.winfo_class() == ("Entry" or "Textbox"):
+            return
+        if self.search_window is None or not self.search_window.winfo_exists():
+            self.search_window = SearchWindow(self)
+        else:
+            self.search_window.focus()
 
     def read_write_colour(self, event=None):
         if self.read_write_button.get() == "Read-only":

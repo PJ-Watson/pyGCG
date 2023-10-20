@@ -30,8 +30,12 @@ from photutils.aperture import (
 )
 from tqdm import tqdm
 
-from ..utils.misc import ValidateFloatVar, error_bar_visibility, update_errorbar
-from ..utils.toolbar import VerticalNavigationToolbar2Tk
+from pygcg.utils import (
+    ValidateFloatVar,
+    VerticalNavigationToolbar2Tk,
+    error_bar_visibility,
+    update_errorbar,
+)
 
 
 class SpecFrame(ctk.CTkFrame):
