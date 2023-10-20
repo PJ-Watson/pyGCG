@@ -346,6 +346,7 @@ class SinglePABeamFrame(ctk.CTkFrame):
                         # aspect="auto"
                         norm=norm,
                         visible=True,
+                        interpolation="nearest",
                     )
                 ax.set_xticklabels("")
                 ax.set_yticklabels("")
@@ -418,6 +419,7 @@ class SinglePABeamFrame(ctk.CTkFrame):
                         norm=norm,
                         extent=extent,
                         visible=True,
+                        interpolation="nearest",
                     )
                 ax.tick_params(axis="both", direction="in", top=True, right=True)
 
