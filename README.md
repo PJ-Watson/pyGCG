@@ -97,6 +97,9 @@ This table can be used to specify non-standard column names (compared to the def
 | `dec` | `"Y_WORLD"` | The declination of the object, assumed to be in degrees if no unit is present. |
 | `seg_id` | `"NUMBER"` | The unique number corresponding to the object identification in the `grizli` segmentation map and extractions (_e.g._ `nis-wfss_{seg_id}.1D.fits`). By default, this is also used as the object `id`. If `seg_id` is supplied, but not a valid catalogue column name, a warning will be raised. |
 | `seg_id_length` | `5` | The number of characters used for `seg_id`, which is assumed to be zero-padded (_e.g._ 76 -> 00076). |
+| `mag` | `"MAG_AUTO"` | The magnitude of the object. If not supplied, or the column name does not exist, this will not be displayed rather than raising an error. |
+| `radius` | `5` | The radius of the object. This will fail silently if not found, in the same way as `mag`. |
+| `plate_scale` | `None` | In arcsec/pixel. By default, `radius` will be displayed alongside any units included in the catalogue. If plate scale is specified, `radius` is taken to be in pixels, and converted to angular units using `plate_scale`. |
 
 ### Lines
 

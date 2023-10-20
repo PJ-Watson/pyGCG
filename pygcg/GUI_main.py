@@ -52,10 +52,9 @@ class GCG(ctk.CTk):
         nav_frame.grid(
             column=0,
             row=2,
-            # columnspan=5,
             sticky="ew",
         )
-        # nav_frame.grid_columnconfigure((0, 7), weight=1, uniform="buttons")
+
         nav_frame.grid_columnconfigure((1, 2, 3, 5, 6), weight=1, uniform="settings")
         nav_frame.grid_columnconfigure((4), weight=0, uniform="frame")
 
@@ -368,7 +367,6 @@ class GCG(ctk.CTk):
             self.seg_id_col = self.cat[seg_name].astype(int)
 
             if id_name != seg_name:
-                self.id_frame.grid_columnconfigure((0, 2), weight=0, uniform="label")
                 self.id_frame.grid_columnconfigure((1, 3), weight=1, uniform="entry")
 
                 self.seg_id_label = ctk.CTkLabel(
