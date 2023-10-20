@@ -11,6 +11,7 @@ class BaseWindow(ctk.CTkToplevel):
         # Key bindings
         self.protocol("WM_DELETE_WINDOW", self.quit_no_action)
         self.bind("<Control-w>", self.quit_no_action)
+        self.bind("<Control-s>", self.action_button_callback)
 
         self.main_frame = ctk.CTkFrame(self)
         self.main_frame.grid_columnconfigure((0, 1), weight=1)

@@ -13,7 +13,6 @@ class CommentsWindow(BaseWindow):
             f"{self._root().current_gal_id.get()} here:"
         )
         self.action_button.configure(text="Save")
-        self.bind("<Control-s>", self.action_button_callback)
 
     def create_text_box(self):
         super().create_text_box()
