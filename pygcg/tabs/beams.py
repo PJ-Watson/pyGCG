@@ -93,14 +93,11 @@ class BeamFrame(ctk.CTkFrame):
                     Path(self._root().config["files"]["extractions_dir"])
                     .expanduser()
                     .resolve()
-                ).glob(f"*{self._root().seg_id:0>{pad}}.stack.fits")
+                ).glob(f"**/*{self._root().seg_id:0>{pad}}.stack.fits")
             ][0]
         except:
             self.file_path = None
 
-        # print (self.master)
-        # if self._root().main_tabs.get() in self._root().tab_names[0:2]:
-        # print ("yes")
         self.generate_grid()
 
     def change_cmap(self, event=None):
@@ -119,7 +116,10 @@ class BeamFrame(ctk.CTkFrame):
         if self.gal_id == self._root().current_gal_id.get() and not force_update:
             self.beam_single_PA_frame.quality_frame.save_current()
             for k, v in self.beam_single_PA_frame.coverage.items():
-                self._root().current_gal_data[k]["coverage"] = v
+                try:
+                    self._root().current_gal_data[k]["coverage"] = v
+                except:
+                    pass
             pass
         else:
             self.gal_id = self._root().current_gal_id.get()
@@ -129,22 +129,11 @@ class BeamFrame(ctk.CTkFrame):
                     Path(self._root().config["files"]["extractions_dir"])
                     .expanduser()
                     .resolve()
-                ).glob(f"*{self._root().seg_id:0>{pad}}.stack.fits")
+                ).glob(f"**/*{self._root().seg_id:0>{pad}}.stack.fits")
             ][0]
-            with pf.open(self.file_path) as hdul:
-                header = hdul[0].header
-                n_grism = len(self._root().filter_names)
-                n_pa = len(self._root().PAs)
-                self.beam_frame_list = []
-                extver_list = []
-                for i in range(n_grism):
-                    try:
-                        grism_name = self._root().filter_names[::-1][i]
-                        extver = grism_name + f",{self.PA}"
-                    except:
-                        extver = "none"
-                    extver_list.append(extver)
-                self.beam_single_PA_frame.update_plots(extvers=extver_list)
+
+            extver_list = [s for s in self._root().poss_extvers if self.PA in s]
+            self.beam_single_PA_frame.update_plots(extvers=extver_list)
 
             self.update()
 
@@ -155,18 +144,10 @@ class BeamFrame(ctk.CTkFrame):
             n_pa = np.nanmax(
                 [header[f"N{header[f'GRISM{n:0>3}']}"] for n in range(1, n_grism + 1)]
             )
-            self.beam_frame_list = []
-            row = 0
-            extver_list = []
-            for i in range(n_grism):
-                grism_name = header[f"GRISM{i+1:0>3}"]
-                pa = "," + str(header[f"{grism_name}{row+1:0>2}"])
-                extver = grism_name + pa
-                extver = grism_name + f",{self.PA}"
-                extver_list.append(extver)
-            self.beam_single_PA_frame = SinglePABeamFrame(self, extvers=extver_list)
-            self.beam_single_PA_frame.grid(row=1, column=0, sticky="news")
+            extver_list = [s for s in self._root().poss_extvers if self.PA in s]
 
+            self.beam_single_PA_frame = SinglePABeamFrame(self, extvers= extver_list)
+            self.beam_single_PA_frame.grid(row=1, column=0, sticky="news")
             self.grid_rowconfigure(1, weight=1)
             self.grid_columnconfigure(0, weight=1)
 
@@ -200,14 +181,12 @@ class SinglePABeamFrame(ctk.CTkFrame):
 
         self.check_axes_colours()
 
-        # plt.style.use("dark_background")
-
         self.extvers = extvers
         self.coverage = {}
-        widths = [1 / 3, 1] * len(self.extvers)
+        widths = [1 / 3, 1] * 3
         self.fig_axes = self.fig.subplots(
             4,
-            2 * len(self.extvers),
+            6,
             sharey=True,
             width_ratios=widths,
         )

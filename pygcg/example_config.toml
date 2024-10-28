@@ -75,10 +75,6 @@ plate_scale = 0.03 # arcsec/pixel. If specified, radii are taken to be in pixels
         tex_name = 'NII'
         centre = 6585.27
 
-        [lines.emission.PaE]
-        tex_name = 'Pa-$\eta$'
-        centre = 9548.6
-
         [lines.emission.PaD]
         tex_name = 'Pa-$\delta$'
         centre = 10052.1
@@ -105,7 +101,11 @@ plate_scale = 0.03 # arcsec/pixel. If specified, radii are taken to be in pixels
 
         [lines.emission.SIII_9069]
         tex_name = 'SIII'
-        centre = 9068.6
+        centre = 9071.1
+        
+        [lines.emission.SIII_9531]
+        tex_name = 'SIII'
+        centre = 9533.2
 
         [lines.emission.HeI_10830]
         tex_name = 'HeI'

@@ -14,6 +14,7 @@ from tqdm import tqdm
 from pygcg.tabs import BeamFrame, SpecFrame
 from pygcg.utils import ValidateFloatVar, flatten_dict, fpe
 from pygcg.windows import CommentsWindow, SearchWindow, SettingsWindow
+from itertools import product
 
 
 class GCG(ctk.CTk):
@@ -115,6 +116,17 @@ class GCG(ctk.CTk):
         )
 
         self.current_gal_data = {}
+        self.poss_extvers = []
+        for g, p in product(
+            [
+                self.config["grisms"]["B"],
+                self.config["grisms"]["G"],
+                self.config["grisms"]["R"],
+            ],
+            [self.config["grisms"]["PA1"], self.config["grisms"]["PA2"]],
+        ):
+            self.poss_extvers.append(f"{g},{p}")
+            self.current_gal_data[f"{g},{p}"] = {}
 
         self.warning_flag = True
 
@@ -270,6 +282,8 @@ class GCG(ctk.CTk):
                     self.temp_dir.mkdir(exist_ok=True)
 
                 out_name = self.config["files"].get("out_cat_name", "pyGCG_output.fits")
+                if out_name == "":
+                    out_name = "pyGCG_output.fits"
                 self.out_cat_path = fpe(self.config["files"]["out_dir"]) / out_name
                 self.read_write_button.configure(state="normal")
             except:
@@ -328,6 +342,29 @@ class GCG(ctk.CTk):
                         bool,
                         bool,
                         str,
+                    ],
+                    units=[
+                        None,
+                        None,
+                        "deg",
+                        "deg",
+                        None,
+                        None,
+                        None,
+                        None,
+                        None,
+                        None,
+                        None,
+                        None,
+                        None,
+                        None,
+                        None,
+                        None,
+                        None,
+                        None,
+                        None,
+                        None,
+                        None,
                     ],
                 )
 
@@ -417,9 +454,11 @@ class GCG(ctk.CTk):
 
             pad = self.config.get("catalogue", {}).get("seg_id_length", 5)
 
-            row_ids = [s.stem[-4 - pad : -4] for s in dir_to_chk.glob("*.row.fits")]
-            stack_ids = [s.stem[-6 - pad : -6] for s in dir_to_chk.glob("*.stack.fits")]
-            oned_ids = [s.stem[-3 - pad : -3] for s in dir_to_chk.glob("*.1D.fits")]
+            row_ids = [s.stem[-4 - pad : -4] for s in dir_to_chk.glob("**/*.row.fits")]
+            stack_ids = [
+                s.stem[-6 - pad : -6] for s in dir_to_chk.glob("**/*.stack.fits")
+            ]
+            oned_ids = [s.stem[-3 - pad : -3] for s in dir_to_chk.glob("**/*.1D.fits")]
 
             for i, (n, s) in tqdm(
                 enumerate(zip(self.id_col, self.seg_id_col)),
@@ -799,7 +838,10 @@ class GCG(ctk.CTk):
         mid_message = (
             "Classifications will not be saved."
             if self.read_write_button.get().lower() == "read-only"
-            else "Classifications will be written to ??? in the output directory."
+            else (
+                f"Classifications will be written to "
+                f"{self.out_cat_path.name} in the output directory."
+            )
         )
         check_overwrite = CTkMessagebox(
             title="Read/Write Mode",
@@ -943,7 +985,6 @@ class GCG(ctk.CTk):
                 rad_val = f"{self.tab_row[rad_name]:.0f}"
             else:
                 rad_val = float(plate_scale) * self.tab_row[rad_name].value * u.arcsec
-                print(rad_val)
                 rad_val = f"{rad_val:.2f}"
             rad_text = f"r\u2096\u1d63\u2092\u2099 = {rad_val}"
         except Exception as e:
@@ -969,13 +1010,16 @@ class GCG(ctk.CTk):
             ]
             self.current_gal_data["bad_seg_map"] = out_row["BAD_SEG_MAP"]
 
+        for gp in self.poss_extvers:
+            self.current_gal_data[gp] = {}
+
     def change_sky_coord(self, event=None):
         new_coord = None
         try:
             new_coord = SkyCoord(self.current_gal_coords.get())
         except ValueError:
             try:
-                parts = re.split("\s*[,|;|\s]\s*", self.current_gal_coords.get())
+                parts = re.split(r"\s*[,|;|\s]\s*", self.current_gal_coords.get())
                 if len(parts) == 2:
                     new_coord = SkyCoord(
                         float(parts[0]) * u.deg, float(parts[1]) * u.deg

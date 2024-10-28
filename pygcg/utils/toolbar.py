@@ -4,7 +4,6 @@ import customtkinter as ctk
 import numpy as np
 from matplotlib import cbook
 from matplotlib.backend_bases import NavigationToolbar2
-from matplotlib.backends._backend_tk import ToolTip
 from matplotlib.backends.backend_tkagg import NavigationToolbar2Tk
 from PIL import Image
 

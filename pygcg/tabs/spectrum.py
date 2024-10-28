@@ -239,7 +239,7 @@ class SpecFrame(ctk.CTkFrame):
                 Path(self._root().config["files"]["extractions_dir"])
                 .expanduser()
                 .resolve()
-            ).glob(f"*{self._root().seg_id:0>{pad}}.row.fits")
+            ).glob(f"**/*{self._root().seg_id:0>{pad}}.row.fits")
         ][0]
         with pf.open(_row_path) as hdul:
             grizli_redshift = Table(hdul[1].data)["redshift"].value[0]
@@ -299,7 +299,7 @@ class SpecFrame(ctk.CTkFrame):
                 Path(self._root().config["files"]["extractions_dir"])
                 .expanduser()
                 .resolve()
-            ).glob(f"*{self._root().seg_id:0>{pad}}.1D.fits")
+            ).glob(f"**/*{self._root().seg_id:0>{pad}}.1D.fits")
         ][0]
 
         if templates:
@@ -774,7 +774,7 @@ class ImagesFrame(ctk.CTkFrame):
                     Path(self._root().config["files"]["prep_dir"])
                     .expanduser()
                     .resolve()
-                ).glob(f"*{p.lower()}_drz_sci.fits")
+                ).glob(f"*{p.lower()}*_dr[zc]_sci.fits")
             ]
             if len(rgb_path) == 0:
                 print(f"{p} image not found.")
@@ -1192,7 +1192,7 @@ class RedshiftPlotFrame(ctk.CTkFrame):
                 Path(self._root().config["files"]["extractions_dir"])
                 .expanduser()
                 .resolve()
-            ).glob(f"*{self._root().seg_id:0>{pad}}.full.fits")
+            ).glob(f"**/*{self._root().seg_id:0>{pad}}.full.fits")
         ]
         if len(self.fits_path) == 0:
             print("Full extraction data not found.")
