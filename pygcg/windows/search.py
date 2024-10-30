@@ -54,64 +54,77 @@ class SearchWindow(BaseWindow):
         lines = re.split("\n", text_input.strip())
 
         try:
-            parts = re.split("\s*[,|;|\s]\s*", lines[0].strip())
+            parts = re.split(r"\s*[,|;|\s]\s*", lines[0].strip())
         except Exception as e:
             self.warn_input(f"Could not parse input: {e}")
             return
 
         ras = np.empty(len(lines), dtype=object)
         decs = np.empty_like(ras, dtype=object)
+        self.ids_arr = np.empty_like(ras, dtype=object)
 
-        try:
-            if len(parts) == 3:
-                self.ids_arr = np.empty_like(ras, dtype=object)
-                for i, l in enumerate(lines):
-                    # print(re.split("\s*[,|;|\s]\s*", l.strip()))
-                    self.ids_arr[i], ras[i], decs[i] = re.split(
-                        "\s*[,|;|\s]\s*", l.strip()
-                    )
-
-            elif len(parts) == 2:
-                for i, l in enumerate(lines):
-                    # print(re.split("\s*[,|;|\s]\s*", l.strip()))
-                    ras[i], decs[i] = re.split("\s*[,|;|\s]\s*", l.strip())
-            else:
-                raise ValueError()
-        except Exception as e:
-            self.warn_input(
-                "Could not parse input: input must be either "
-                "two or three components per line."
+        if len(parts) == 1:
+            for i, l in enumerate(lines):
+                self.ids_arr[i] = re.split(r"\s*[,|;|\s]\s*", l.strip())[0]
+            self.ids_arr = np.asarray(self.ids_arr)
+            _, _, match_idx = np.intersect1d(
+                np.asarray(self.ids_arr), self._root().id_col, return_indices=True
             )
-            return
 
-        try:
-            new_coords = SkyCoord(ras.astype(float) * u.deg, decs.astype(float) * u.deg)
-        except Exception as e:
+        else:
             try:
-                new_coords = SkyCoord(ras, decs)
+
+                if len(parts) == 3:
+                    # self.ids_arr = np.empty_like(ras, dtype=object)
+                    for i, l in enumerate(lines):
+                        # print(re.split("\s*[,|;|\s]\s*", l.strip()))
+                        self.ids_arr[i], ras[i], decs[i] = re.split(
+                            r"\s*[,|;|\s]\s*", l.strip()
+                        )
+
+                elif len(parts) == 2:
+                    for i, l in enumerate(lines):
+                        # print(re.split("\s*[,|;|\s]\s*", l.strip()))
+                        ras[i], decs[i] = re.split(r"\s*[,|;|\s]\s*", l.strip())
+                else:
+                    raise ValueError()
+            except Exception as e:
+                self.warn_input(
+                    "Could not parse input: input must be either "
+                    "two or three components per line."
+                )
+                return
+
+            try:
+                new_coords = SkyCoord(
+                    ras.astype(float) * u.deg, decs.astype(float) * u.deg
+                )
             except Exception as e:
                 try:
-                    new_coords = SkyCoord(ras, decs, unit=(u.hourangle, u.deg))
+                    new_coords = SkyCoord(ras, decs)
                 except Exception as e:
-                    self.warn_input(f"Could not parse input coordinates: {e}")
-                    return
+                    try:
+                        new_coords = SkyCoord(ras, decs, unit=(u.hourangle, u.deg))
+                    except Exception as e:
+                        self.warn_input(f"Could not parse input coordinates: {e}")
+                        return
 
-        sky_match_idx, dist, _ = new_coords.match_to_catalog_sky(
-            self._root().sky_coords
-        )
+            sky_match_idx, dist, _ = new_coords.match_to_catalog_sky(
+                self._root().sky_coords
+            )
 
-        sky_match_idx = sky_match_idx[
-            dist <= float(self.search_radius.get()) * u.arcsec
-        ]
-        if hasattr(self, "ids_arr"):
-            self.ids_arr = self.ids_arr[
+            sky_match_idx = sky_match_idx[
                 dist <= float(self.search_radius.get()) * u.arcsec
             ]
+            if hasattr(self, "ids_arr"):
+                self.ids_arr = self.ids_arr[
+                    dist <= float(self.search_radius.get()) * u.arcsec
+                ]
 
-        _, unique_idx = np.unique(sky_match_idx, return_index=True)
-        match_idx = sky_match_idx[np.sort(unique_idx)]
-        if hasattr(self, "ids_arr"):
-            self.ids_arr = self.ids_arr[np.sort(unique_idx)]
+            _, unique_idx = np.unique(sky_match_idx, return_index=True)
+            match_idx = sky_match_idx[np.sort(unique_idx)]
+            if hasattr(self, "ids_arr"):
+                self.ids_arr = self.ids_arr[np.sort(unique_idx)]
 
         if len(match_idx) == 0:
             self.warn_input("No matches found!")

@@ -1193,6 +1193,12 @@ class RedshiftPlotFrame(ctk.CTkFrame):
                 .expanduser()
                 .resolve()
             ).glob(f"**/*{self._root().seg_id:0>{pad}}.full.fits")
+        ] + [
+            *(
+                Path(self._root().config["files"]["extractions_dir"])
+                .expanduser()
+                .resolve()
+            ).glob(f"**/*{self._root().seg_id:0>{pad}}.maps.fits")
         ]
         if len(self.fits_path) == 0:
             print("Full extraction data not found.")

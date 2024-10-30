@@ -457,6 +457,8 @@ class GCG(ctk.CTk):
             row_ids = [s.stem[-4 - pad : -4] for s in dir_to_chk.glob("**/*.row.fits")]
             stack_ids = [
                 s.stem[-6 - pad : -6] for s in dir_to_chk.glob("**/*.stack.fits")
+            ] + [
+                s.stem[-3 - pad : -3] for s in dir_to_chk.glob("**/*.2D.fits")
             ]
             oned_ids = [s.stem[-3 - pad : -3] for s in dir_to_chk.glob("**/*.1D.fits")]
 
@@ -483,10 +485,17 @@ class GCG(ctk.CTk):
             self.id_col = self.id_col[id_idx_list]
             self.seg_id_col = self.seg_id_col[id_idx_list]
             self.cat = self.cat[id_idx_list]
-            self.sky_coords = SkyCoord(
-                self.cat[self.config.get("catalogue", {}).get("ra", "X_WORLD")],
-                self.cat[self.config.get("catalogue", {}).get("dec", "Y_WORLD")],
-            )
+            try:
+                self.sky_coords = SkyCoord(
+                    self.cat[self.config.get("catalogue", {}).get("ra", "X_WORLD")],
+                    self.cat[self.config.get("catalogue", {}).get("dec", "Y_WORLD")],
+                )
+            except:
+                self.sky_coords = SkyCoord(
+                    self.cat[self.config.get("catalogue", {}).get("ra", "X_WORLD")],
+                    self.cat[self.config.get("catalogue", {}).get("dec", "Y_WORLD")],
+                    unit="deg"
+                )
 
             assert len(self.id_col) > 0
 
