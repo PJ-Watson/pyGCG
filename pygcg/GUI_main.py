@@ -317,6 +317,7 @@ class GCG(ctk.CTk):
                         "GRIZLI_REDSHIFT",
                         "ESTIMATED_REDSHIFT",
                         "UNRELIABLE_REDSHIFT",
+                        "TENTATIVE_REDSHIFT",
                         "BAD_SEG_MAP",
                         "COMMENTS",
                     ],
@@ -341,6 +342,7 @@ class GCG(ctk.CTk):
                         float,
                         bool,
                         bool,
+                        bool,
                         str,
                     ],
                     units=[
@@ -348,6 +350,7 @@ class GCG(ctk.CTk):
                         None,
                         "deg",
                         "deg",
+                        None,
                         None,
                         None,
                         None,
@@ -1016,6 +1019,9 @@ class GCG(ctk.CTk):
             self.current_gal_data["estimated_redshift"] = out_row["ESTIMATED_REDSHIFT"]
             self.current_gal_data["unreliable_redshift"] = out_row[
                 "UNRELIABLE_REDSHIFT"
+            ]
+            self.current_gal_data["tentative_redshift"] = out_row[
+                "TENTATIVE_REDSHIFT"
             ]
             self.current_gal_data["bad_seg_map"] = out_row["BAD_SEG_MAP"]
 

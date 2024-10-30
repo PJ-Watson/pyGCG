@@ -70,12 +70,24 @@ class SpecFrame(ctk.CTkFrame):
 
         self.redshift_frame = ctk.CTkFrame(self)
         self.redshift_frame.grid(row=2, column=2, sticky="news")
-        self.redshift_frame.columnconfigure([0, 1], weight=1)
+        self.redshift_frame.columnconfigure([0, 1, 2, 3, 4, 5], weight=1)
         self.redshift_label = ctk.CTkLabel(
             self.redshift_frame, text="Estimated redshift:"
         )
         self.redshift_label.grid(
             row=0, column=0, columnspan=2, padx=(20, 10), pady=(10,), sticky="w"
+        )
+        self.redshift_spec_info = ctk.CTkLabel(
+            self.redshift_frame, text="test",
+        )
+        self.redshift_spec_info.grid(
+            row=0, column=2, columnspan=2, padx=(20, 10), pady=(10,), sticky="we",
+        )
+        self.redshift_phot_info = ctk.CTkLabel(
+            self.redshift_frame, text="test2",
+        )
+        self.redshift_phot_info.grid(
+            row=0, column=4, columnspan=2, padx=(20, 10), pady=(10,), sticky="we",
         )
         self.current_redshift = ValidateFloatVar(
             master=self,
@@ -88,6 +100,7 @@ class SpecFrame(ctk.CTkFrame):
         self.redshift_entry.grid(
             row=1,
             column=0,
+            columnspan=3,
             padx=(20, 10),
             pady=(10, 0),
             sticky="we",
@@ -103,7 +116,8 @@ class SpecFrame(ctk.CTkFrame):
         )
         self.reset_redshift_button.grid(
             row=1,
-            column=1,
+            column=3,
+            columnspan=3,
             padx=(20, 10),
             pady=(10, 0),
             sticky="we",
@@ -118,32 +132,56 @@ class SpecFrame(ctk.CTkFrame):
         self.redshift_slider.grid(
             row=2,
             column=0,
-            columnspan=2,
+            columnspan=6,
             padx=(20, 10),
             pady=10,
             sticky="we",
         )
 
-        self.z_q_checkbox = ctk.CTkCheckBox(
+        self.z_q_checkbox_un = ctk.CTkCheckBox(
             self.redshift_frame,
-            text="Unreliable redshift",
-            command=self.z_q_update,
+            text="Unreliable z",
+            command=self.z_q_update_un,
         )
-        self.z_q_checkbox.grid(row=3, column=0, padx=(20, 10), pady=10, sticky="w")
+        self.z_q_checkbox_un.grid(
+            row=3, column=0, columnspan=2, padx=(20, 10), pady=10, sticky="w"
+        )
+
+        self.z_q_checkbox_te = ctk.CTkCheckBox(
+            self.redshift_frame,
+            text="Tentative z",
+            command=self.z_q_update_te,
+        )
+        self.z_q_checkbox_te.grid(
+            row=3, column=2, columnspan=2, padx=(20, 10), pady=10, sticky="w"
+        )
 
         self.bad_seg_checkbox = ctk.CTkCheckBox(
             self.redshift_frame,
             text="Bad segmentation map",
             command=self.bad_seg_update,
         )
-        self.bad_seg_checkbox.grid(row=3, column=1, padx=(20, 10), pady=10, sticky="w")
+        self.bad_seg_checkbox.grid(
+            row=3,
+            column=4,
+            columnspan=2,
+            padx=(20, 10),
+            pady=10,
+            sticky="w",
+        )
 
         self.muse_checkbox = ctk.CTkCheckBox(
             self.plot_options_frame,
             text="MUSE spectrum",
             command=self.change_components,
         )
-        self.muse_checkbox.grid(row=0, column=2, padx=20, pady=(10, 10), sticky="w")
+        self.muse_checkbox.grid(
+            row=0,
+            column=2,
+            padx=20,
+            pady=(10, 10),
+            sticky="w",
+        )
         self.grizli_checkbox = ctk.CTkCheckBox(
             self.plot_options_frame,
             text="NIRISS spectrum",
@@ -166,8 +204,13 @@ class SpecFrame(ctk.CTkFrame):
         )
         self.images_frame.grid(row=2, column=0, columnspan=2, sticky="news")
 
-    def z_q_update(self):
-        self._root().current_gal_data["unreliable_redshift"] = self.z_q_checkbox.get()
+    def z_q_update_un(self):
+        self._root().current_gal_data[
+            "unreliable_redshift"
+        ] = self.z_q_checkbox_un.get()
+
+    def z_q_update_te(self):
+        self._root().current_gal_data["tentative_redshift"] = self.z_q_checkbox_te.get()
 
     def bad_seg_update(self):
         self._root().current_gal_data["bad_seg_map"] = self.bad_seg_checkbox.get()
@@ -252,6 +295,9 @@ class SpecFrame(ctk.CTkFrame):
             self.unreliable_redshift = self._root().current_gal_data.get(
                 "unreliable_redshift", False
             )
+            self.tentative_redshift = self._root().current_gal_data.get(
+                "tentative_redshift", False
+            )
             self.bad_seg = self._root().current_gal_data.get("bad_seg_map", False)
 
             self._root().current_gal_data["grizli_redshift"] = self.grizli_redshift
@@ -261,12 +307,50 @@ class SpecFrame(ctk.CTkFrame):
             self._root().current_gal_data[
                 "unreliable_redshift"
             ] = self.unreliable_redshift
+            self._root().current_gal_data[
+                "tentative_redshift"
+            ] = self.tentative_redshift
             self._root().current_gal_data["bad_seg_map"] = self.bad_seg
             self.current_redshift.set(self.estimated_redshift)
             self.redshift_slider.set(self.estimated_redshift)
-            self.z_q_checkbox.select() if self.unreliable_redshift else self.z_q_checkbox.deselect()
-            self.bad_seg_checkbox.select() if self.bad_seg else self.bad_seg_checkbox.deselect()
+            (
+                self.z_q_checkbox_un.select()
+                if self.unreliable_redshift
+                else self.z_q_checkbox_un.deselect()
+            )
+            (
+                self.z_q_checkbox_te.select()
+                if self.unreliable_redshift
+                else self.z_q_checkbox_te.deselect()
+            )
+            (
+                self.bad_seg_checkbox.select()
+                if self.bad_seg
+                else self.bad_seg_checkbox.deselect()
+            )
 
+        try:
+            phot_z_name = self._root().config.get("catalogue", {}).get("zphot", "zphot")
+            phot_z = self._root().tab_row[phot_z_name]
+            assert phot_z!="--"
+            phot_z_text = f"z\u209a\u2095\u2092\u209c = {phot_z:.3f} "
+        except Exception as e:
+            phot_z_text = "z\u209a\u2095\u2092\u209c = n/a  "
+        self.redshift_phot_info.configure(
+            text=(f"{phot_z_text}"),
+        )
+
+        try:
+            spec_z_name = self._root().config.get("catalogue", {}).get("zspec", "zspec")
+            spec_z = self._root().tab_row[spec_z_name]
+            assert spec_z!="--"
+            spec_z_text = f"z\u209b\u209a\u2091\U0001E03F = {spec_z:.3f} "
+        except Exception as e:
+            spec_z_text = f"z\u209b\u209a\u2091\U0001E03F = n/a  "
+        self.redshift_spec_info.configure(
+            text=(f"{spec_z_text}"),
+        )
+        
     def _update_all(self):
         self.check_axes_colours()
         self.fig.set_layout_engine("constrained")
@@ -329,14 +413,16 @@ class SpecFrame(ctk.CTkFrame):
                             data_table["line"][clip] / data_table["flat"][clip] / 1e-19,
                         )
                     except:
-                        (
-                            self.plotted_components[dict_key][hdu.name],
-                        ) = self.fig_axes.plot(
-                            data_table["wave"][clip],
-                            data_table["line"][clip] / data_table["flat"][clip] / 1e-19,
-                            c="red",
-                            alpha=0.7,
-                            zorder=10,
+                        (self.plotted_components[dict_key][hdu.name],) = (
+                            self.fig_axes.plot(
+                                data_table["wave"][clip],
+                                data_table["line"][clip]
+                                / data_table["flat"][clip]
+                                / 1e-19,
+                                c="red",
+                                alpha=0.7,
+                                zorder=10,
+                            )
                         )
                 else:
                     try:
@@ -368,16 +454,16 @@ class SpecFrame(ctk.CTkFrame):
                             yerr=y_err,
                         )
                     except:
-                        self.plotted_components[dict_key][
-                            hdu.name
-                        ] = self.fig_axes.errorbar(
-                            data_table["wave"][clip],
-                            y_vals,
-                            yerr=y_err,
-                            fmt="o",
-                            markersize=3,
-                            ecolor=colors.to_rgba(colours[hdu.name], 0.5),
-                            c=colours[hdu.name],
+                        self.plotted_components[dict_key][hdu.name] = (
+                            self.fig_axes.errorbar(
+                                data_table["wave"][clip],
+                                y_vals,
+                                yerr=y_err,
+                                fmt="o",
+                                markersize=3,
+                                ecolor=colors.to_rgba(colours[hdu.name], 0.5),
+                                c=colours[hdu.name],
+                            )
                         )
                     ymax = np.nanmax([ymax, np.nanmax(y_vals)])
 
@@ -965,7 +1051,7 @@ class ImagesFrame(ctk.CTkFrame):
                 self.rgb_data[0],
                 self.rgb_data[1],
                 self.rgb_data[2],
-                stretch=0.1,  # Q=10
+                stretch=0.2,
             )
             try:
                 self.plotted_components["rgb_img"].set_data(self.rgb_stretched)
