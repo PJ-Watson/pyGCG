@@ -94,13 +94,23 @@ class GCG(ctk.CTk):
         self.prev_gal_button.grid(
             row=0, column=0, padx=10, pady=10, rowspan=2, sticky="news"
         )
+        self.save_gal_button = ctk.CTkButton(
+            nav_frame,
+            text="Save",
+            command=self.save_button_fn,
+            fg_color="green",
+            hover_color="dark green",
+        )
+        self.save_gal_button.grid(
+            row=0, column=7, padx=10, pady=10, rowspan=1, sticky="news"
+        )
         self.next_gal_button = ctk.CTkButton(
             nav_frame,
             text="Next",
             command=self.next_gal_button_callback,
         )
         self.next_gal_button.grid(
-            row=0, column=7, padx=10, pady=10, rowspan=2, sticky="news"
+            row=1, column=7, padx=10, pady=10, rowspan=1, sticky="news"
         )
         self.comments_button = ctk.CTkButton(
             nav_frame,
@@ -459,9 +469,7 @@ class GCG(ctk.CTk):
 
             stack_ids = [
                 s.stem[-6 - pad : -6] for s in dir_to_chk.glob("**/*.stack.fits")
-            ] + [
-                s.stem[-7 - pad : -7] for s in dir_to_chk.glob("**/*.spec2D.fits")
-            ]
+            ] + [s.stem[-7 - pad : -7] for s in dir_to_chk.glob("**/*.spec2D.fits")]
             oned_ids = [
                 s.stem[-3 - pad : -3] for s in dir_to_chk.glob("**/*.1D.fits")
             ] + [s.stem[-7 - pad : -7] for s in dir_to_chk.glob("**/*.spec1D.fits")]
@@ -474,10 +482,7 @@ class GCG(ctk.CTk):
                 if self.config["files"].get("skip_existing", True) or skip:
                     if s in self.out_cat["SEG_ID"]:
                         continue
-                if (
-                    f"{s:0>{pad}}" in oned_ids
-                    and f"{s:0>{pad}}" in stack_ids
-                ):
+                if f"{s:0>{pad}}" in oned_ids and f"{s:0>{pad}}" in stack_ids:
                     id_idx_list.append(i)
 
             assert len(id_idx_list) > 0, (
@@ -497,7 +502,7 @@ class GCG(ctk.CTk):
                 self.sky_coords = SkyCoord(
                     self.cat[self.config.get("catalogue", {}).get("ra", "X_WORLD")],
                     self.cat[self.config.get("catalogue", {}).get("dec", "Y_WORLD")],
-                    unit="deg"
+                    unit="deg",
                 )
 
             assert len(self.id_col) > 0
@@ -917,6 +922,23 @@ class GCG(ctk.CTk):
         self.focus_force()
         return out
 
+    def save_button_fn(self, event=None):
+
+        flattened_data = flatten_dict(self.current_gal_data)
+
+        if self.read_write_button.get().lower() != "write output":
+            self.raise_save_warning("This program is currently set to `Read-only`.")
+        elif np.sum([*self.object_progress.values()]) < 3:
+            self.raise_save_warning("Not all tabs have been viewed yet.")
+        elif len(flattened_data) < 22:
+            self.raise_save_warning(
+                "This is a catch-all error. Somehow the output row "
+                "is insufficiently populated."
+            )
+        else:
+            self.save_current_object()
+            return True
+
     def save_current_object(self, event=None):
         ### This is where the logic for loading/updating the tables will go
         flattened_data = flatten_dict(self.current_gal_data)
@@ -951,6 +973,17 @@ class GCG(ctk.CTk):
                     self.focus_force()
             self.out_cat.add_row(flattened_data)
             self.out_cat.write(self.out_cat_path, overwrite=True)
+
+    def raise_save_warning(self, err_msg=""):
+        warn_box = CTkMessagebox(
+            title="Cannot Save Output",
+            message=(err_msg),
+            icon="warning",
+            option_1="Continue",
+            option_focus=1,
+        )
+        if warn_box.get() == "Continue":
+            return
 
     def change_gal_id(self, event=None):
         for n in self.tab_names:
@@ -1020,9 +1053,7 @@ class GCG(ctk.CTk):
             self.current_gal_data["unreliable_redshift"] = out_row[
                 "UNRELIABLE_REDSHIFT"
             ]
-            self.current_gal_data["tentative_redshift"] = out_row[
-                "TENTATIVE_REDSHIFT"
-            ]
+            self.current_gal_data["tentative_redshift"] = out_row["TENTATIVE_REDSHIFT"]
             self.current_gal_data["bad_seg_map"] = out_row["BAD_SEG_MAP"]
 
         for gp in self.poss_extvers:
