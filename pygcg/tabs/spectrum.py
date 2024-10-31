@@ -421,7 +421,14 @@ class SpecFrame(ctk.CTkFrame):
                 .expanduser()
                 .resolve()
             ).glob(f"**/*{self._root().seg_id:0>{pad}}.1D.fits")
-        ][0]
+        ] + [
+            *(
+                Path(self._root().config["files"]["extractions_dir"])
+                .expanduser()
+                .resolve()
+            ).glob(f"**/*{self._root().seg_id:0>{pad}}.spec1D.fits")
+        ]
+        file_path = file_path[0]
 
         if templates:
             dict_key = "grism_templates"

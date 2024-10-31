@@ -94,7 +94,14 @@ class BeamFrame(ctk.CTkFrame):
                     .expanduser()
                     .resolve()
                 ).glob(f"**/*{self._root().seg_id:0>{pad}}.stack.fits")
-            ][0]
+            ] + [
+                *(
+                    Path(self._root().config["files"]["extractions_dir"])
+                    .expanduser()
+                    .resolve()
+                ).glob(f"**/*{self._root().seg_id:0>{pad}}.spec2D.fits")
+            ]
+            self.file_path = self.file_path[0]
         except:
             self.file_path = None
 
@@ -130,7 +137,14 @@ class BeamFrame(ctk.CTkFrame):
                     .expanduser()
                     .resolve()
                 ).glob(f"**/*{self._root().seg_id:0>{pad}}.stack.fits")
-            ][0]
+            ] + [
+                *(
+                    Path(self._root().config["files"]["extractions_dir"])
+                    .expanduser()
+                    .resolve()
+                ).glob(f"**/*{self._root().seg_id:0>{pad}}.spec2D.fits")
+            ]
+            self.file_path = self.file_path[0]
 
             extver_list = [s for s in self._root().poss_extvers if self.PA in s]
             self.beam_single_PA_frame.update_plots(extvers=extver_list)
