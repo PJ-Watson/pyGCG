@@ -78,16 +78,28 @@ class SpecFrame(ctk.CTkFrame):
             row=0, column=0, columnspan=2, padx=(20, 10), pady=(10,), sticky="w"
         )
         self.redshift_spec_info = ctk.CTkLabel(
-            self.redshift_frame, text="test",
+            self.redshift_frame,
+            text="test",
         )
         self.redshift_spec_info.grid(
-            row=0, column=2, columnspan=2, padx=(20, 10), pady=(10,), sticky="we",
+            row=0,
+            column=2,
+            columnspan=2,
+            padx=(20, 10),
+            pady=(10,),
+            sticky="we",
         )
         self.redshift_phot_info = ctk.CTkLabel(
-            self.redshift_frame, text="test2",
+            self.redshift_frame,
+            text="test2",
         )
         self.redshift_phot_info.grid(
-            row=0, column=4, columnspan=2, padx=(20, 10), pady=(10,), sticky="we",
+            row=0,
+            column=4,
+            columnspan=2,
+            padx=(20, 10),
+            pady=(10,),
+            sticky="we",
         )
         self.current_redshift = ValidateFloatVar(
             master=self,
@@ -332,7 +344,7 @@ class SpecFrame(ctk.CTkFrame):
         try:
             phot_z_name = self._root().config.get("catalogue", {}).get("zphot", "zphot")
             phot_z = self._root().tab_row[phot_z_name]
-            assert phot_z!="--"
+            assert phot_z != "--"
             phot_z_text = f"z\u209a\u2095\u2092\u209c = {phot_z:.3f} "
         except Exception as e:
             phot_z_text = "z\u209a\u2095\u2092\u209c = n/a  "
@@ -343,14 +355,14 @@ class SpecFrame(ctk.CTkFrame):
         try:
             spec_z_name = self._root().config.get("catalogue", {}).get("zspec", "zspec")
             spec_z = self._root().tab_row[spec_z_name]
-            assert spec_z!="--"
+            assert spec_z != "--"
             spec_z_text = f"z\u209b\u209a\u2091\U0001E03F = {spec_z:.3f} "
         except Exception as e:
             spec_z_text = f"z\u209b\u209a\u2091\U0001E03F = n/a  "
         self.redshift_spec_info.configure(
             text=(f"{spec_z_text}"),
         )
-        
+
     def _update_all(self):
         self.check_axes_colours()
         self.fig.set_layout_engine("constrained")
@@ -1042,6 +1054,19 @@ class ImagesFrame(ctk.CTkFrame):
 
             for i, v in enumerate(self.rgb_paths):
                 with pf.open(v) as hdul:
+                    try:
+                        zp = hdul[0].header["ZP"]
+                    except:
+                        try:
+                            # PASSAGE
+                            zp = (
+                                -2.5 * np.log10(hdul[0].header["PHOTFLAM"])
+                                - 5 * np.log10(hdul[0].header["PHOTPLAM"])
+                                - 2.408
+                            )
+                        except:
+                            # Dawn JWST products
+                            zp = 28.9
                     self.rgb_data[i] = hdul[0].data[
                         self.cutout_dimensions[0] : self.cutout_dimensions[1],
                         self.cutout_dimensions[2] : self.cutout_dimensions[3],
