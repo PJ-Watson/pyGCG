@@ -91,13 +91,13 @@ class VerticalNavigationToolbar2Tk(NavigationToolbar2Tk):
                 image_kwargs["selectimage"] = image
 
         try:
-            button.configure(**image_kwargs, height="18p", width="18p")
+            button.configure(**image_kwargs, height=18, width=18)
         except:
             button.configure(
                 unchecked_icon=image_kwargs["image"],
                 checked_icon=image_kwargs["image"],
-                height="18p",
-                width="18p",
+                height=18,
+                width=18,
             )
             button._update_image()
             button._draw()
