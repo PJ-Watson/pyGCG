@@ -460,9 +460,11 @@ class GCG(ctk.CTk):
             stack_ids = [
                 s.stem[-6 - pad : -6] for s in dir_to_chk.glob("**/*.stack.fits")
             ] + [
-                s.stem[-3 - pad : -3] for s in dir_to_chk.glob("**/*.2D.fits")
+                s.stem[-3 - pad : -3] for s in dir_to_chk.glob("**/*.spec2D.fits")
             ]
-            oned_ids = [s.stem[-3 - pad : -3] for s in dir_to_chk.glob("**/*.1D.fits")]
+            oned_ids = [
+                s.stem[-3 - pad : -3] for s in dir_to_chk.glob("**/*.1D.fits")
+            ] + [s.stem[-3 - pad : -3] for s in dir_to_chk.glob("**/*.spec1D.fits")]
 
             for i, (n, s) in tqdm(
                 enumerate(zip(self.id_col, self.seg_id_col)),
