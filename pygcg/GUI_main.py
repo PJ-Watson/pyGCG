@@ -922,7 +922,7 @@ class GCG(ctk.CTk):
         flattened_data = flatten_dict(self.current_gal_data)
 
         if (
-            len(flattened_data) == 21
+            len(flattened_data) == 22
             and self.read_write_button.get() == "Write output"
             and np.sum([*self.object_progress.values()]) == 3
         ):
