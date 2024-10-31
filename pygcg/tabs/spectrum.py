@@ -1070,7 +1070,7 @@ class ImagesFrame(ctk.CTkFrame):
                     self.rgb_data[i] = hdul[0].data[
                         self.cutout_dimensions[0] : self.cutout_dimensions[1],
                         self.cutout_dimensions[2] : self.cutout_dimensions[3],
-                    ] * 10 ** ((hdul[0].header["ZP"] - 25) / 2.5)
+                    ] * 10 ** ((zp - 25) / 2.5)
 
             self.rgb_stretched = make_lupton_rgb(
                 self.rgb_data[0],
