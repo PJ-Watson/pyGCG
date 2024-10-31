@@ -301,7 +301,7 @@ class SpecFrame(ctk.CTkFrame):
             ][0]
             with pf.open(_row_path) as hdul:
                 grizli_redshift = Table(hdul[1].data)["redshift"].value[0]
-        except:
+        except Exception as e:
             try:
                 # Check if *full [GLASS] or *maps [PASSAGE] files exist
                 _full_path = [
@@ -320,51 +320,53 @@ class SpecFrame(ctk.CTkFrame):
                 _full_path = _full_path[0]
                 with pf.open(_full_path) as hdul:
                     grizli_redshift = hdul[1].header["Z_MAP"].value[0]
-            except:
+            except Exception as e:
                 grizli_redshift = 0.0
 
-            self.grizli_redshift = self._root().current_gal_data.get(
-                "grizli_redshift", grizli_redshift
-            )
-            self.estimated_redshift = self._root().current_gal_data.get(
-                "estimated_redshift", grizli_redshift
-            )
-            self.unreliable_redshift = self._root().current_gal_data.get(
-                "unreliable_redshift", False
-            )
-            self.tentative_redshift = self._root().current_gal_data.get(
-                "tentative_redshift", False
-            )
-            self.bad_seg = self._root().current_gal_data.get("bad_seg_map", False)
+            # print (grizli_redshift)
 
-            self._root().current_gal_data["grizli_redshift"] = self.grizli_redshift
-            self._root().current_gal_data[
-                "estimated_redshift"
-            ] = self.estimated_redshift
-            self._root().current_gal_data[
-                "unreliable_redshift"
-            ] = self.unreliable_redshift
-            self._root().current_gal_data[
-                "tentative_redshift"
-            ] = self.tentative_redshift
-            self._root().current_gal_data["bad_seg_map"] = self.bad_seg
-            self.current_redshift.set(self.estimated_redshift)
-            self.redshift_slider.set(self.estimated_redshift)
-            (
-                self.z_q_checkbox_un.select()
-                if self.unreliable_redshift
-                else self.z_q_checkbox_un.deselect()
-            )
-            (
-                self.z_q_checkbox_te.select()
-                if self.unreliable_redshift
-                else self.z_q_checkbox_te.deselect()
-            )
-            (
-                self.bad_seg_checkbox.select()
-                if self.bad_seg
-                else self.bad_seg_checkbox.deselect()
-            )
+        self.grizli_redshift = self._root().current_gal_data.get(
+            "grizli_redshift", grizli_redshift
+        )
+        self.estimated_redshift = self._root().current_gal_data.get(
+            "estimated_redshift", grizli_redshift
+        )
+        self.unreliable_redshift = self._root().current_gal_data.get(
+            "unreliable_redshift", False
+        )
+        self.tentative_redshift = self._root().current_gal_data.get(
+            "tentative_redshift", False
+        )
+        self.bad_seg = self._root().current_gal_data.get("bad_seg_map", False)
+
+        self._root().current_gal_data["grizli_redshift"] = self.grizli_redshift
+        self._root().current_gal_data[
+            "estimated_redshift"
+        ] = self.estimated_redshift
+        self._root().current_gal_data[
+            "unreliable_redshift"
+        ] = self.unreliable_redshift
+        self._root().current_gal_data[
+            "tentative_redshift"
+        ] = self.tentative_redshift
+        self._root().current_gal_data["bad_seg_map"] = self.bad_seg
+        self.current_redshift.set(self.estimated_redshift)
+        self.redshift_slider.set(self.estimated_redshift)
+        (
+            self.z_q_checkbox_un.select()
+            if self.unreliable_redshift
+            else self.z_q_checkbox_un.deselect()
+        )
+        (
+            self.z_q_checkbox_te.select()
+            if self.unreliable_redshift
+            else self.z_q_checkbox_te.deselect()
+        )
+        (
+            self.bad_seg_checkbox.select()
+            if self.bad_seg
+            else self.bad_seg_checkbox.deselect()
+        )
 
         try:
             phot_z_name = self._root().config.get("catalogue", {}).get("zphot", "zphot")
