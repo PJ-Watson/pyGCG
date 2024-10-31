@@ -137,9 +137,9 @@ class SpecFrame(ctk.CTkFrame):
         self.redshift_slider = ctk.CTkSlider(
             self.redshift_frame,
             from_=0,
-            to=4,
+            to=8,
             command=self.update_lines,
-            number_of_steps=400,
+            number_of_steps=800,
         )
         self.redshift_slider.grid(
             row=2,
@@ -289,15 +289,40 @@ class SpecFrame(ctk.CTkFrame):
 
     def _update_data(self):
         pad = self._root().config.get("catalogue", {}).get("seg_id_length", 5)
-        _row_path = [
-            *(
-                Path(self._root().config["files"]["extractions_dir"])
-                .expanduser()
-                .resolve()
-            ).glob(f"**/*{self._root().seg_id:0>{pad}}.row.fits")
-        ][0]
-        with pf.open(_row_path) as hdul:
-            grizli_redshift = Table(hdul[1].data)["redshift"].value[0]
+
+        # Check if *row data exists (small file, default grizli reduction)
+        try:
+            _row_path = [
+                *(
+                    Path(self._root().config["files"]["extractions_dir"])
+                    .expanduser()
+                    .resolve()
+                ).glob(f"**/*{self._root().seg_id:0>{pad}}.row.fits")
+            ][0]
+            with pf.open(_row_path) as hdul:
+                grizli_redshift = Table(hdul[1].data)["redshift"].value[0]
+        except:
+            try:
+                # Check if *full [GLASS] or *maps [PASSAGE] files exist
+                _full_path = [
+                    *(
+                        Path(self._root().config["files"]["extractions_dir"])
+                        .expanduser()
+                        .resolve()
+                    ).glob(f"**/*{self._root().seg_id:0>{pad}}.full.fits")
+                ] + [
+                    *(
+                        Path(self._root().config["files"]["extractions_dir"])
+                        .expanduser()
+                        .resolve()
+                    ).glob(f"**/*{self._root().seg_id:0>{pad}}.maps.fits")
+                ]
+                _full_path = _full_path[0]
+                with pf.open(_full_path) as hdul:
+                    grizli_redshift = hdul[1].header["Z_MAP"].value[0]
+            except:
+                grizli_redshift = 0.0
+
             self.grizli_redshift = self._root().current_gal_data.get(
                 "grizli_redshift", grizli_redshift
             )

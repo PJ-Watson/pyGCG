@@ -111,6 +111,10 @@ plate_scale = 0.03 # arcsec/pixel. If specified, radii are taken to be in pixels
         tex_name = 'HeI'
         centre = 10830.3398
 
+        [lines.emission.OII_3728]
+        tex_name = 'OII'
+        centre = 3728.4835
+        
         [lines.emission.OIII_4960]
         tex_name = 'OIII'
         centre = 4960.295

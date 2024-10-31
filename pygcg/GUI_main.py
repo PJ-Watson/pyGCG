@@ -457,7 +457,6 @@ class GCG(ctk.CTk):
 
             pad = self.config.get("catalogue", {}).get("seg_id_length", 5)
 
-            row_ids = [s.stem[-4 - pad : -4] for s in dir_to_chk.glob("**/*.row.fits")]
             stack_ids = [
                 s.stem[-6 - pad : -6] for s in dir_to_chk.glob("**/*.stack.fits")
             ] + [
@@ -474,8 +473,7 @@ class GCG(ctk.CTk):
                     if s in self.out_cat["SEG_ID"]:
                         continue
                 if (
-                    f"{s:0>{pad}}" in row_ids
-                    and f"{s:0>{pad}}" in oned_ids
+                    f"{s:0>{pad}}" in oned_ids
                     and f"{s:0>{pad}}" in stack_ids
                 ):
                     id_idx_list.append(i)
