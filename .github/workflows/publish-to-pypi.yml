@@ -1,8 +1,6 @@
 name: Build and publish on release
 
-on:
-  release:
-    types: [published]
+on: [push, workflow_dispatch]
 
 jobs:
   build:
@@ -32,7 +30,8 @@ jobs:
   publish-to-pypi:
     name: >-
       Publish Python 🐍 distribution 📦 to PyPI
-    if: startsWith(github.ref, 'refs/tags/')
+    # upload to PyPI on every tag starting with 'v'
+    if: github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags/v')
     needs:
     - build
     runs-on: ubuntu-latest
