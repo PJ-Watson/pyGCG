@@ -1,10 +1,13 @@
 [build-system]
-requires = ["setuptools>=61.0"]
+requires = [
+  "setuptools>=61.0",
+  "setuptools_scm>=8.0",
+]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "pyGCG"
-version = "0.7.2"
+dynamic = ["version"]
 authors = [
   { name="Peter Watson", email="peter.watson+pygcg@inaf.it" },
 ]
@@ -33,6 +36,9 @@ dependencies = [
 
 [tool.setuptools.package-data]
 "*" = ["*.*"]
+
+[tool.setuptools_scm]
+version_file = "pygcg/_version.py"
 
 [tool.black]
 line-length = 88

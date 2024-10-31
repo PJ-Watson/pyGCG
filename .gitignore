@@ -165,3 +165,4 @@ config.toml
 TODO.list
 test_script.py
 *.prof
+_version.py
