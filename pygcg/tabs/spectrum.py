@@ -910,6 +910,7 @@ class ImagesFrame(ctk.CTkFrame):
                 print(f"{p} image not found.")
                 self.rgb_paths.append(None)
             else:
+                rgb_path.sort(reverse=True)
                 self.rgb_paths.append(rgb_path[0])
 
     def plot_failed(self, ax, plot_name, text=None):
