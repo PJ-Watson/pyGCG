@@ -351,7 +351,7 @@ class SpecFrame(ctk.CTkFrame):
         )
         (
             self.z_q_checkbox_te.select()
-            if self.unreliable_redshift
+            if self.tentative_redshift
             else self.z_q_checkbox_te.deselect()
         )
         (
