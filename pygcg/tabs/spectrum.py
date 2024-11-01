@@ -319,7 +319,7 @@ class SpecFrame(ctk.CTkFrame):
                 ]
                 _full_path = _full_path[0]
                 with pf.open(_full_path) as hdul:
-                    grizli_redshift = hdul[1].header["Z_MAP"].value[0]
+                    grizli_redshift = hdul[1].header["Z_MAP"]
             except Exception as e:
                 grizli_redshift = 0.0
 
