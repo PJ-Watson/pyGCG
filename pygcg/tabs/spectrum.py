@@ -323,8 +323,6 @@ class SpecFrame(ctk.CTkFrame):
             except Exception as e:
                 grizli_redshift = 0.0
 
-            # print (grizli_redshift)
-
         self.grizli_redshift = self._root().current_gal_data.get(
             "grizli_redshift", grizli_redshift
         )
@@ -340,15 +338,9 @@ class SpecFrame(ctk.CTkFrame):
         self.bad_seg = self._root().current_gal_data.get("bad_seg_map", False)
 
         self._root().current_gal_data["grizli_redshift"] = self.grizli_redshift
-        self._root().current_gal_data[
-            "estimated_redshift"
-        ] = self.estimated_redshift
-        self._root().current_gal_data[
-            "unreliable_redshift"
-        ] = self.unreliable_redshift
-        self._root().current_gal_data[
-            "tentative_redshift"
-        ] = self.tentative_redshift
+        self._root().current_gal_data["estimated_redshift"] = self.estimated_redshift
+        self._root().current_gal_data["unreliable_redshift"] = self.unreliable_redshift
+        self._root().current_gal_data["tentative_redshift"] = self.tentative_redshift
         self._root().current_gal_data["bad_seg_map"] = self.bad_seg
         self.current_redshift.set(self.estimated_redshift)
         self.redshift_slider.set(self.estimated_redshift)
@@ -1088,24 +1080,27 @@ class ImagesFrame(ctk.CTkFrame):
             )
 
             for i, v in enumerate(self.rgb_paths):
-                with pf.open(v) as hdul:
-                    try:
-                        zp = hdul[0].header["ZP"]
-                    except:
+                try:
+                    with pf.open(v) as hdul:
                         try:
-                            # PASSAGE
-                            zp = (
-                                -2.5 * np.log10(hdul[0].header["PHOTFLAM"])
-                                - 5 * np.log10(hdul[0].header["PHOTPLAM"])
-                                - 2.408
-                            )
+                            zp = hdul[0].header["ZP"]
                         except:
-                            # Dawn JWST products
-                            zp = 28.9
-                    self.rgb_data[i] = hdul[0].data[
-                        self.cutout_dimensions[0] : self.cutout_dimensions[1],
-                        self.cutout_dimensions[2] : self.cutout_dimensions[3],
-                    ] * 10 ** ((zp - 25) / 2.5)
+                            try:
+                                # PASSAGE
+                                zp = (
+                                    -2.5 * np.log10(hdul[0].header["PHOTFLAM"])
+                                    - 5 * np.log10(hdul[0].header["PHOTPLAM"])
+                                    - 2.408
+                                )
+                            except:
+                                # Dawn JWST products
+                                zp = 28.9
+                        self.rgb_data[i] = hdul[0].data[
+                            self.cutout_dimensions[0] : self.cutout_dimensions[1],
+                            self.cutout_dimensions[2] : self.cutout_dimensions[3],
+                        ] * 10 ** ((zp - 25) / 2.5)
+                except:
+                    self.rgb_data[i] = np.zeros_like(self.rgb_data[i])
 
             self.rgb_stretched = make_lupton_rgb(
                 self.rgb_data[0],
