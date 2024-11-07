@@ -1,5 +1,7 @@
 # pyGCG: GLASS-JWST Classification GUI
 
+[![PyPI - Version](https://img.shields.io/pypi/v/pygcg?label=PyPI)](https://pypi.org/project/pyGCG/)
+
 A Python GUI to aid in viewing and classifying NIRISS data products from GLASS-JWST.
 
 ## Installation
