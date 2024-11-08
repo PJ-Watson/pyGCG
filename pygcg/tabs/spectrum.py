@@ -23,11 +23,14 @@ from astropy.visualization import (
 from astropy.wcs import WCS
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from matplotlib.figure import Figure
-from photutils.aperture import (
-    CircularAperture,
-    SkyCircularAperture,
-    aperture_photometry,
-)
+try:
+    from photutils.aperture import (
+        CircularAperture,
+        aperture_photometry,
+    )
+    HAS_PHOTUTILS = True
+except:
+    HAS_PHOTUTILS = False    
 from tqdm import tqdm
 
 from pygcg.utils import (
@@ -134,10 +137,11 @@ class SpecFrame(ctk.CTkFrame):
             pady=(10, 0),
             sticky="we",
         )
+        print (self._root().config.get("spectrum", {}).get("z_slider_max", 8.0), type(self._root().config.get("spectrum", {}).get("z_slider_max", 8.0)))
         self.redshift_slider = ctk.CTkSlider(
             self.redshift_frame,
-            from_=0,
-            to=8,
+            from_=int(self._root().config.get("spectrum", {}).get("z_slider_min", 0.0)),
+            to=int(self._root().config.get("spectrum", {}).get("z_slider_max", 8.0)),
             command=self.update_lines,
             number_of_steps=800,
         )
@@ -537,14 +541,16 @@ class SpecFrame(ctk.CTkFrame):
                 # radius=tab_row["r50_SE"][0],
             )
 
-            (self.plotted_components["MUSE_spec"],) = self.fig_axes.plot(
-                wavelengths,
-                MUSE_spec
-                / np.nanmedian(MUSE_spec)
-                * np.nanmedian(self.fig_axes.get_ylim()),
-                linewidth=0.5,
-                c="k",
-            )
+            if MUSE_spec is not None:
+
+                (self.plotted_components["MUSE_spec"],) = self.fig_axes.plot(
+                    wavelengths,
+                    MUSE_spec
+                    / np.nanmedian(MUSE_spec)
+                    * np.nanmedian(self.fig_axes.get_ylim()),
+                    linewidth=0.5,
+                    c="k",
+                )
 
     def cube_extract_spectra(
         self,
@@ -567,6 +573,8 @@ class SpecFrame(ctk.CTkFrame):
                 return hdul[0].data
         except Exception as e:
             print(e)
+            if not HAS_PHOTUTILS:
+                return None
             try:
                 ra.unit
                 dec.unit

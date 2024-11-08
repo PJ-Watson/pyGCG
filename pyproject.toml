@@ -27,7 +27,6 @@ dependencies = [
     "CTkMessageBox>=2.5",
     "matplotlib>=3.6",
     "tqdm>=4.66",
-    "photutils>=1.9",
 ]
 
 [project.urls]

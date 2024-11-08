@@ -35,9 +35,15 @@ plate_scale = 0.03 # arcsec/pixel. If specified, radii are taken to be in pixels
 
 [lines]
 # [optional] These tables define the lines shown in the redshift tab.
+# Lines are separated into `emission` and `absorption`, although there
+# is no physical distinction between the two as yet.
+# For example, the `emission` group could be set to the most common
+# lines, and the `absorption` group a much rarer set of lines often
+# seen in AGN. The only constraint is that each table key 
+# (lines.emission.XXX) must be unique.
 
     [lines.emission]
-    # These are the emission lines. Each name (lines.emission.XXX) must be unique.
+    # These are the emission lines.
 
         [lines.emission.Lyman_alpha]
         tex_name = 'Ly$\alpha$'
@@ -159,6 +165,19 @@ plate_scale = 0.03 # arcsec/pixel. If specified, radii are taken to be in pixels
         centre = 8564.52
 
 
-[appearance]
-appearance_mode = "system" # System (default), light, or dark.
-theme = "blue" # Blue (default), dark-blue, or green. The CustomTKinter color theme. Can also point to the location of a custom .json file describing the desired theme.
+[appearance] # Appearance-related settings
+
+# System (default), light, or dark.
+appearance_mode = "system" 
+
+# Blue (default), dark-blue, or green. The CustomTKinter color theme.
+# Can also point to the location of a custom .json file describing the
+# desired theme.
+theme = "blue" 
+
+[spectrum] # Settings related to the spectrum tab
+
+# Due to limitations in the CTK framework, the slider min/max
+# must be integers
+z_slider_min = 0
+z_slider_max = 8

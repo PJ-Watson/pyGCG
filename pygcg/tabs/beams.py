@@ -63,7 +63,7 @@ class BeamFrame(ctk.CTkFrame):
             values=["Linear", "Square root", "Logarithmic"],
             command=self.change_stretch,
         )
-        self.stretch_menu.set(self._root().plot_options["cmap"])
+        self.stretch_menu.set(self._root().plot_options["stretch"])
         self.stretch_menu.grid(row=0, column=5, padx=(5, 20), pady=10, sticky="w")
 
         limits_label = ctk.CTkLabel(self.settings_frame, text="Colourmap limits:")

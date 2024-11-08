@@ -2,15 +2,22 @@
 
 [![PyPI - Version](https://img.shields.io/pypi/v/pygcg?label=PyPI)](https://pypi.org/project/pyGCG/)
 
-A Python GUI to aid in viewing and classifying NIRISS data products from GLASS-JWST.
+A Python GUI to aid in viewing and classifying NIRISS data products. 
+This was originally designed for use by the GLASS-JWST collaboration, but
+has been tested against the data products from the PASSAGE collaboration
+as well.
 
 ## Installation
 
-In all cases, it is strongly recommended to install `pyGCG` into a new virtual environment, to minimise dependency conflicts (see [Requirements](#requirements)).
+In all cases, it is strongly recommended to install `pyGCG` into a new 
+virtual environment, to minimise dependency conflicts 
+(see [Requirements](#requirements)).
 
 ### Using pip (recommended)
 
-`pyGCG` can be installed directly from the [Python Package Index (PyPI)](https://pypi.org/project/pyGCG/), by running:
+`pyGCG` can be installed directly from the 
+[Python Package Index (PyPI)](https://pypi.org/project/pyGCG/), by 
+running:
 
 ```
 pip install --upgrade pygcg
@@ -34,14 +41,16 @@ pip install .
 
 ### Launching the GUI
 
-In the most basic configuration, `pyGCG` can be run in a Python session as follows:
+In the most basic configuration, `pyGCG` can be run in a Python session as
+follows:
 
 ```python
 from pygcg.GUI_main import run_app
 run_app()
 ```
 
-Alternatively, `pyGCG` can be launched from the terminal using a single line:
+Alternatively, `pyGCG` can be launched from the terminal using a single
+line:
 
 ```
 python -c "from pygcg.GUI_main import run_app; run_app()"
@@ -49,17 +58,21 @@ python -c "from pygcg.GUI_main import run_app; run_app()"
 
 ## Configuration file
 
-When launching `pyGCG`, one can pass the path of a configuration file using the `config_file` keyword:
+When launching `pyGCG`, one can pass the path of a configuration file
+using the `config_file` keyword:
 
 ```python
 from pygcg.GUI_main import run_app
 run_app(config_file="/path/to/your/config.toml")
 ```
 
-By default, `pyGCG` will look for `config.toml` in the current working directory, and will create this file if it doesn't exist, using the included [`example_config.toml`](pygcg/example_config.toml).
-This file will also be created if the supplied configuration file is invalid.
+By default, `pyGCG` will look for `config.toml` in the current working
+directory, and will create this file if it doesn't exist, using the 
+included [`example_config.toml`](pygcg/example_config.toml). This file
+will also be created if the supplied configuration file is invalid.
 
-The configuration file is TOML-formatted and organised into various sections, or tables.
+The configuration file is TOML-formatted and organised into various
+sections, or tables.
 
 ### Files
 
@@ -78,7 +91,8 @@ This table describes the location of the necessary files and directories.
 
 ### Grisms
 
-This table specifies the grism filters and position angles used in observations.
+This table specifies the grism filters and position angles used in
+observations.
 
 | Key | Default | Description |
 | --- | --- | --- |
@@ -90,7 +104,8 @@ This table specifies the grism filters and position angles used in observations.
 
 ### Catalogue
 
-This table can be used to specify non-standard column names (compared to the default `grizli` catalogue).
+This table can be used to specify non-standard column names (compared to
+the default `grizli` catalogue).
 
 | Key | Default | Description |
 | --- | --- | --- |
@@ -105,7 +120,8 @@ This table can be used to specify non-standard column names (compared to the def
 
 ### Lines
 
-In the `Spectrum` tab, it is possible to overlay the positions of reference lines at a given redshift. These take the following format:
+In the `Spectrum` tab, it is possible to overlay the positions of
+reference lines at a given redshift. These take the following format:
 
 ```toml
 [lines.emission.Lyman_alpha]
@@ -113,13 +129,16 @@ tex_name = 'Ly$\alpha$'
 centre = 1215.24
 ```
 
-`pyGCG` currently supports grouping lines into two categories, `emission` and `absorption`.
-The visibility of these groups can be toggled separately.
+`pyGCG` currently supports grouping lines into two categories, `emission`
+and `absorption`. The visibility of these groups can be toggled
+separately.
 
-The key for each line, `[lines.emission.XXX]`, must be unique.
-There is no such requirement for `tex_name`, which uses the [Matplotlib Mathtext parser](https://matplotlib.org/stable/users/explain/text/mathtext.html) to render the name on the plot.
-Note that single quotation marks are used to represent a string literal in TOML.
-`centre` is self-evidently the centre of the line, and is given in angstroms.
+The key for each line, `[lines.emission.XXX]`, must be unique. There is no
+such requirement for `tex_name`, which uses the 
+[Matplotlib Mathtext parser](https://matplotlib.org/stable/users/explain/text/mathtext.html)
+to render the name on the plot. Note that single quotation marks are used
+to represent a string literal in TOML. `centre` is self-evidently the
+centre of the line, and is given in angstroms.
 
 ### Appearance
 
@@ -140,8 +159,8 @@ These options can be used to change the appearance of the GUI.
  - [Astropy](https://www.astropy.org/) 5.3 or later
  - [CustomTkinter](https://customtkinter.tomschimansky.com/) 5.2 or later
  - [CTkMessageBox](https://github.com/Akascape/CTkMessagebox/) 2.5 or later
- - [Photutils](https://photutils.readthedocs.io/) 1.9 or later
  - [TOML Kit](https://tomlkit.readthedocs.io/) 0.12 or later
  - [tqdm](https://tqdm.github.io/) 4.66 or later
 
-`pyGCG` has been tested with Python 3.10, and is developed primarily on Python 3.11. Note that not all of the required packages may yet be compatible with Python 3.12.
+`pyGCG` has been tested with Python 3.10-3.12, across multiple operating
+systems, and is developed primarily on Python 3.12 and Ubuntu 22.04.5 LTS.
