@@ -50,26 +50,6 @@ plate_scale = 0.03 # arcsec/pixel. If specified, radii are taken to be in pixels
         tex_name = 'Ly$\alpha$'
         centre = 1215.24
 
-        [lines.emission.CIV_1549]
-        tex_name = 'C IV'
-        centre = 1549.48
-
-        [lines.emission.OIII-1665]
-        tex_name = 'O III'
-        centre = 1665.85
-
-        [lines.emission.CIII-1908] # Doublet
-        tex_name = 'C III'
-        centre = 1907.7085
-
-        [lines.emission.MgII-2799]
-        tex_name = 'Mg II'
-        centre = 2799.12
-
-        [lines.emission.HeII-1640]
-        tex_name = 'He II'
-        centre = 1640.4
-
         [lines.emission.NV-1240]
         tex_name = 'N V'
         centre = 1240.81
@@ -78,25 +58,57 @@ plate_scale = 0.03 # arcsec/pixel. If specified, radii are taken to be in pixels
         tex_name = 'N IV'
         centre = 1487.0
 
+        [lines.emission.CIV_1549]
+        tex_name = 'C IV'
+        centre = 1549.48
+
+        [lines.emission.HeII-1640]
+        tex_name = 'He II'
+        centre = 1640.4
+
+        [lines.emission.OIII-1665]
+        tex_name = 'O III'
+        centre = 1665.85
+
         [lines.emission.NIII-1750]
         tex_name = 'N III'
         centre = 1750.0
+        
+        [lines.emission.CIII-1908] # Doublet
+        tex_name = 'C III'
+        centre = 1907.7085
+
+        [lines.emission.MgII-2799]
+        tex_name = 'Mg II'
+        centre = 2799.12
+
+        [lines.emission.OII_3728]
+        tex_name = 'OII'
+        centre = 3728.4835
 
         [lines.emission.H_delta]
         tex_name = 'H$\delta$'
         centre = 4102.89
 
-        [lines.emission.OIII_4364]
-        tex_name = 'OIII'
-        centre = 4364.436
-
         [lines.emission.H_gamma]
         tex_name = 'H$\gamma$'
         centre = 4341.68
 
+        [lines.emission.OIII_4364]
+        tex_name = 'OIII'
+        centre = 4364.436
+
         [lines.emission.H_beta]
         tex_name = 'H$\beta$'
         centre = 4862.68
+
+        [lines.emission.OIII_4960]
+        tex_name = 'OIII'
+        centre = 4960.295
+
+        [lines.emission.OIII_5008]
+        tex_name = 'OIII'
+        centre = 5008.24
 
         [lines.emission.NII_6550]
         tex_name = 'NII'
@@ -109,22 +121,6 @@ plate_scale = 0.03 # arcsec/pixel. If specified, radii are taken to be in pixels
         [lines.emission.NII_6585]
         tex_name = 'NII'
         centre = 6585.27
-
-        [lines.emission.PaD]
-        tex_name = 'Pa-$\delta$'
-        centre = 10052.1
-
-        [lines.emission.PaG]
-        tex_name = 'Pa-$\gamma$'
-        centre = 10941.1
-
-        [lines.emission.PaB]
-        tex_name = 'Pa-$\beta$'
-        centre = 12821.6
-
-        [lines.emission.PaA]
-        tex_name = 'Pa-$\alpha$'
-        centre = 18756.1
 
         [lines.emission.SII_6718]
         tex_name = 'SII'
@@ -142,37 +138,25 @@ plate_scale = 0.03 # arcsec/pixel. If specified, radii are taken to be in pixels
         tex_name = 'SIII'
         centre = 9533.2
 
+        [lines.emission.PaD]
+        tex_name = 'Pa-$\delta$'
+        centre = 10052.1
+
         [lines.emission.HeI_10830]
         tex_name = 'HeI'
         centre = 10830.3398
 
-        [lines.emission.OII_3728]
-        tex_name = 'OII'
-        centre = 3728.4835
-
-        [lines.emission.OIII_4960]
-        tex_name = 'OIII'
-        centre = 4960.295
-
-        [lines.emission.OIII_5008]
-        tex_name = 'OIII'
-        centre = 5008.24
+        [lines.emission.PaG]
+        tex_name = 'Pa-$\gamma$'
+        centre = 10941.1
 
         [lines.emission.FeII_12570]
         tex_name = 'FeII'
         centre = 12570.21
 
-        [lines.emission.FeII_16440]
-        tex_name = 'FeII'
-        centre = 16440.02
-
-        [lines.emission.H2_19570]
-        tex_name = 'H2'
-        centre = 19575.59
-
-        [lines.emission.H2_21218]
-        tex_name = 'H2'
-        centre = 21218.34
+        [lines.emission.PaB]
+        tex_name = 'Pa-$\beta$'
+        centre = 12821.6
 
         [lines.emission.MgI_1503]
         tex_name = "MgI"
@@ -182,7 +166,21 @@ plate_scale = 0.03 # arcsec/pixel. If specified, radii are taken to be in pixels
         tex_name = "SiI"
         centre = 15892.73
 
+        [lines.emission.FeII_16440]
+        tex_name = 'FeII'
+        centre = 16440.02
 
+        [lines.emission.PaA]
+        tex_name = 'Pa-$\alpha$'
+        centre = 18756.1
+
+        [lines.emission.H2_19570]
+        tex_name = 'H2'
+        centre = 19575.59
+
+        [lines.emission.H2_21218]
+        tex_name = 'H2'
+        centre = 21218.34
 
     [lines.absorption]
     # These are the absorption lines.
