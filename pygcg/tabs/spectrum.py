@@ -299,11 +299,9 @@ class SpecFrame(ctk.CTkFrame):
         # Check if *row data exists (small file, default grizli reduction)
         try:
             _row_path = [
-                *(
-                    Path(self._root().config["files"]["extractions_dir"])
-                    .expanduser()
-                    .resolve()
-                ).glob(f"**/*{self._root().seg_id:0>{pad}}.row.fits")
+                *self._root().extractions_dir.glob(
+                    f"**/*{self._root().seg_id:0>{pad}}.row.fits"
+                )
             ][0]
             with pf.open(_row_path) as hdul:
                 grizli_redshift = Table(hdul[1].data)["redshift"].value[0]
@@ -311,17 +309,13 @@ class SpecFrame(ctk.CTkFrame):
             try:
                 # Check if *full [GLASS] or *maps [PASSAGE] files exist
                 _full_path = [
-                    *(
-                        Path(self._root().config["files"]["extractions_dir"])
-                        .expanduser()
-                        .resolve()
-                    ).glob(f"**/*{self._root().seg_id:0>{pad}}.full.fits")
+                    *self._root().extractions_dir.glob(
+                        f"**/*{self._root().seg_id:0>{pad}}.full.fits"
+                    )
                 ] + [
-                    *(
-                        Path(self._root().config["files"]["extractions_dir"])
-                        .expanduser()
-                        .resolve()
-                    ).glob(f"**/*{self._root().seg_id:0>{pad}}.maps.fits")
+                    *self._root().extractions_dir.glob(
+                        f"**/*{self._root().seg_id:0>{pad}}.maps.fits"
+                    )
                 ]
                 _full_path = _full_path[0]
                 with pf.open(_full_path) as hdul:
@@ -416,17 +410,13 @@ class SpecFrame(ctk.CTkFrame):
     def plot_grizli(self, templates=False):
         pad = self._root().config.get("catalogue", {}).get("seg_id_length", 5)
         file_path = [
-            *(
-                Path(self._root().config["files"]["extractions_dir"])
-                .expanduser()
-                .resolve()
-            ).glob(f"**/*{self._root().seg_id:0>{pad}}.1D.fits")
+            *self._root().extractions_dir.glob(
+                f"**/*{self._root().seg_id:0>{pad}}.1D.fits"
+            )
         ] + [
-            *(
-                Path(self._root().config["files"]["extractions_dir"])
-                .expanduser()
-                .resolve()
-            ).glob(f"**/*{self._root().seg_id:0>{pad}}.spec1D.fits")
+            *self._root().extractions_dir.glob(
+                f"**/*{self._root().seg_id:0>{pad}}.spec1D.fits"
+            )
         ]
         file_path = file_path[0]
 
@@ -457,16 +447,14 @@ class SpecFrame(ctk.CTkFrame):
                             data_table["line"][clip] / data_table["flat"][clip] / 1e-19,
                         )
                     except:
-                        (self.plotted_components[dict_key][hdu.name],) = (
-                            self.fig_axes.plot(
-                                data_table["wave"][clip],
-                                data_table["line"][clip]
-                                / data_table["flat"][clip]
-                                / 1e-19,
-                                c="red",
-                                alpha=0.7,
-                                zorder=10,
-                            )
+                        (
+                            self.plotted_components[dict_key][hdu.name],
+                        ) = self.fig_axes.plot(
+                            data_table["wave"][clip],
+                            data_table["line"][clip] / data_table["flat"][clip] / 1e-19,
+                            c="red",
+                            alpha=0.7,
+                            zorder=10,
                         )
                 else:
                     try:
@@ -498,16 +486,16 @@ class SpecFrame(ctk.CTkFrame):
                             yerr=y_err,
                         )
                     except:
-                        self.plotted_components[dict_key][hdu.name] = (
-                            self.fig_axes.errorbar(
-                                data_table["wave"][clip],
-                                y_vals,
-                                yerr=y_err,
-                                fmt="o",
-                                markersize=3,
-                                ecolor=colors.to_rgba(colours[hdu.name], 0.5),
-                                c=colours[hdu.name],
-                            )
+                        self.plotted_components[dict_key][
+                            hdu.name
+                        ] = self.fig_axes.errorbar(
+                            data_table["wave"][clip],
+                            y_vals,
+                            yerr=y_err,
+                            fmt="o",
+                            markersize=3,
+                            ecolor=colors.to_rgba(colours[hdu.name], 0.5),
+                            c=colours[hdu.name],
                         )
                     ymax = np.nanmax([ymax, np.nanmax(y_vals)])
 
@@ -888,11 +876,7 @@ class ImagesFrame(ctk.CTkFrame):
         self.fig.canvas.get_tk_widget().config(bg=self._root().bg_colour_name)
 
     def update_seg_path(self, pattern="*seg.fits"):
-        self.seg_path = [
-            *(
-                Path(self._root().config["files"]["prep_dir"]).expanduser().resolve()
-            ).glob(pattern)
-        ]
+        self.seg_path = [*self._root().prep_dir.glob(pattern)]
         if len(self.seg_path) == 0:
             print("Segmentation map not found.")
             self.seg_path = None
@@ -902,13 +886,7 @@ class ImagesFrame(ctk.CTkFrame):
     def update_rgb_path(self):
         self.rgb_paths = []
         for p in self._root().filter_names:
-            rgb_path = [
-                *(
-                    Path(self._root().config["files"]["prep_dir"])
-                    .expanduser()
-                    .resolve()
-                ).glob(f"*{p.lower()}*_dr[zc]_sci.fits")
-            ]
+            rgb_path = [*self._root().prep_dir.glob(f"*{p.lower()}*_dr[zc]_sci.fits")]
             if len(rgb_path) == 0:
                 print(f"{p} image not found.")
                 self.rgb_paths.append(None)
@@ -1338,17 +1316,13 @@ class RedshiftPlotFrame(ctk.CTkFrame):
     def update_fits_path(self):
         pad = self._root().config.get("catalogue", {}).get("seg_id_length", 5)
         self.fits_path = [
-            *(
-                Path(self._root().config["files"]["extractions_dir"])
-                .expanduser()
-                .resolve()
-            ).glob(f"**/*{self._root().seg_id:0>{pad}}.full.fits")
+            *self._root().extractions_dir.glob(
+                f"**/*{self._root().seg_id:0>{pad}}.full.fits"
+            )
         ] + [
-            *(
-                Path(self._root().config["files"]["extractions_dir"])
-                .expanduser()
-                .resolve()
-            ).glob(f"**/*{self._root().seg_id:0>{pad}}.maps.fits")
+            *self._root().extractions_dir.glob(
+                f"**/*{self._root().seg_id:0>{pad}}.maps.fits"
+            )
         ]
         if len(self.fits_path) == 0:
             print("Full extraction data not found.")

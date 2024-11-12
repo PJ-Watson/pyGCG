@@ -89,17 +89,13 @@ class BeamFrame(ctk.CTkFrame):
         try:
             pad = self._root().config.get("catalogue", {}).get("seg_id_length", 5)
             self.file_path = [
-                *(
-                    Path(self._root().config["files"]["extractions_dir"])
-                    .expanduser()
-                    .resolve()
-                ).glob(f"**/*{self._root().seg_id:0>{pad}}.stack.fits")
+                *self._root().extractions_dir.glob(
+                    f"**/*{self._root().seg_id:0>{pad}}.stack.fits"
+                )
             ] + [
-                *(
-                    Path(self._root().config["files"]["extractions_dir"])
-                    .expanduser()
-                    .resolve()
-                ).glob(f"**/*{self._root().seg_id:0>{pad}}.spec2D.fits")
+                *self._root().extractions_dir.glob(
+                    f"**/*{self._root().seg_id:0>{pad}}.spec2D.fits"
+                )
             ]
             self.file_path = self.file_path[0]
         except:
@@ -132,17 +128,13 @@ class BeamFrame(ctk.CTkFrame):
             self.gal_id = self._root().current_gal_id.get()
             pad = self._root().config.get("catalogue", {}).get("seg_id_length", 5)
             self.file_path = [
-                *(
-                    Path(self._root().config["files"]["extractions_dir"])
-                    .expanduser()
-                    .resolve()
-                ).glob(f"**/*{self._root().seg_id:0>{pad}}.stack.fits")
+                *self._root().extractions_dir.glob(
+                    f"**/*{self._root().seg_id:0>{pad}}.stack.fits"
+                )
             ] + [
-                *(
-                    Path(self._root().config["files"]["extractions_dir"])
-                    .expanduser()
-                    .resolve()
-                ).glob(f"**/*{self._root().seg_id:0>{pad}}.spec2D.fits")
+                *self._root().extractions_dir.glob(
+                    f"**/*{self._root().seg_id:0>{pad}}.spec2D.fits"
+                )
             ]
             self.file_path = self.file_path[0]
 

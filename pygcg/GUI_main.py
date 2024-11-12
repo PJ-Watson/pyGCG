@@ -1,4 +1,5 @@
 import re
+from functools import partial
 from itertools import product
 from pathlib import Path
 
@@ -249,15 +250,25 @@ class GCG(ctk.CTk):
                 len(self.config["files"]["extractions_dir"]) > 0
             ), "Extractions directory is not defined."
 
+            fpe_with_root = partial(
+                fpe, root=self.config["files"].get("root_dir", None)
+            )
+
             try:
-                self.cat = QTable.read(fpe(self.config["files"]["cat_path"]))
+                self.cat = QTable.read(
+                    fpe_with_root(
+                        self.config["files"]["cat_path"],
+                    )
+                )
             except Exception as e:
                 print("Catalogue could not be loaded from `cat_path' in config.")
                 try:
                     self.cat = QTable.read(
                         [
-                            *fpe(self.config["files"]["extractions_dir"]).glob(
-                                "*ir.cat.fits"
+                            *fpe_with_root(
+                                self.config["files"]["extractions_dir"]
+                            ).glob(
+                                "*ir.cat.fits",
                             )
                         ][0]
                     )
@@ -279,14 +290,20 @@ class GCG(ctk.CTk):
             try:
                 assert len(self.config["files"]["out_dir"]) > 0
 
-                fpe(self.config["files"]["out_dir"]).mkdir(exist_ok=True, parents=True)
-                self.out_dir = fpe(self.config["files"]["out_dir"])
+                fpe_with_root(
+                    self.config["files"]["out_dir"],
+                ).mkdir(exist_ok=True, parents=True)
+                self.out_dir = fpe_with_root(
+                    self.config["files"]["out_dir"],
+                )
 
                 if len(self.config["files"]["temp_dir"]) > 0:
-                    fpe(self.config["files"]["temp_dir"]).mkdir(
-                        exist_ok=True, parents=True
+                    fpe_with_root(
+                        self.config["files"]["temp_dir"],
+                    ).mkdir(exist_ok=True, parents=True)
+                    self.temp_dir = fpe_with_root(
+                        self.config["files"]["temp_dir"],
                     )
-                    self.temp_dir = fpe(self.config["files"]["temp_dir"])
                 else:
                     self.temp_dir = self.out_dir / ".temp"
                     self.temp_dir.mkdir(exist_ok=True)
@@ -294,7 +311,12 @@ class GCG(ctk.CTk):
                 out_name = self.config["files"].get("out_cat_name", "pyGCG_output.fits")
                 if out_name == "":
                     out_name = "pyGCG_output.fits"
-                self.out_cat_path = fpe(self.config["files"]["out_dir"]) / out_name
+                self.out_cat_path = (
+                    fpe_with_root(
+                        self.config["files"]["out_dir"],
+                    )
+                    / out_name
+                )
                 self.read_write_button.configure(state="normal")
             except:
                 print(
@@ -461,18 +483,35 @@ class GCG(ctk.CTk):
             self.seg_id_col = self.seg_id_col[unique_idx]
             self.id_col = self.id_col[unique_idx]
             self.cat = self.cat[unique_idx]
-            dir_to_chk = fpe(self.config["files"]["extractions_dir"])
+            self.extractions_dir = fpe_with_root(
+                self.config["files"]["extractions_dir"],
+            )
+            if self.config["files"].get("prep_dir", None) is not None:
+                self.prep_dir = fpe_with_root(
+                    self.config["files"]["prep_dir"],
+                )
+            else:
+                self.prep_dir = fpe_with_root(
+                    self.config["files"]["extractions_dir"],
+                )
 
             id_idx_list = []
 
             pad = self.config.get("catalogue", {}).get("seg_id_length", 5)
 
             stack_ids = [
-                s.stem[-6 - pad : -6] for s in dir_to_chk.glob("**/*.stack.fits")
-            ] + [s.stem[-7 - pad : -7] for s in dir_to_chk.glob("**/*.spec2D.fits")]
+                s.stem[-6 - pad : -6]
+                for s in self.extractions_dir.glob("**/*.stack.fits")
+            ] + [
+                s.stem[-7 - pad : -7]
+                for s in self.extractions_dir.glob("**/*.spec2D.fits")
+            ]
             oned_ids = [
-                s.stem[-3 - pad : -3] for s in dir_to_chk.glob("**/*.1D.fits")
-            ] + [s.stem[-7 - pad : -7] for s in dir_to_chk.glob("**/*.spec1D.fits")]
+                s.stem[-3 - pad : -3] for s in self.extractions_dir.glob("**/*.1D.fits")
+            ] + [
+                s.stem[-7 - pad : -7]
+                for s in self.extractions_dir.glob("**/*.spec1D.fits")
+            ]
 
             for i, (n, s) in tqdm(
                 enumerate(zip(self.id_col, self.seg_id_col)),

@@ -3,6 +3,7 @@
 title = "pyGCG Configuration"
 
 [files]
+root_dir = "" # The root dir, from which all other paths will be resolved
 out_dir = "" # The location of the primary configuration file.
 extractions_dir = "" # The directory in which NIRISS extractions are stored.
 cat_path = "" # [optional] The file path of the NIRISS catalogue. Must contain id, ra, dec columns. Defaults to "*ir.cat.fits" inside $EXTRACTIONS_DIR.
@@ -55,7 +56,7 @@ plate_scale = 0.03 # arcsec/pixel. If specified, radii are taken to be in pixels
 
         [lines.emission.OIII-1665]
         tex_name = 'O III'
-        centre = 1665.85 
+        centre = 1665.85
 
         [lines.emission.CIII-1908] # Doublet
         tex_name = 'C III'

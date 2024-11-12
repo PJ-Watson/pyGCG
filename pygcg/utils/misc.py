@@ -5,8 +5,11 @@ import customtkinter as ctk
 import numpy as np
 
 
-def fpe(filepath):
-    return Path(filepath).expanduser().resolve()
+def fpe(filepath, root=None):
+    if root is None:
+        return Path(filepath).expanduser().resolve()
+    else:
+        return (Path(root) / filepath).expanduser().resolve()
 
 
 def flatten_dict(input_dict, parent_key=False, separator="_"):
