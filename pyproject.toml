@@ -33,6 +33,9 @@ dependencies = [
 "Homepage" = "https://github.com/PJ-Watson/pyGCG"
 "Bug Tracker" = "https://github.com/PJ-Watson/pyGCG/issues"
 
+[tool.setuptools]
+packages = ["pygcg"]
+
 [tool.setuptools.package-data]
 "*" = ["*.*"]
 
