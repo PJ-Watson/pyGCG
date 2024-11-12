@@ -160,7 +160,7 @@ class BeamFrame(ctk.CTkFrame):
             )
             extver_list = [s for s in self._root().poss_extvers if self.PA in s]
 
-            self.beam_single_PA_frame = SinglePABeamFrame(self, extvers= extver_list)
+            self.beam_single_PA_frame = SinglePABeamFrame(self, extvers=extver_list)
             self.beam_single_PA_frame.grid(row=1, column=0, sticky="news")
             self.grid_rowconfigure(1, weight=1)
             self.grid_columnconfigure(0, weight=1)

@@ -1,4 +1,5 @@
 import re
+from itertools import product
 from pathlib import Path
 
 import astropy.units as u
@@ -14,7 +15,6 @@ from tqdm import tqdm
 from pygcg.tabs import BeamFrame, SpecFrame
 from pygcg.utils import ValidateFloatVar, flatten_dict, fpe
 from pygcg.windows import CommentsWindow, SearchWindow, SettingsWindow
-from itertools import product
 
 
 class GCG(ctk.CTk):
@@ -61,8 +61,8 @@ class GCG(ctk.CTk):
         self.read_write_button = ctk.CTkSegmentedButton(
             nav_frame,
             values=["Read-only", "Write output"],
-            selected_color="red",
-            selected_hover_color="dark red",
+            selected_color="green",
+            selected_hover_color="dark green",
             command=self.read_write_colour,
         )
         self.read_write_button.grid(
@@ -72,7 +72,7 @@ class GCG(ctk.CTk):
             pady=10,
             sticky="ew",
         )
-        self.read_write_button.set("Read-only")
+        self.read_write_button.set("Write output")
 
         self.open_settings_button = ctk.CTkButton(
             nav_frame,
@@ -923,7 +923,6 @@ class GCG(ctk.CTk):
         return out
 
     def save_button_fn(self, event=None):
-
         flattened_data = flatten_dict(self.current_gal_data)
 
         if self.read_write_button.get().lower() != "write output":

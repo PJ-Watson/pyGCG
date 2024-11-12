@@ -73,7 +73,6 @@ class SearchWindow(BaseWindow):
 
         else:
             try:
-
                 if len(parts) == 3:
                     # self.ids_arr = np.empty_like(ras, dtype=object)
                     for i, l in enumerate(lines):

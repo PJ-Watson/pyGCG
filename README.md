@@ -1,22 +1,22 @@
-# pyGCG: GLASS-JWST Classification GUI
+# pyGCG: Grism Classification GUI
 
 [![PyPI - Version](https://img.shields.io/pypi/v/pygcg?label=PyPI)](https://pypi.org/project/pyGCG/)
 
-A Python GUI to aid in viewing and classifying NIRISS data products. 
+A Python GUI to aid in viewing and classifying NIRISS data products.
 This was originally designed for use by the GLASS-JWST collaboration, but
 has been tested against the data products from the PASSAGE collaboration
 as well.
 
 ## Installation
 
-In all cases, it is strongly recommended to install `pyGCG` into a new 
-virtual environment, to minimise dependency conflicts 
+In all cases, it is strongly recommended to install `pyGCG` into a new
+virtual environment, to minimise dependency conflicts
 (see [Requirements](#requirements)).
 
 ### Using pip (recommended)
 
-`pyGCG` can be installed directly from the 
-[Python Package Index (PyPI)](https://pypi.org/project/pyGCG/), by 
+`pyGCG` can be installed directly from the
+[Python Package Index (PyPI)](https://pypi.org/project/pyGCG/), by
 running:
 
 ```
@@ -67,7 +67,7 @@ run_app(config_file="/path/to/your/config.toml")
 ```
 
 By default, `pyGCG` will look for `config.toml` in the current working
-directory, and will create this file if it doesn't exist, using the 
+directory, and will create this file if it doesn't exist, using the
 included [`example_config.toml`](pygcg/example_config.toml). This file
 will also be created if the supplied configuration file is invalid.
 
@@ -134,7 +134,7 @@ and `absorption`. The visibility of these groups can be toggled
 separately.
 
 The key for each line, `[lines.emission.XXX]`, must be unique. There is no
-such requirement for `tex_name`, which uses the 
+such requirement for `tex_name`, which uses the
 [Matplotlib Mathtext parser](https://matplotlib.org/stable/users/explain/text/mathtext.html)
 to render the name on the plot. Note that single quotation marks are used
 to represent a string literal in TOML. `centre` is self-evidently the

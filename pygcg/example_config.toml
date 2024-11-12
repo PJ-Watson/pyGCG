@@ -39,7 +39,7 @@ plate_scale = 0.03 # arcsec/pixel. If specified, radii are taken to be in pixels
 # is no physical distinction between the two as yet.
 # For example, the `emission` group could be set to the most common
 # lines, and the `absorption` group a much rarer set of lines often
-# seen in AGN. The only constraint is that each table key 
+# seen in AGN. The only constraint is that each table key
 # (lines.emission.XXX) must be unique.
 
     [lines.emission]
@@ -52,6 +52,34 @@ plate_scale = 0.03 # arcsec/pixel. If specified, radii are taken to be in pixels
         [lines.emission.CIV_1549]
         tex_name = 'C IV'
         centre = 1549.48
+
+        [lines.emission.OIII-1665]
+        tex_name = 'O III'
+        centre = 1665.85 
+
+        [lines.emission.CIII-1908] # Doublet
+        tex_name = 'C III'
+        centre = 1907.7085
+
+        [lines.emission.MgII-2799]
+        tex_name = 'Mg II'
+        centre = 2799.12
+
+        [lines.emission.HeII-1640]
+        tex_name = 'He II'
+        centre = 1640.4
+
+        [lines.emission.NV-1240]
+        tex_name = 'N V'
+        centre = 1240.81
+
+        [lines.emission.NIV-1487]
+        tex_name = 'N IV'
+        centre = 1487.0
+
+        [lines.emission.NIII-1750]
+        tex_name = 'N III'
+        centre = 1750.0
 
         [lines.emission.H_delta]
         tex_name = 'H$\delta$'
@@ -108,7 +136,7 @@ plate_scale = 0.03 # arcsec/pixel. If specified, radii are taken to be in pixels
         [lines.emission.SIII_9069]
         tex_name = 'SIII'
         centre = 9071.1
-        
+
         [lines.emission.SIII_9531]
         tex_name = 'SIII'
         centre = 9533.2
@@ -120,7 +148,7 @@ plate_scale = 0.03 # arcsec/pixel. If specified, radii are taken to be in pixels
         [lines.emission.OII_3728]
         tex_name = 'OII'
         centre = 3728.4835
-        
+
         [lines.emission.OIII_4960]
         tex_name = 'OIII'
         centre = 4960.295
@@ -128,6 +156,32 @@ plate_scale = 0.03 # arcsec/pixel. If specified, radii are taken to be in pixels
         [lines.emission.OIII_5008]
         tex_name = 'OIII'
         centre = 5008.24
+
+        [lines.emission.FeII_12570]
+        tex_name = 'FeII'
+        centre = 12570.21
+
+        [lines.emission.FeII_16440]
+        tex_name = 'FeII'
+        centre = 16440.02
+
+        [lines.emission.H2_19570]
+        tex_name = 'H2'
+        centre = 19575.59
+
+        [lines.emission.H2_21218]
+        tex_name = 'H2'
+        centre = 21218.34
+
+        [lines.emission.MgI_1503]
+        tex_name = "MgI"
+        centre = 15029.10
+
+        [lines.emission.SiI_1589]
+        tex_name = "SiI"
+        centre = 15892.73
+
+
 
     [lines.absorption]
     # These are the absorption lines.
@@ -168,12 +222,13 @@ plate_scale = 0.03 # arcsec/pixel. If specified, radii are taken to be in pixels
 [appearance] # Appearance-related settings
 
 # System (default), light, or dark.
-appearance_mode = "system" 
+appearance_mode = "system"
 
 # Blue (default), dark-blue, or green. The CustomTKinter color theme.
 # Can also point to the location of a custom .json file describing the
 # desired theme.
-theme = "blue" 
+theme = "blue"
+
 
 [spectrum] # Settings related to the spectrum tab
 

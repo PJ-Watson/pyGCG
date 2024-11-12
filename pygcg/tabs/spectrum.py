@@ -23,14 +23,13 @@ from astropy.visualization import (
 from astropy.wcs import WCS
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from matplotlib.figure import Figure
+
 try:
-    from photutils.aperture import (
-        CircularAperture,
-        aperture_photometry,
-    )
+    from photutils.aperture import CircularAperture, aperture_photometry
+
     HAS_PHOTUTILS = True
 except:
-    HAS_PHOTUTILS = False    
+    HAS_PHOTUTILS = False
 from tqdm import tqdm
 
 from pygcg.utils import (
@@ -137,7 +136,10 @@ class SpecFrame(ctk.CTkFrame):
             pady=(10, 0),
             sticky="we",
         )
-        print (self._root().config.get("spectrum", {}).get("z_slider_max", 8.0), type(self._root().config.get("spectrum", {}).get("z_slider_max", 8.0)))
+        print(
+            self._root().config.get("spectrum", {}).get("z_slider_max", 8.0),
+            type(self._root().config.get("spectrum", {}).get("z_slider_max", 8.0)),
+        )
         self.redshift_slider = ctk.CTkSlider(
             self.redshift_frame,
             from_=int(self._root().config.get("spectrum", {}).get("z_slider_min", 0.0)),
@@ -542,7 +544,6 @@ class SpecFrame(ctk.CTkFrame):
             )
 
             if MUSE_spec is not None:
-
                 (self.plotted_components["MUSE_spec"],) = self.fig_axes.plot(
                     wavelengths,
                     MUSE_spec

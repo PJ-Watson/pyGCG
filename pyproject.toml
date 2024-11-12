@@ -11,7 +11,7 @@ dynamic = ["version"]
 authors = [
   { name="Peter Watson", email="peter.watson+pygcg@inaf.it" },
 ]
-description = "A GUI to aid in viewing and classifying NIRISS data products from GLASS-JWST."
+description = "A GUI to aid in viewing and classifying NIRISS data products."
 readme = "README.md"
 requires-python = ">=3.10"
 classifiers = [
