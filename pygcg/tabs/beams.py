@@ -33,10 +33,11 @@ class BeamFrame(ctk.CTkFrame):
         self.settings_frame.grid(
             row=0,
             column=0,
-            columnspan=3,
+            columnspan=8,
             sticky="ew",
         )
         self.PA = PA
+        self.settings_frame.grid_columnconfigure(8, weight=1)
 
         cmap_label = ctk.CTkLabel(self.settings_frame, text="Colourmap:")
         cmap_label.grid(row=0, column=2, padx=(20, 5), pady=10, sticky="e")
@@ -84,6 +85,14 @@ class BeamFrame(ctk.CTkFrame):
         )
         self.limits_menu.set(self._root().plot_options["limits"])
         self.limits_menu.grid(row=0, column=7, padx=(5, 20), pady=10, sticky="w")
+
+        save_beams_button = ctk.CTkButton(
+            self.settings_frame,
+            text="Save Figure",
+            command=self.save_beam_figure,
+        )
+        save_beams_button.grid(row=0, column=8, padx=(20, 20), pady=10, sticky="e")
+        self.last_saved_dir = Path.cwd()
 
         self.gal_id = gal_id
         try:
@@ -156,6 +165,18 @@ class BeamFrame(ctk.CTkFrame):
             self.beam_single_PA_frame.grid(row=1, column=0, sticky="news")
             self.grid_rowconfigure(1, weight=1)
             self.grid_columnconfigure(0, weight=1)
+
+    def save_beam_figure(self):
+
+        path_output = str(
+            ctk.filedialog.asksaveasfilename(
+                parent=self,
+                initialdir=self.last_saved_dir,
+            )
+        )
+        if Path(path_output) is not None:
+            self.beam_single_PA_frame.fig.savefig(path_output)
+            self.last_saved_dir = Path(path_output).parent
 
 
 class SinglePABeamFrame(ctk.CTkFrame):
@@ -474,9 +495,9 @@ class MultiQualityFrame(ctk.CTkFrame):
     def keypress_select(self, event, key_maps):
         if event.char in key_maps:
             idx = (event.char == key_maps).nonzero()
-            self._root().current_gal_data[self.extvers[int(idx[0])]][
-                "quality"
-            ] = self.possible_values[int(idx[1])]
+            self._root().current_gal_data[self.extvers[int(idx[0])]]["quality"] = (
+                self.possible_values[int(idx[1])]
+            )
             self.quality_menus[self.extvers[int(idx[0])]].set(
                 self.possible_values[int(idx[1])]
             )
