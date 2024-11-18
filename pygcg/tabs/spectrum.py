@@ -104,9 +104,24 @@ class SpecFrame(ctk.CTkFrame):
             sticky="we",
         )
 
-        self.line_info_label = ctk.CTkLabel(self, text="Best line: n/a")
+        self.line_frame = ctk.CTkFrame(self, fg_color=self._root().bg_colour_name)
+        self.line_frame.grid(row=0, column=2, sticky="ew")
+        # self.line_frame.columnconfigure([0, 1, 2], weight=1)
+        self.line_menu = ctk.CTkOptionMenu(
+            self.line_frame,
+            values=["n/a"],
+            command=self.select_line_info,
+        )
+        self.line_info_dict = {}
+        self.line_menu.grid(row=0, column=1, padx=(5, 20), pady=(10,), sticky="w")
+
+        line_main_label = ctk.CTkLabel(self.line_frame, text="Line: ")
+        line_main_label.grid(
+            row=0, column=0, columnspan=1, padx=(20, 5), pady=(10,), sticky="e"
+        )
+        self.line_info_label = ctk.CTkLabel(self.line_frame, text="")
         self.line_info_label.grid(
-            row=0, column=2, columnspan=1, padx=(20, 20), pady=(10,), sticky="we"
+            row=0, column=2, columnspan=1, padx=(10, 20), pady=(10,), sticky="we"
         )
 
         self.current_redshift = ValidateFloatVar(
@@ -247,6 +262,20 @@ class SpecFrame(ctk.CTkFrame):
         )
         self.nav_toolbar.update()
 
+    def select_line_info(self, line_name=None):
+        if line_name is None or line_name == "n/a":
+            self.line_info_label.configure(text="")
+        else:
+            self.line_info_label.configure(
+                text=(
+                    "SN = "
+                    f"{self.line_info_dict[line_name]['sn']:.1f}"
+                    "        Flux = "
+                    f"{self.line_info_dict[line_name]['flux']:.2e}"
+                    " erg/s/cm\u00b2"
+                ),
+            )
+
     def update_plot(self):
         if not hasattr(self, "pyplot_canvas"):
             self.gal_id = self._root().current_gal_id.get()
@@ -309,17 +338,17 @@ class SpecFrame(ctk.CTkFrame):
                 _tab_data = Table(hdul[1].data)
                 grizli_redshift = _tab_data["redshift"].value[0]
 
-                line_names = _tab_data["haslines"].value[0].split()
-                sn_lines = []
-                grism_var = []
-                for l in line_names:
-                    # sn_lines.append(_tab_data[f"flux_{l}"].value[0]/_tab_data[f"err_{l}"].value[0])
-                    # sn_lines.append(_tab_data[f"flux_{l}"].value[0]/_tab_data[f"err_{l}"].value[0])
-                    sn_lines.append(_tab_data[f"sn_{l}"].value[0])
-                print(line_names, sn_lines)
-                print(_tab_data["tsgsadfg"])
+                try:
+                    line_names = _tab_data["haslines"].value[0].split()
+                    self.line_info_dict = {}
+                    for l in line_names:
+                        self.line_info_dict[l] = {}
+                        self.line_info_dict[l]["flux"] = _tab_data[f"flux_{l}"].value[0]
+                        self.line_info_dict[l]["sn"] = _tab_data[f"sn_{l}"].value[0]
+                except Exception as e:
+                    self.line_info_dict = {}
+
         except Exception as e:
-            print(e)
             try:
                 # Check if *full [GLASS] or *maps [PASSAGE] files exist
                 _full_path = [
@@ -335,21 +364,22 @@ class SpecFrame(ctk.CTkFrame):
                 with pf.open(_full_path) as hdul:
                     grizli_redshift = hdul[1].header["Z_MAP"]
                     _line_hdr = hdul[0].header
-                    line_names = _line_hdr["HASLINES"].split()
-                    sn_lines = []
-                    grism_var = []
-                    for i_l, l in enumerate(line_names):
-                        sn_lines.append(
-                            _line_hdr[f"flux{i_l+1:0>3}"] / _line_hdr[f"err{i_l+1:0>3}"]
-                        )
-                        # # sn_lines.append(_tab_data[f"flux_{l}"].value[0]/_tab_data[f"err_{l}"].value[0])
-                        # sn_lines.append(_tab_data[f"sn_{l}"].value[0])
-                    print(line_names, sn_lines)
-                    self.line_info_label.configure(
-                        text=(f"SN={sn_lines[0]}"),
-                    )
+
+                    try:
+                        line_names = _line_hdr["HASLINES"].split()
+                        self.line_info_dict = {}
+                        for i_l, l in enumerate(line_names):
+                            self.line_info_dict[l] = {}
+                            self.line_info_dict[l]["flux"] = _line_hdr[
+                                f"flux{i_l+1:0>3}"
+                            ]
+                            self.line_info_dict[l]["sn"] = (
+                                _line_hdr[f"flux{i_l+1:0>3}"]
+                                / _line_hdr[f"err{i_l+1:0>3}"]
+                            )
+                    except Exception as e:
+                        self.line_info_dict = {}
             except Exception as e:
-                print(e)
                 grizli_redshift = 0.0
 
         self.grizli_redshift = self._root().current_gal_data.get(
@@ -399,6 +429,15 @@ class SpecFrame(ctk.CTkFrame):
         self.redshift_phot_info.configure(
             text=(f"{phot_z_text}"),
         )
+        if self.line_info_dict is None:
+            self.line_menu.configure(values=["n/a"])
+            self.line_menu.set("n/a")
+        else:
+            keys = [*self.line_info_dict.keys()]
+            sns = np.array([v["sn"] for v in self.line_info_dict.values()])
+            self.line_menu.configure(values=keys)
+            self.line_menu.set(keys[np.argmax(sns)])
+        self.select_line_info(self.line_menu.get())
 
         try:
             spec_z_name = self._root().config.get("catalogue", {}).get("zspec", "zspec")
