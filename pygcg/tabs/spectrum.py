@@ -103,6 +103,12 @@ class SpecFrame(ctk.CTkFrame):
             pady=(10,),
             sticky="we",
         )
+
+        self.line_info_label = ctk.CTkLabel(self, text="Best line: n/a")
+        self.line_info_label.grid(
+            row=0, column=2, columnspan=1, padx=(20, 20), pady=(10,), sticky="we"
+        )
+
         self.current_redshift = ValidateFloatVar(
             master=self,
             value=0,
@@ -135,10 +141,6 @@ class SpecFrame(ctk.CTkFrame):
             padx=(20, 10),
             pady=(10, 0),
             sticky="we",
-        )
-        print(
-            self._root().config.get("spectrum", {}).get("z_slider_max", 8.0),
-            type(self._root().config.get("spectrum", {}).get("z_slider_max", 8.0)),
         )
         self.redshift_slider = ctk.CTkSlider(
             self.redshift_frame,
@@ -304,8 +306,20 @@ class SpecFrame(ctk.CTkFrame):
                 )
             ][0]
             with pf.open(_row_path) as hdul:
-                grizli_redshift = Table(hdul[1].data)["redshift"].value[0]
+                _tab_data = Table(hdul[1].data)
+                grizli_redshift = _tab_data["redshift"].value[0]
+
+                line_names = _tab_data["haslines"].value[0].split()
+                sn_lines = []
+                grism_var = []
+                for l in line_names:
+                    # sn_lines.append(_tab_data[f"flux_{l}"].value[0]/_tab_data[f"err_{l}"].value[0])
+                    # sn_lines.append(_tab_data[f"flux_{l}"].value[0]/_tab_data[f"err_{l}"].value[0])
+                    sn_lines.append(_tab_data[f"sn_{l}"].value[0])
+                print(line_names, sn_lines)
+                print(_tab_data["tsgsadfg"])
         except Exception as e:
+            print(e)
             try:
                 # Check if *full [GLASS] or *maps [PASSAGE] files exist
                 _full_path = [
@@ -320,7 +334,22 @@ class SpecFrame(ctk.CTkFrame):
                 _full_path = _full_path[0]
                 with pf.open(_full_path) as hdul:
                     grizli_redshift = hdul[1].header["Z_MAP"]
+                    _line_hdr = hdul[0].header
+                    line_names = _line_hdr["HASLINES"].split()
+                    sn_lines = []
+                    grism_var = []
+                    for i_l, l in enumerate(line_names):
+                        sn_lines.append(
+                            _line_hdr[f"flux{i_l+1:0>3}"] / _line_hdr[f"err{i_l+1:0>3}"]
+                        )
+                        # # sn_lines.append(_tab_data[f"flux_{l}"].value[0]/_tab_data[f"err_{l}"].value[0])
+                        # sn_lines.append(_tab_data[f"sn_{l}"].value[0])
+                    print(line_names, sn_lines)
+                    self.line_info_label.configure(
+                        text=(f"SN={sn_lines[0]}"),
+                    )
             except Exception as e:
+                print(e)
                 grizli_redshift = 0.0
 
         self.grizli_redshift = self._root().current_gal_data.get(
