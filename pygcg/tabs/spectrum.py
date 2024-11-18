@@ -447,14 +447,16 @@ class SpecFrame(ctk.CTkFrame):
                             data_table["line"][clip] / data_table["flat"][clip] / 1e-19,
                         )
                     except:
-                        (
-                            self.plotted_components[dict_key][hdu.name],
-                        ) = self.fig_axes.plot(
-                            data_table["wave"][clip],
-                            data_table["line"][clip] / data_table["flat"][clip] / 1e-19,
-                            c="red",
-                            alpha=0.7,
-                            zorder=10,
+                        (self.plotted_components[dict_key][hdu.name],) = (
+                            self.fig_axes.plot(
+                                data_table["wave"][clip],
+                                data_table["line"][clip]
+                                / data_table["flat"][clip]
+                                / 1e-19,
+                                c="red",
+                                alpha=0.7,
+                                zorder=10,
+                            )
                         )
                 else:
                     try:
@@ -478,7 +480,10 @@ class SpecFrame(ctk.CTkFrame):
                             data_table["err"][clip] / data_table["flat"][clip] / 1e-19
                         )
 
-                    if self._root().config["spectrum"]["spec_line"] == "step":
+                    if (
+                        self._root().config.get("spectrum", {}).get("spec_line")
+                        == "step"
+                    ):
                         try:
                             self.plotted_components[dict_key][hdu.name].set_data(
                                 data_table["wave"][clip],
@@ -498,22 +503,22 @@ class SpecFrame(ctk.CTkFrame):
                                 f"{hdu.name}_err"
                             ].set_paths([dp.vertices])
                         except Exception as e:
-                            (
-                                self.plotted_components[dict_key][hdu.name],
-                            ) = self.fig_axes.plot(
-                                data_table["wave"][clip],
-                                y_vals,
-                                drawstyle="steps-mid",
-                                c=colours[hdu.name],
+                            (self.plotted_components[dict_key][hdu.name],) = (
+                                self.fig_axes.plot(
+                                    data_table["wave"][clip],
+                                    y_vals,
+                                    drawstyle="steps-mid",
+                                    c=colours[hdu.name],
+                                )
                             )
-                            self.plotted_components[dict_key][
-                                f"{hdu.name}_err"
-                            ] = self.fig_axes.fill_between(
-                                data_table["wave"][clip],
-                                y_vals - y_err,
-                                y_vals + y_err,
-                                step="mid",
-                                facecolor=colors.to_rgba(colours[hdu.name], 0.5),
+                            self.plotted_components[dict_key][f"{hdu.name}_err"] = (
+                                self.fig_axes.fill_between(
+                                    data_table["wave"][clip],
+                                    y_vals - y_err,
+                                    y_vals + y_err,
+                                    step="mid",
+                                    facecolor=colors.to_rgba(colours[hdu.name], 0.5),
+                                )
                             )
                     else:
                         try:
@@ -524,16 +529,16 @@ class SpecFrame(ctk.CTkFrame):
                                 yerr=y_err,
                             )
                         except:
-                            self.plotted_components[dict_key][
-                                hdu.name
-                            ] = self.fig_axes.errorbar(
-                                data_table["wave"][clip],
-                                y_vals,
-                                yerr=y_err,
-                                fmt="o",
-                                markersize=3,
-                                ecolor=colors.to_rgba(colours[hdu.name], 0.5),
-                                c=colours[hdu.name],
+                            self.plotted_components[dict_key][hdu.name] = (
+                                self.fig_axes.errorbar(
+                                    data_table["wave"][clip],
+                                    y_vals,
+                                    yerr=y_err,
+                                    fmt="o",
+                                    markersize=3,
+                                    ecolor=colors.to_rgba(colours[hdu.name], 0.5),
+                                    c=colours[hdu.name],
+                                )
                             )
                     ymax = np.nanmax([ymax, np.nanmax(y_vals)])
 
