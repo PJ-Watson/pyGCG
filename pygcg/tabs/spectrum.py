@@ -53,7 +53,9 @@ class SpecFrame(ctk.CTkFrame):
         self.grid_columnconfigure(1, weight=1)
         self.grid_columnconfigure(2, weight=1)
 
-        self.plot_options_frame = ctk.CTkFrame(self)
+        self.plot_options_frame = ctk.CTkFrame(
+            self, fg_color=self._root().bg_colour_name
+        )
         self.plot_options_frame.grid(row=0, column=0, columnspan=2, sticky="ew")
 
         self.redshift_plot = RedshiftPlotFrame(self, self.gal_id)
@@ -70,7 +72,7 @@ class SpecFrame(ctk.CTkFrame):
             row=0, column=1, padx=20, pady=(10, 10), sticky="w"
         )
 
-        self.redshift_frame = ctk.CTkFrame(self)
+        self.redshift_frame = ctk.CTkFrame(self, fg_color=self._root().bg_colour_name)
         self.redshift_frame.grid(row=2, column=2, sticky="news")
         self.redshift_frame.columnconfigure([0, 1, 2, 3, 4, 5], weight=1)
         self.redshift_label = ctk.CTkLabel(

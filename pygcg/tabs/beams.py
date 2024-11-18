@@ -29,7 +29,7 @@ class BeamFrame(ctk.CTkFrame):
     def __init__(self, master, gal_id, PA, **kwargs):
         super().__init__(master, **kwargs)
 
-        self.settings_frame = ctk.CTkFrame(self)
+        self.settings_frame = ctk.CTkFrame(self, fg_color=self._root().bg_colour_name)
         self.settings_frame.grid(
             row=0,
             column=0,
