@@ -41,7 +41,7 @@ version_file = "pygcg/_version.py"
 
 [tool.black]
 line-length = 88
-target-version = ['py311']
+target-version = ['py312']
 extend-exclude = '(.*.txt|.*.md|.*.toml|.*.odg)'
 
 [tool.isort]

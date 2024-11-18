@@ -73,7 +73,7 @@ plate_scale = 0.03 # arcsec/pixel. If specified, radii are taken to be in pixels
         [lines.emission.NIII-1750]
         tex_name = 'N III'
         centre = 1750.0
-        
+
         [lines.emission.CIII-1908] # Doublet
         tex_name = 'C III'
         centre = 1907.7085
@@ -235,3 +235,6 @@ theme = "blue"
 # must be integers
 z_slider_min = 0
 z_slider_max = 8
+
+# Appearance of the 1D spectrum: "step" or "point"
+spec_line = "step"
