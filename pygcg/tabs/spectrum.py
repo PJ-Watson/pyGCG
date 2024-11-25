@@ -989,23 +989,27 @@ class ImagesFrame(ctk.CTkFrame):
         self.fig.canvas.get_tk_widget().config(bg=self._root().bg_colour_name)
 
     def update_seg_path(self, pattern="*seg.fits"):
-        self.seg_path = [*self._root().prep_dir.glob(pattern)]
-        if len(self.seg_path) == 0:
+        seg_paths = [str(s) for s in self._root().prep_dir.glob(pattern)]
+        if len(seg_paths) == 0:
             print("Segmentation map not found.")
             self.seg_path = None
         else:
-            self.seg_path = self.seg_path[0]
+            seg_paths = sorted(seg_paths, key=len)
+            self.seg_path = Path(seg_paths[0])
 
     def update_rgb_path(self):
         self.rgb_paths = []
         for p in self._root().filter_names:
-            rgb_path = [*self._root().prep_dir.glob(f"*{p.lower()}*_dr[zc]_sci.fits")]
-            if len(rgb_path) == 0:
+            rgb_paths = [
+                str(s)
+                for s in self._root().prep_dir.glob(f"*{p.lower()}*_dr[zc]_sci.fits")
+            ]
+            if len(rgb_paths) == 0:
                 print(f"{p} image not found.")
                 self.rgb_paths.append(None)
             else:
-                rgb_path.sort(reverse=True)
-                self.rgb_paths.append(rgb_path[0])
+                rgb_paths = sorted(rgb_paths, key=len)
+                self.rgb_paths.append(Path(rgb_paths[0]))
 
     def plot_failed(self, ax, plot_name, text=None):
         for k in ["img", "marker", "text"]:
@@ -1032,34 +1036,6 @@ class ImagesFrame(ctk.CTkFrame):
 
     def plot_images(self, border=5):
         plot_names = self._root().filter_names[::-1] + ["rgb", "seg"]
-
-        # if self.seg_path is None and all(x is None for x in self.rgb_paths):
-        #     print("No images to plot.")
-        #     missing_data_text = self._root().filter_names[::-1] + [
-        #         "No images found.",
-        #         "Segmentation map\nnot found.",
-        #     ]
-
-        #     try:
-        #         for v in self.plotted_components.values():
-        #             v.set_visible(False)
-        #     except:
-        #         pass
-
-        #     for a, n, t in zip(self.fig_axes, plot_names, missing_data_text):
-        #         print(t)
-        #         self.plotted_components[f"{n}_text"] = a.text(
-        #             0.5,
-        #             0.5,
-        #             t,
-        #             transform=a.transAxes,
-        #             ha="center",
-        #             va="center",
-        #             c=self._root().text_colour,
-        #             visible=True
-        #         )
-        #     self.pyplot_canvas.draw_idle()
-        #     return
 
         try:
             with pf.open(self.seg_path) as hdul:
