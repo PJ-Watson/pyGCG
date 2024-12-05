@@ -495,7 +495,7 @@ class SpecFrame(ctk.CTkFrame):
         else:
             dict_key = "grisms"
 
-        ymax = 0
+        data_lims = np.full((3, 2), np.nan)
         colours = {
             self._root().filter_names[0]: "C2",
             self._root().filter_names[1]: "C1",
@@ -610,10 +610,36 @@ class SpecFrame(ctk.CTkFrame):
                                     c=colours[hdu.name],
                                 )
                             )
-                    ymax = np.nanmax([ymax, np.nanmax(y_vals)])
+
+                    data_lims[0, 1] = np.nanmax(
+                        [data_lims[0, 1], np.nanmax(data_table["wave"][clip])]
+                    )
+                    data_lims[0, 0] = np.nanmin(
+                        [data_lims[0, 0], np.nanmin(data_table["wave"][clip])]
+                    )
+                    data_lims[1, 1] = np.nanmax(
+                        [data_lims[1, 1], np.nanmedian(y_vals) + 3 * np.nanstd(y_vals)]
+                    )
+                    data_lims[1, 0] = np.nanmin(
+                        [data_lims[1, 0], np.nanmedian(y_vals) - 3 * np.nanstd(y_vals)]
+                    )
+                    data_lims[2, 1] = np.nanmax([data_lims[2, 1], np.nanmax(y_vals)])
+                    data_lims[2, 0] = np.nanmin([data_lims[2, 0], np.nanmin(y_vals)])
 
         if not templates:
-            self.fig_axes.set_ylim(ymin=-0.05 * ymax, ymax=1.05 * ymax)
+            data_range = np.diff(data_lims, axis=1).flatten()
+            data_lims[:, 0] -= 0.025 * data_range
+            data_lims[:, 1] += 0.025 * data_range
+            self.fig_axes.set_xlim(*data_lims[0])
+            self.fig_axes.set_ylim(*data_lims[2])
+            toolbar = self.fig.canvas.toolbar
+            self.fig.canvas.draw()
+            toolbar.push_current()
+
+            self.fig_axes.set_xlim(data_lims[0])
+            self.fig_axes.set_ylim(
+                ymin=np.nanmax(data_lims[1:, 0]), ymax=np.nanmin(data_lims[1:, 1])
+            )
 
     def plot_MUSE_spec(
         self,
