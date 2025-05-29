@@ -12,6 +12,7 @@ cube_path = "" # [optional] The file path of the corresponding MUSE datacube.
 temp_dir = "" # [optional] The directory in which temporary files are stored. Defaults to $OUT_DIR/.temp/
 skip_existing = false # [optional] Skip loading objects which already exist in the output catalogue.
 out_cat_name = "" # [optional] The name of the output catalogue. Defaults to "pyGCG_output.fits"
+write_out = true # [optional] Whether to write to an output catalogue, by default true.
 
 [grisms]
 # [optional] Change these if using different grisms. R, G, B refer to the red, green and blue channels in the image viewer.
@@ -32,7 +33,13 @@ seg_id_length = 5 # [optional] The number of characters in $SEG_ID.
 mag = "MAG_AUTO"
 radius = "KRON_RCIRC"
 plate_scale = 0.03 # arcsec/pixel. If specified, radii are taken to be in pixels, and converted to arcseconds.
+zspec = "zspec" # The name of the spectroscopic redshift in the catalogue
+zphot = "zphot" # The name of the photometric redshift in the catalogue
+z_vals = "" # The name of the column containing previous classifications, in the form of a semi-colon separated string
+z_flags = "" # The name of the column containing previous flags, in the form of a semi-colon separated string
 
+    [catalogue.z_flags_cmap]
+    secure = "test"
 
 [lines]
 # [optional] These tables define the lines shown in the redshift tab.

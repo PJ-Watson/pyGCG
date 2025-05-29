@@ -14,7 +14,7 @@ from CTkMessagebox import CTkMessagebox
 from tqdm import tqdm
 
 from pygcg.tabs import BeamFrame, SpecFrame
-from pygcg.utils import ValidateFloatVar, flatten_dict, fpe
+from pygcg.utils import ValidateFloatVar, check_deg, flatten_dict, fpe
 from pygcg.windows import CommentsWindow, SearchWindow, SettingsWindow
 
 
@@ -26,7 +26,7 @@ class GCG(ctk.CTk):
         self.geometry("1366x768")
         self.minsize(1280, 720)
         # self.attributes("-zoomed", True)
-        self.title("GLASS-JWST Classification GUI")
+        self.title("Grism Classification GUI")
 
         self.initialise_configuration(config_file)
         self.settings_window = None
@@ -73,7 +73,12 @@ class GCG(ctk.CTk):
             pady=10,
             sticky="ew",
         )
-        self.read_write_button.set("Write output")
+        self.read_write_button.set(
+            "Write output"
+            if self.config["files"].get("write_out", True)
+            else "Read-only"
+        )
+        self.read_write_colour()
 
         self.open_settings_button = ctk.CTkButton(
             nav_frame,
@@ -261,7 +266,7 @@ class GCG(ctk.CTk):
                     )
                 )
             except Exception as e:
-                print("Catalogue could not be loaded from `cat_path' in config.")
+                print(f"Catalogue could not be loaded from `cat_path' in config: {e}")
                 try:
                     self.cat = QTable.read(
                         [
@@ -1041,12 +1046,12 @@ class GCG(ctk.CTk):
         self.current_gal_data = {}
         self.current_gal_data["id"] = self.current_gal_id.get()
         self.current_gal_data["seg_id"] = self.seg_id
-        self.current_gal_data["ra"] = self.tab_row[
-            self.config.get("catalogue", {}).get("ra", "X_WORLD")
-        ]
-        self.current_gal_data["dec"] = self.tab_row[
-            self.config.get("catalogue", {}).get("dec", "Y_WORLD")
-        ]
+        self.current_gal_data["ra"] = check_deg(
+            self.tab_row[self.config.get("catalogue", {}).get("ra", "X_WORLD")]
+        )
+        self.current_gal_data["dec"] = check_deg(
+            self.tab_row[self.config.get("catalogue", {}).get("dec", "Y_WORLD")]
+        )
         self.current_gal_data["comments"] = ""
 
         self.current_gal_coords.set(
