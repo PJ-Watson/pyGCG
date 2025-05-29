@@ -1,6 +1,8 @@
 import collections
+import warnings
 from pathlib import Path
 
+import astropy.units as u
 import customtkinter as ctk
 import numpy as np
 
@@ -134,3 +136,21 @@ class ValidateFloatVar(ctk.StringVar):
             self._old_value = new_value
         except ValueError:
             ctk.StringVar.set(self, self._old_value)
+
+
+def check_deg(orig):
+    if hasattr(orig, "unit") and orig.unit != None:
+        new = orig.value * orig.unit  # Avoiding problems with columns
+        if new.unit == u.pix:
+            return new
+        elif u.get_physical_type(new) == "dimensionless":
+            new *= u.deg
+        if u.get_physical_type(new) == "angle":
+            new = new.to(u.deg)
+    else:
+        warnings.warn("Coordinate has no unit, assuming degrees.", RuntimeWarning)
+        if hasattr(orig, "value"):
+            new = orig.value * u.deg
+        else:
+            new = orig * u.deg
+    return new

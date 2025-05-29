@@ -35,6 +35,7 @@ from tqdm import tqdm
 from pygcg.utils import (
     ValidateFloatVar,
     VerticalNavigationToolbar2Tk,
+    check_deg,
     error_bar_visibility,
     update_errorbar,
 )
@@ -72,39 +73,105 @@ class SpecFrame(ctk.CTkFrame):
             row=0, column=1, padx=20, pady=(10, 10), sticky="w"
         )
 
+        # Create new redshift info frame
+        # Create multiple labels depending on config setup
+
         self.redshift_frame = ctk.CTkFrame(self, fg_color=self._root().bg_colour_name)
         self.redshift_frame.grid(row=2, column=2, sticky="news")
         self.redshift_frame.columnconfigure([0, 1, 2, 3, 4, 5], weight=1)
-        self.redshift_label = ctk.CTkLabel(
-            self.redshift_frame, text="Estimated redshift:"
+
+        # This whole mess is because customtkinter has very few options for colouring text
+        # In hindsight, I should have used a different GUI framework
+        self.redshift_info_frame = ctk.CTkFrame(
+            self.redshift_frame, fg_color=self._root().bg_colour_name
         )
-        self.redshift_label.grid(
-            row=0, column=0, columnspan=2, padx=(20, 10), pady=(10,), sticky="w"
+        self.redshift_info_frame.grid(
+            row=0, column=2, columnspan=4, sticky="news", padx=0, pady=0
         )
-        self.redshift_spec_info = ctk.CTkLabel(
-            self.redshift_frame,
-            text="test",
-        )
-        self.redshift_spec_info.grid(
-            row=0,
-            column=2,
-            columnspan=2,
-            padx=(20, 10),
-            pady=(10,),
-            sticky="we",
-        )
-        self.redshift_phot_info = ctk.CTkLabel(
-            self.redshift_frame,
-            text="test2",
-        )
-        self.redshift_phot_info.grid(
-            row=0,
-            column=4,
-            columnspan=2,
-            padx=(20, 10),
-            pady=(10,),
-            sticky="we",
-        )
+
+        z_vals_colname = self._root().config.get("catalogue", {}).get("z_vals", "")
+        try:
+            # print("Catalogue key exists")
+            # print(self._root().cat[z_vals_colname][0])
+            num_z_evals = len(self._root().cat[z_vals_colname][0])
+
+            self.redshift_spec_info = ctk.CTkLabel(
+                self.redshift_frame,
+                text="test",
+            )
+            self.redshift_spec_info.grid(
+                row=0,
+                column=0,
+                padx=(5, 5),
+                pady=(10,),
+                sticky="we",
+            )
+            self.redshift_phot_info = ctk.CTkLabel(
+                self.redshift_frame,
+                text="test2",
+            )
+            self.redshift_phot_info.grid(
+                row=0,
+                column=1,
+                padx=(5, 5),
+                pady=(10,),
+                sticky="we",
+            )
+            self.redshift_info_frame.columnconfigure(
+                np.arange(num_z_evals).tolist(), weight=1
+            )
+            self.z_eval_labels = []
+            for n in np.arange(num_z_evals):
+                redshift_eval_info = ctk.CTkLabel(
+                    self.redshift_info_frame,
+                    text="",
+                    # text = f"{self._root().cat[z_vals_colname][0][n]:.3f}"
+                )
+                redshift_eval_info.grid(
+                    row=0,
+                    column=n,
+                    padx=(5, 5),
+                    pady=(10,),
+                    sticky="we",
+                )
+                self.z_eval_labels.append(redshift_eval_info)
+        except Exception as e:
+            # import traceback
+            # traceback.print_exc()
+            print(
+                "Could not load `z_vals' column."
+                "Searching for `zspec' and `zphot' instead."
+            )
+            self.redshift_label = ctk.CTkLabel(
+                self.redshift_frame, text="Estimated redshift:"
+            )
+            self.redshift_label.grid(
+                row=0, column=0, columnspan=2, padx=(20, 10), pady=(10,), sticky="w"
+            )
+            self.redshift_info_frame.columnconfigure([0, 1], weight=1)
+
+            self.redshift_spec_info = ctk.CTkLabel(
+                self.redshift_info_frame,
+                text="test",
+            )
+            self.redshift_spec_info.grid(
+                row=0,
+                column=0,
+                padx=(20, 10),
+                pady=(10,),
+                sticky="we",
+            )
+            self.redshift_phot_info = ctk.CTkLabel(
+                self.redshift_info_frame,
+                text="test2",
+            )
+            self.redshift_phot_info.grid(
+                row=0,
+                column=1,
+                padx=(20, 10),
+                pady=(10,),
+                sticky="we",
+            )
 
         self.line_frame = ctk.CTkFrame(self, fg_color=self._root().bg_colour_name)
         self.line_frame.grid(row=0, column=2, sticky="ew")
@@ -421,16 +488,6 @@ class SpecFrame(ctk.CTkFrame):
             else self.bad_seg_checkbox.deselect()
         )
 
-        try:
-            phot_z_name = self._root().config.get("catalogue", {}).get("zphot", "zphot")
-            phot_z = self._root().tab_row[phot_z_name]
-            assert phot_z != "--"
-            phot_z_text = f"z\u209a\u2095\u2092\u209c = {phot_z:.3f} "
-        except Exception as e:
-            phot_z_text = "z\u209a\u2095\u2092\u209c = n/a  "
-        self.redshift_phot_info.configure(
-            text=(f"{phot_z_text}"),
-        )
         if self.line_info_dict is None:
             self.line_menu.configure(values=["n/a"])
             self.line_menu.set("n/a")
@@ -441,6 +498,42 @@ class SpecFrame(ctk.CTkFrame):
             self.line_menu.set(keys[np.argmax(sns)])
         self.select_line_info(self.line_menu.get())
 
+        if hasattr(self, "z_eval_labels"):
+            self._update_z_evals()
+        # else:
+        self._update_redshift_labels()
+
+    def _update_z_evals(self):
+
+        z_vals_colname = self._root().config.get("catalogue", {}).get("z_vals", "")
+        z_flags_colname = self._root().config.get("catalogue", {}).get("z_flags", "")
+        z_cmap = self._root().config.get("catalogue", {}).get("z_flags_cmap", None)
+        # print (z_flags)
+        import traceback
+
+        try:
+            z_vals = self._root().tab_row[z_vals_colname]
+            z_flags = self._root().tab_row[z_flags_colname].astype("U")
+
+            default_col = self.bad_seg_checkbox.cget("text_color")
+
+            for n_z, (z_lab, z_val, z_flag) in enumerate(
+                zip(self.z_eval_labels, z_vals, z_flags)
+            ):
+                try:
+                    assert z_val != "--"
+                    spec_z_text = f"{z_val:.3f}"
+                    if z_cmap is not None:
+                        col = z_cmap.get(z_flag, default_col)
+                except Exception as e:
+                    spec_z_text = f"n/a"
+                    col = default_col
+                z_lab.configure(text=(f"{spec_z_text}"), text_color=col)
+        except:
+            pass
+
+    def _update_redshift_labels(self):
+
         try:
             spec_z_name = self._root().config.get("catalogue", {}).get("zspec", "zspec")
             spec_z = self._root().tab_row[spec_z_name]
@@ -450,6 +543,17 @@ class SpecFrame(ctk.CTkFrame):
             spec_z_text = f"z\u209b\u209a\u2091\U0001E03F = n/a  "
         self.redshift_spec_info.configure(
             text=(f"{spec_z_text}"),
+        )
+
+        try:
+            phot_z_name = self._root().config.get("catalogue", {}).get("zphot", "zphot")
+            phot_z = self._root().tab_row[phot_z_name]
+            assert phot_z != "--"
+            phot_z_text = f"z\u209a\u2095\u2092\u209c = {phot_z:.3f} "
+        except Exception as e:
+            phot_z_text = "z\u209a\u2095\u2092\u209c = n/a  "
+        self.redshift_phot_info.configure(
+            text=(f"{phot_z_text}"),
         )
 
     def _update_all(self):
@@ -497,8 +601,8 @@ class SpecFrame(ctk.CTkFrame):
 
         data_lims = np.full((3, 2), np.nan)
         colours = {
-            self._root().filter_names[0]: "C2",
-            self._root().filter_names[1]: "C1",
+            self._root().filter_names[0]: "C1",
+            self._root().filter_names[1]: "C2",
             self._root().filter_names[2]: "C0",
         }
 
@@ -999,7 +1103,7 @@ class ImagesFrame(ctk.CTkFrame):
             a.tick_params(axis="both", direction="in", top=True, right=True)
             # a.tick_params(axis="both", direction="in", left=False, bottom=False)
 
-        self.default_cmap = colors.ListedColormap(["C1", "C0", "C2", "C3", "C4", "C5"])
+        self.default_cmap = colors.ListedColormap(["C3", "C4", "C5", "C6", "C7", "C8"])
 
         self.plotted_components = {}
 
@@ -1357,23 +1461,6 @@ def extract_pixel_ra_dec(q_table, celestial_wcs, key_ra="ra", key_dec="dec"):
             else:
                 continue
             break
-
-    def check_deg(orig):
-        if hasattr(orig, "unit") and orig.unit != None:
-            new = orig.value * orig.unit  # Avoiding problems with columns
-            if new.unit == u.pix:
-                return new
-            elif u.get_physical_type(new) == "dimensionless":
-                new *= u.deg
-            if u.get_physical_type(new) == "angle":
-                new = new.to(u.deg)
-        else:
-            print("Coordinate has no unit, assuming degrees.")
-            if hasattr(orig, "value"):
-                new = orig.value * u.deg
-            else:
-                new = orig * u.deg
-        return new
 
     new_ra, new_dec = check_deg(orig_ra), check_deg(orig_dec)
     if new_ra.unit == u.pix:

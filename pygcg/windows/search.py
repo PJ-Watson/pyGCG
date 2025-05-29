@@ -147,14 +147,25 @@ class SearchWindow(BaseWindow):
         self._root().id_col = self.ids_arr
         self._root().seg_id_col = self._root().seg_id_col[match_idx]
         self._root().cat = self._root().cat[match_idx]
-        self._root().sky_coords = SkyCoord(
-            self._root().cat[
-                self._root().config.get("catalogue", {}).get("ra", "X_WORLD")
-            ],
-            self._root().cat[
-                self._root().config.get("catalogue", {}).get("dec", "Y_WORLD")
-            ],
-        )
+        try:
+            self._root().sky_coords = SkyCoord(
+                self._root().cat[
+                    self._root().config.get("catalogue", {}).get("ra", "X_WORLD")
+                ],
+                self._root().cat[
+                    self._root().config.get("catalogue", {}).get("dec", "Y_WORLD")
+                ],
+            )
+        except:
+            self._root().sky_coords = SkyCoord(
+                self._root().cat[
+                    self._root().config.get("catalogue", {}).get("ra", "X_WORLD")
+                ],
+                self._root().cat[
+                    self._root().config.get("catalogue", {}).get("dec", "Y_WORLD")
+                ],
+                unit="deg",
+            )
 
         self._root().current_gal_id.set(self._root().id_col[0])
         self._root().tab_row = self._root().cat[0]
