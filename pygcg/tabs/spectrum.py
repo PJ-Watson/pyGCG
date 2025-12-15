@@ -488,7 +488,7 @@ class SpecFrame(ctk.CTkFrame):
             else self.bad_seg_checkbox.deselect()
         )
 
-        if self.line_info_dict is None:
+        if (self.line_info_dict is None) or (len(self.line_info_dict) == 0):
             self.line_menu.configure(values=["n/a"])
             self.line_menu.set("n/a")
         else:
@@ -611,9 +611,10 @@ class SpecFrame(ctk.CTkFrame):
         with pf.open(file_path) as hdul:
             for hdu in hdul[1:]:
                 data_table = Table(hdu.data)
-                clip = data_table["err"] > 0
+                err_colname = "err" if "err" in data_table.colnames else "ferr"
+                clip = data_table[err_colname] > 0
                 if clip.sum() == 0:
-                    clip = np.isfinite(data_table["err"])
+                    clip = np.isfinite(data_table[err_colname])
                 if templates:
                     try:
                         self.plotted_components[dict_key][hdu.name].set_data(
@@ -641,7 +642,7 @@ class SpecFrame(ctk.CTkFrame):
                             / 1e-19
                         )
                         y_err = (
-                            data_table["err"][clip]
+                            data_table[err_colname][clip]
                             / data_table["flat"][clip]
                             / data_table["pscale"][clip]
                             / 1e-19
@@ -651,7 +652,7 @@ class SpecFrame(ctk.CTkFrame):
                             data_table["flux"][clip] / data_table["flat"][clip] / 1e-19
                         )
                         y_err = (
-                            data_table["err"][clip] / data_table["flat"][clip] / 1e-19
+                            data_table[err_colname][clip] / data_table["flat"][clip] / 1e-19
                         )
 
                     if (
