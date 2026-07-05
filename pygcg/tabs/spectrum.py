@@ -420,15 +420,23 @@ class SpecFrame(ctk.CTkFrame):
         except Exception as e:
             try:
                 # Check if *full [GLASS] or *maps [PASSAGE] files exist
-                _full_path = [
-                    *self._root().extractions_dir.glob(
-                        f"**/*{self._root().seg_id:0>{pad}}.full.fits"
-                    )
-                ] + [
-                    *self._root().extractions_dir.glob(
-                        f"**/*{self._root().seg_id:0>{pad}}.maps.fits"
-                    )
-                ]
+                _full_path = (
+                    [
+                        *self._root().extractions_dir.glob(
+                            f"**/*{self._root().seg_id:0>{pad}}.full.fits"
+                        )
+                    ]
+                    + [
+                        *self._root().extractions_dir.glob(
+                            f"**/*{self._root().seg_id:0>{pad}}.maps.fits"
+                        )
+                    ]
+                    + [
+                        *self._root().extractions_dir.glob(
+                            f"**/*{self._root().seg_id:0>{pad}}.zinfo.fits"
+                        )
+                    ]
+                )
                 _full_path = _full_path[0]
                 with pf.open(_full_path) as hdul:
                     grizli_redshift = hdul[1].header["Z_MAP"]
@@ -583,15 +591,23 @@ class SpecFrame(ctk.CTkFrame):
 
     def plot_grizli(self, templates=False):
         pad = self._root().config.get("catalogue", {}).get("seg_id_length", 5)
-        file_path = [
-            *self._root().extractions_dir.glob(
-                f"**/*{self._root().seg_id:0>{pad}}.1D.fits"
-            )
-        ] + [
-            *self._root().extractions_dir.glob(
-                f"**/*{self._root().seg_id:0>{pad}}.spec1D.fits"
-            )
-        ]
+        file_path = (
+            [
+                *self._root().extractions_dir.glob(
+                    f"**/*{self._root().seg_id:0>{pad}}.1D.fits"
+                )
+            ]
+            + [
+                *self._root().extractions_dir.glob(
+                    f"**/*{self._root().seg_id:0>{pad}}.spec1D.fits"
+                )
+            ]
+            + [
+                *self._root().extractions_dir.glob(
+                    f"**/*{self._root().seg_id:0>{pad}}.1D_RC.fits"
+                )
+            ]
+        )
         file_path = file_path[0]
 
         if templates:
@@ -652,7 +668,9 @@ class SpecFrame(ctk.CTkFrame):
                             data_table["flux"][clip] / data_table["flat"][clip] / 1e-19
                         )
                         y_err = (
-                            data_table[err_colname][clip] / data_table["flat"][clip] / 1e-19
+                            data_table[err_colname][clip]
+                            / data_table["flat"][clip]
+                            / 1e-19
                         )
 
                     if (
@@ -1518,15 +1536,23 @@ class RedshiftPlotFrame(ctk.CTkFrame):
 
     def update_fits_path(self):
         pad = self._root().config.get("catalogue", {}).get("seg_id_length", 5)
-        self.fits_path = [
-            *self._root().extractions_dir.glob(
-                f"**/*{self._root().seg_id:0>{pad}}.full.fits"
-            )
-        ] + [
-            *self._root().extractions_dir.glob(
-                f"**/*{self._root().seg_id:0>{pad}}.maps.fits"
-            )
-        ]
+        self.fits_path = (
+            [
+                *self._root().extractions_dir.glob(
+                    f"**/*{self._root().seg_id:0>{pad}}.full.fits"
+                )
+            ]
+            + [
+                *self._root().extractions_dir.glob(
+                    f"**/*{self._root().seg_id:0>{pad}}.maps.fits"
+                )
+            ]
+            + [
+                *self._root().extractions_dir.glob(
+                    f"**/*{self._root().seg_id:0>{pad}}.zinfo.fits"
+                )
+            ]
+        )
         if len(self.fits_path) == 0:
             print("Full extraction data not found.")
             self.fits_path = None
