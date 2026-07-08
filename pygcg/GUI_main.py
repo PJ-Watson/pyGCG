@@ -17,6 +17,8 @@ from pygcg.tabs import BeamFrame, SpecFrame
 from pygcg.utils import ValidateFloatVar, check_deg, flatten_dict, fpe
 from pygcg.windows import CommentsWindow, SearchWindow, SettingsWindow
 
+import warnings
+warnings.filterwarnings('ignore')
 
 class GCG(ctk.CTk):
     def __init__(self, config_file=None):
