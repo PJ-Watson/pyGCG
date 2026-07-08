@@ -4,7 +4,7 @@ import customtkinter as ctk
 import numpy as np
 from matplotlib import cbook
 from matplotlib.backend_bases import NavigationToolbar2
-from matplotlib.backends.backend_tkagg import NavigationToolbar2Tk
+from matplotlib.backends.backend_tkagg import NavigationToolbar2Tk, _backend_tk
 from PIL import Image
 
 from .icon_checkbox import IconCheckBox

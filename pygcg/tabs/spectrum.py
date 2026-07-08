@@ -136,10 +136,8 @@ class SpecFrame(ctk.CTkFrame):
                 )
                 self.z_eval_labels.append(redshift_eval_info)
         except Exception as e:
-            # import traceback
-            # traceback.print_exc()
             print(
-                "Could not load `z_vals' column."
+                "Could not load `z_vals' column. "
                 "Searching for `zspec' and `zphot' instead."
             )
             self.redshift_label = ctk.CTkLabel(
@@ -150,10 +148,20 @@ class SpecFrame(ctk.CTkFrame):
             )
             self.redshift_info_frame.columnconfigure([0, 1], weight=1)
 
-            self.redshift_spec_info = ctk.CTkLabel(
+            self.redshift_spec_info = ctk.CTkTextbox(
                 self.redshift_info_frame,
-                text="test",
+                activate_scrollbars=False,
+                width=1,
+                height=1,
+                border_width=0.0,
+                corner_radius=0.0,
+                border_spacing=0.0,
+                fg_color="transparent",
             )
+            self.redshift_spec_info._textbox.tag_configure(
+                "subscript", offset=-2, font=("font", 7)
+            )
+            self.redshift_spec_info.insert(ctk.END, "")
             self.redshift_spec_info.grid(
                 row=0,
                 column=0,
@@ -161,10 +169,21 @@ class SpecFrame(ctk.CTkFrame):
                 pady=(10,),
                 sticky="we",
             )
-            self.redshift_phot_info = ctk.CTkLabel(
+
+            self.redshift_phot_info = ctk.CTkTextbox(
                 self.redshift_info_frame,
-                text="test2",
+                activate_scrollbars=False,
+                width=1,
+                height=1,
+                border_width=0.0,
+                corner_radius=0.0,
+                border_spacing=0.0,
+                fg_color="transparent",
             )
+            self.redshift_phot_info._textbox.tag_configure(
+                "subscript", offset=-2, font=("font", 7)
+            )
+            self.redshift_phot_info.insert(ctk.END, "")
             self.redshift_phot_info.grid(
                 row=0,
                 column=1,
@@ -546,23 +565,35 @@ class SpecFrame(ctk.CTkFrame):
             spec_z_name = self._root().config.get("catalogue", {}).get("zspec", "zspec")
             spec_z = self._root().tab_row[spec_z_name]
             assert spec_z != "--"
-            spec_z_text = f"z\u209b\u209a\u2091\U0001e03f = {spec_z:.3f} "
+            spec_z = f"{spec_z:.3f}"
+            # spec_z_text = f"z\u209b\u209a\u2091\U0001e03f = {spec_z:.3f} "
         except Exception as e:
-            spec_z_text = f"z\u209b\u209a\u2091\U0001e03f = n/a  "
-        self.redshift_spec_info.configure(
-            text=(f"{spec_z_text}"),
-        )
+            spec_z = "n/a"
+            # spec_z_text = f"z\u209b\u209a\u2091\U0001e03f = n/a  "
+        # self.redshift_spec_info.configure(
+        #     text=(f"{spec_z_text}"),
+        # )
+        self.redshift_spec_info.configure(state="normal")
+        self.redshift_spec_info.delete(0.0, "end")
+        self.redshift_spec_info.insert(ctk.END, "z")
+        self.redshift_spec_info.insert(ctk.END, "spec", "subscript")
+        self.redshift_spec_info.insert(ctk.END, f" = {spec_z}    ")
+        self.redshift_spec_info.configure(state="disabled")
 
         try:
             phot_z_name = self._root().config.get("catalogue", {}).get("zphot", "zphot")
             phot_z = self._root().tab_row[phot_z_name]
             assert phot_z != "--"
-            phot_z_text = f"z\u209a\u2095\u2092\u209c = {phot_z:.3f} "
+            phot_z = f"{phot_z:.3f}"
         except Exception as e:
-            phot_z_text = "z\u209a\u2095\u2092\u209c = n/a  "
-        self.redshift_phot_info.configure(
-            text=(f"{phot_z_text}"),
-        )
+            phot_z = "n/a"
+
+        self.redshift_phot_info.configure(state="normal")
+        self.redshift_phot_info.delete(0.0, "end")
+        self.redshift_phot_info.insert(ctk.END, "z")
+        self.redshift_phot_info.insert(ctk.END, "phot", "subscript")
+        self.redshift_phot_info.insert(ctk.END, f" = {phot_z}")
+        self.redshift_phot_info.configure(state="disabled")
 
     def _update_all(self):
         self.check_axes_colours()

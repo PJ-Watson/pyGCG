@@ -257,7 +257,7 @@ class GCG(ctk.CTk):
         )
 
         self.gal_info_label._textbox.tag_configure(
-            "subscript", offset=-4, font=("font", 7)
+            "subscript", offset=-2, font=("font", 7)
         )
         self.gal_info_label.insert(ctk.END, "")
 
