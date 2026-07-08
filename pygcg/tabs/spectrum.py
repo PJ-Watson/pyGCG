@@ -546,9 +546,9 @@ class SpecFrame(ctk.CTkFrame):
             spec_z_name = self._root().config.get("catalogue", {}).get("zspec", "zspec")
             spec_z = self._root().tab_row[spec_z_name]
             assert spec_z != "--"
-            spec_z_text = f"z\u209b\u209a\u2091\U0001E03F = {spec_z:.3f} "
+            spec_z_text = f"z\u209b\u209a\u2091\U0001e03f = {spec_z:.3f} "
         except Exception as e:
-            spec_z_text = f"z\u209b\u209a\u2091\U0001E03F = n/a  "
+            spec_z_text = f"z\u209b\u209a\u2091\U0001e03f = n/a  "
         self.redshift_spec_info.configure(
             text=(f"{spec_z_text}"),
         )
@@ -615,7 +615,8 @@ class SpecFrame(ctk.CTkFrame):
         else:
             dict_key = "grisms"
 
-        data_lims = np.full((3, 2), np.nan)
+        # wavelength, flux, flux alternative
+        data_lims = np.array([[10130, 22260], [0.0, 1.0], [0.0, 1.0]], dtype=float)
         colours = {
             self._root().filter_names[0]: "C1",
             self._root().filter_names[1]: "C2",
@@ -890,7 +891,7 @@ class SpecFrame(ctk.CTkFrame):
             self.plotted_components[line_type][line_key] = self.fig.get_axes()[
                 0
             ].axvline(
-                line_data["centre"] * float(self.current_redshift.get()),
+                float(line_data["centre"]) * float(self.current_redshift.get()),
                 c="0.7",
                 alpha=0.7,
                 linewidth=2,
