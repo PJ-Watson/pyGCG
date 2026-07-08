@@ -14,7 +14,60 @@ class VerticalNavigationToolbar2Tk(NavigationToolbar2Tk):
     def __init__(self, canvas, window, pack_toolbar=False, **kwargs):
         NavigationToolbar2Tk._set_image_for_button = self._set_image_for_button
 
-        super().__init__(canvas, window, pack_toolbar=False, **kwargs)
+        # super().__init__(canvas, window, pack_toolbar=pack_toolbar, **kwargs)
+
+        if window is None:
+            window = canvas.get_tk_widget().master
+        tk.Frame.__init__(self, master=window, borderwidth=2, width=50, height=50)
+        # Avoid message_label expanding the toolbar size, and in turn expanding the
+        # canvas size.
+        # Without pack_propagate(False), when the user defines a small figure size
+        # (e.g. 2x2):
+        # 1. Figure size that is bigger than the user's expectation.
+        # 2. When message_label is refreshed by mouse enter/leave, the canvas
+        #    size will also be changed.
+        self.pack_propagate(False)
+
+        self._buttons = {}
+        for text, tooltip_text, image_file, callback in self.toolitems:
+            if text is None:
+                # Add a spacer; return value is unused.
+                self._Spacer()
+            else:
+                self._buttons[text] = button = self._Button(
+                    text,
+                    str(cbook._get_data_path(f"images/{image_file}.png")),
+                    toggle=callback in ["zoom", "pan"],
+                    command=getattr(self, callback),
+                )
+                if tooltip_text is not None:
+                    _backend_tk.add_tooltip(button, tooltip_text)
+
+        self._label_font = tk.font.Font(root=window, size=10)
+
+        # This filler item ensures the toolbar is always at least two text
+        # lines high. Otherwise the canvas gets redrawn as the mouse hovers
+        # over images because those use two-line messages which resize the
+        # toolbar.
+        label = tk.Label(
+            master=self,
+            font=self._label_font,
+            text="\N{NO-BREAK SPACE}\n\N{NO-BREAK SPACE}",
+        )
+        label.pack(side=tk.RIGHT)
+
+        self.message = tk.StringVar(master=self)
+        self._message_label = tk.Label(
+            master=self,
+            font=self._label_font,
+            textvariable=self.message,
+            justify=tk.RIGHT,
+        )
+        self._message_label.pack(side=tk.RIGHT)
+
+        NavigationToolbar2.__init__(self, canvas)
+        if pack_toolbar:
+            self.pack(side=tk.BOTTOM, fill=tk.X)
 
     # # Override the damn image selection
     @staticmethod
@@ -50,13 +103,13 @@ class VerticalNavigationToolbar2Tk(NavigationToolbar2Tk):
             image_data = np.asarray(image).copy()
             black_mask = (image_data[..., :3] == 0).all(axis=-1)
             image_data[black_mask, :3] = color
-            return Image.fromarray(image_data, mode="RGBA")
+            return Image.fromarray(image_data)
 
         # Use the high-resolution (48x48 px) icon if it exists and is needed
         with Image.open(
             path_large if (size > 24 and path_large.exists()) else path_regular
         ) as im:
-            # assure a RGBA image as foreground color is RGB
+            # assure an RGBA image as foreground color is RGB
             im = im.convert("RGBA")
             image = ctk.CTkImage(im.resize((size, size)))
             button._ntimage = image
