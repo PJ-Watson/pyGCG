@@ -325,7 +325,6 @@ class GCG(ctk.CTk):
                     )
                 else:
                     self.temp_dir = self.out_dir / ".temp"
-                    self.temp_dir.mkdir(exist_ok=True)
 
                 out_name = self.config["files"].get("out_cat_name", "pyGCG_output.fits")
                 if out_name == "":

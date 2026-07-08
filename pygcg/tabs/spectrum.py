@@ -601,13 +601,15 @@ class SpecFrame(ctk.CTkFrame):
 
         self._update_data()
 
-        self.cube_path = (
-            Path(self._root().config["files"]["cube_path"]).expanduser().resolve()
-        )
-        if not self.cube_path.is_file():
-            self.muse_checkbox.configure(state="disabled")
-        else:
+        try:
+            self.cube_path = (
+                Path(self._root().config["files"]["cube_path"]).expanduser().resolve()
+            )
+            assert self.cube_path.is_file()
             self.muse_checkbox.configure(state="normal")
+        except:
+            self.cube_path = None
+            self.muse_checkbox.configure(state="disabled")
 
         if self.grizli_checkbox.get():
             self.plot_grizli()
@@ -799,7 +801,7 @@ class SpecFrame(ctk.CTkFrame):
     def plot_MUSE_spec(
         self,
     ):
-        if not self.cube_path.is_file():
+        if (self.cube_path is None) or (not self.cube_path.is_file()):
             return
         if "MUSE_spec" in self.plotted_components.keys():
             for line in self.fig_axes.get_lines():
@@ -845,9 +847,8 @@ class SpecFrame(ctk.CTkFrame):
         cube_error=None,
         kernel_sig=5,
     ):
-        # temp_dir = (
-        #     Path(self._root().config["files"]["temp_dir"]).expanduser().resolve()
-        # )
+        if not self.temp_dir.is_dir():
+            self.temp_dir.mkdir(parents=True)
         try:
             with pf.open(
                 self.temp_dir
