@@ -252,7 +252,7 @@ class GCG(ctk.CTk):
     def rescan_and_reload(self, skip=False):
         try:
             assert (
-                len(self.config["files"]["extractions_dir"]) > 0
+                len(self.config["files"].get("extractions_dir", "")) > 0
             ), "Extractions directory is not defined."
 
             fpe_with_root = partial(
@@ -293,7 +293,7 @@ class GCG(ctk.CTk):
             ]
 
             try:
-                assert len(self.config["files"]["out_dir"]) > 0
+                assert len(self.config["files"].get("out_dir", "")) > 0
 
                 fpe_with_root(
                     self.config["files"]["out_dir"],
@@ -302,7 +302,7 @@ class GCG(ctk.CTk):
                     self.config["files"]["out_dir"],
                 )
 
-                if len(self.config["files"]["temp_dir"]) > 0:
+                if len(self.config["files"].get("temp_dir", "")) > 0:
                     fpe_with_root(
                         self.config["files"]["temp_dir"],
                     ).mkdir(exist_ok=True, parents=True)
