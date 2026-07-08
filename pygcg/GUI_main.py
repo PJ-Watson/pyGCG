@@ -1,4 +1,5 @@
 import re
+import warnings
 from functools import partial
 from itertools import product
 from pathlib import Path
@@ -17,8 +18,8 @@ from pygcg.tabs import BeamFrame, SpecFrame
 from pygcg.utils import ValidateFloatVar, check_deg, flatten_dict, fpe
 from pygcg.windows import CommentsWindow, SearchWindow, SettingsWindow
 
-import warnings
-warnings.filterwarnings('ignore')
+warnings.filterwarnings("ignore")
+
 
 class GCG(ctk.CTk):
     def __init__(self, config_file=None):
@@ -241,13 +242,24 @@ class GCG(ctk.CTk):
         )
         self.search_button.grid(row=1, column=6, padx=10, pady=10, sticky="ew")
 
-        self.gal_info_label = ctk.CTkLabel(
+        self.gal_info_label = ctk.CTkTextbox(
             nav_frame,
-            text="",
+            activate_scrollbars=False,
+            width=1,
+            height=1,
+            border_width=0.0,
+            corner_radius=0.0,
+            border_spacing=0.0,
+            fg_color="transparent",
         )
         self.gal_info_label.grid(
             row=1, column=4, columnspan=2, padx=(5, 10), pady=10, sticky="ew"
         )
+
+        self.gal_info_label._textbox.tag_configure(
+            "subscript", offset=-4, font=("font", 7)
+        )
+        self.gal_info_label.insert(ctk.END, "")
 
         self.rescan_and_reload()
 
@@ -1073,23 +1085,30 @@ class GCG(ctk.CTk):
         try:
             mag_name = self.config.get("catalogue", {}).get("mag", "MAG_AUTO")
             mag_val = self.tab_row[mag_name].value
-            mag_text = f"mag\u2090\u1d64\u209c\u2092 = {mag_val:.2f}    "
         except:
-            mag_text = ""
+            mag_val = ""
         try:
             rad_name = self.config.get("catalogue", {}).get("radius", "KRON_RCIRC")
             plate_scale = self.config.get("catalogue", {}).get("plate_scale", None)
             if plate_scale is None:
-                rad_val = f"{self.tab_row[rad_name]:.0f}"
+                rad_val = float(f"{self.tab_row[rad_name]:.0f}")
             else:
-                rad_val = float(plate_scale) * self.tab_row[rad_name].value * u.arcsec
-                rad_val = f"{rad_val:.2f}"
-            rad_text = f"r\u2096\u1d63\u2092\u2099 = {rad_val}"
+                rad_val = float(plate_scale) * self.tab_row[rad_name].value
+                # rad_val = f"{rad_val:.2f}"
         except Exception as e:
-            rad_text = ""
-        self.gal_info_label.configure(
-            text=(f"{mag_text}" f"{rad_text}"),
-        )
+            rad_val = ""
+
+        self.gal_info_label.configure(state="normal")
+        self.gal_info_label.delete(0.0, "end")
+        if mag_val != "":
+            self.gal_info_label.insert(ctk.END, "mag")
+            self.gal_info_label.insert(ctk.END, "auto", "subscript")
+            self.gal_info_label.insert(ctk.END, f" = {mag_val:.2f}    ")
+        if rad_val != "":
+            self.gal_info_label.insert(ctk.END, "r")
+            self.gal_info_label.insert(ctk.END, "kron", "subscript")
+            self.gal_info_label.insert(ctk.END, f' = {rad_val:.2f}"')
+        self.gal_info_label.configure(state="disabled")
 
         if self.seg_id in self.out_cat["SEG_ID"]:
             out_row = self.out_cat[self.out_cat["SEG_ID"] == self.seg_id][0]
