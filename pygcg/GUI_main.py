@@ -22,8 +22,13 @@ warnings.filterwarnings("ignore")
 
 
 class GCG(ctk.CTk):
-    def __init__(self, config_file=None):
+    def __init__(self, config_file=None, hdpi_scaling=False):
         super().__init__()
+
+        if not hdpi_scaling:
+            ctk.deactivate_automatic_dpi_awareness()
+            ctk.set_window_scaling(1.0)
+            ctk.set_widget_scaling(1.0)
 
         # Geometry
         self.geometry("1366x768")

@@ -56,6 +56,16 @@ line:
 python -c "from pygcg.GUI_main import run_app; run_app()"
 ```
 
+### DPI Scaling
+
+By default, high DPI scaling is disabled for `pyGCG`. This can be enabled
+using the `hdpi_scaling` keyword:
+
+```python
+from pygcg.GUI_main import run_app
+run_app(hdpi_scaling=True)
+```
+
 ## Configuration file
 
 When launching `pyGCG`, one can pass the path of a configuration file
