@@ -494,13 +494,11 @@ class MultiQualityFrame(ctk.CTkFrame):
 
     def keypress_select(self, event, key_maps):
         if event.char in key_maps:
-            idx = (event.char == key_maps).nonzero()
-            self._root().current_gal_data[self.extvers[int(idx[0])]]["quality"] = (
-                self.possible_values[int(idx[1])]
+            idx = np.argwhere(event.char == key_maps)[0]
+            self._root().current_gal_data[self.extvers[idx[0]]]["quality"] = (
+                self.possible_values[idx[1]]
             )
-            self.quality_menus[self.extvers[int(idx[0])]].set(
-                self.possible_values[int(idx[1])]
-            )
+            self.quality_menus[self.extvers[idx[0]]].set(self.possible_values[idx[1]])
 
     def reload_extvers(self, new_extvers=None):
         if self.extvers != None:
