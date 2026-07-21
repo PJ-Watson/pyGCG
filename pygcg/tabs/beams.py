@@ -492,9 +492,9 @@ class MultiQualityFrame(ctk.CTkFrame):
 
         self.save_current()
 
-    def keypress_select(self, event, key_maps):
-        if event.char in key_maps:
-            idx = np.argwhere(event.char == key_maps)[0]
+    def keypress_select(self, char, key_maps):
+        if char in key_maps:
+            idx = np.argwhere(char == key_maps)[0]
             self._root().current_gal_data[self.extvers[idx[0]]]["quality"] = (
                 self.possible_values[idx[1]]
             )

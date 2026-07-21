@@ -549,11 +549,16 @@ class GCG(ctk.CTk):
                 desc="Scanning directory for objects in catalogue",
                 total=len(self.id_col),
             ):
-                if self.config["files"].get("skip_existing", True) or skip:
-                    if s in self.out_cat["SEG_ID"]:
-                        continue
                 if f"{s:0>{pad}}" in oned_ids and f"{s:0>{pad}}" in stack_ids:
                     id_idx_list.append(i)
+
+            self.orig_total = len(id_idx_list)
+            if self.config["files"].get("skip_existing", True) or skip:
+                id_idx_list = [
+                    i
+                    for i in id_idx_list
+                    if self.seg_id_col[i] not in self.out_cat["SEG_ID"]
+                ]
 
             assert len(id_idx_list) > 0, (
                 f"No matches found in the extractions directory for the "
@@ -664,8 +669,20 @@ class GCG(ctk.CTk):
         for l in self.quality_key_map.flatten():
             self.bind(f"{l}", self.select_quality_menu)
 
+        self.bind("b", self.set_all_bad)
+
         self.object_progress[self.main_tabs.get()] = True
         self.update_progress()
+
+    def set_all_bad(self, event=None):
+        if event != None and event.widget.winfo_class() == ("Entry" or "Textbox"):
+            return
+
+        for widg in [self.beam_frame_1, self.beam_frame_2]:
+            for row in self.quality_key_map:
+                widg.beam_single_PA_frame.quality_frame.keypress_select(
+                    row[-1], self.quality_key_map
+                )
 
     def select_quality_menu(self, event=None):
         if event != None and event.widget.winfo_class() == ("Entry" or "Textbox"):
@@ -676,7 +693,7 @@ class GCG(ctk.CTk):
         else:
             widg = self.beam_frame_2
         widg.beam_single_PA_frame.quality_frame.keypress_select(
-            event, self.quality_key_map
+            event.char, self.quality_key_map
         )
 
     def initialise_configuration(self, config_file=None):
@@ -1042,6 +1059,11 @@ class GCG(ctk.CTk):
                     self.focus_force()
             self.out_cat.add_row(flattened_data)
             self.out_cat.write(self.out_cat_path, overwrite=True)
+
+            print(
+                f"{len(self.out_cat) / self.orig_total:.1%} : "
+                f"{len(self.out_cat)} / {self.orig_total} objects classified"
+            )
 
     def raise_save_warning(self, err_msg=""):
         warn_box = CTkMessagebox(
