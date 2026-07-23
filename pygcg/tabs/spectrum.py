@@ -724,11 +724,14 @@ class SpecFrame(ctk.CTkFrame):
                                 step="mid",
                                 alpha=0,
                             )
-                            dp = dummy.get_paths()[0]
+                            try:
+                                dp_vertices = dummy.get_paths()[0].vertices
+                            except:
+                                dp_vertices = [[]]
                             dummy.remove()
                             self.plotted_components[dict_key][
                                 f"{hdu.name}_err"
-                            ].set_paths([dp.vertices])
+                            ].set_paths([dp_vertices])
                         except Exception as e:
                             (self.plotted_components[dict_key][hdu.name],) = (
                                 self.fig_axes.plot(
